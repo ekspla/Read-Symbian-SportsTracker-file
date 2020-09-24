@@ -207,7 +207,7 @@ with in_file.open(mode='rb') as f:
         t_time = t_time / 100 # Totaltime in seconds
         unix_time = symbian_to_unix_time(symbian_time)
         #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
-        #print(unknown1, '\t', datetime.timedelta(seconds=round(t_time, 3)), '\t',  flag, '\t', utc_time, sep = '')
+        #print(unknown, '\t', datetime.timedelta(seconds=round(t_time, 3)), '\t',  flag, '\t', utc_time, sep = '')
         
         # Start flag = 1, we don't use these data.  Just store them for the future purposes.
         if flag == 1:
@@ -243,9 +243,7 @@ with in_file.open(mode='rb') as f:
     #          datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z", sep = '')
     #quit()
     
-    #skip_size = num_pause * 14 # 14 bytes for one datum
-    #print(skip_size)
-    #f.seek(skip_size, 1) # skip autopause data part
+    # Go to the first trackpoint.
     f.seek(track_address, 0)
     
     t_time = 0
@@ -307,11 +305,6 @@ with in_file.open(mode='rb') as f:
                 # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1)
                 (dt_time, unknown3, dy_ax, dx_ax , unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B6hH2B', f.read(17))
                 
-            # Other headers which I don't know.
-            else:
-            
-                print(header, "Error in the track point header: ", track_count, num_trackpt)
-                
             t_time += dt_time / 100 # Totaltime in seconds.
             
             y_degree += dy_ax / 1e4 / 60 # Latitudes and longtitudes are given as differences.
@@ -328,6 +321,12 @@ with in_file.open(mode='rb') as f:
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 2), datetime.timezone.utc).isoformat()
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, dy_ax, dx_ax , z_ax, v, dist, unknown1, unknown2)
+            
+        # Other headers which I don't know.
+        else:
+        
+            print('At address: ', hex(f.tell() - 2))
+            break
             
             
         if len(pause_list) > 0:
@@ -378,10 +377,11 @@ with in_file.open(mode='rb') as f:
         track_count += 1
         
         
-    # This part does'nt work.
+    # Handling of errors.
     if track_count != num_trackpt:
         print('Track points count error: ', track_count, num_trackpt)
         #print(track_count, num_trackpt)
+        quit()
         
         
     # Finally, print or write the gpx. 
