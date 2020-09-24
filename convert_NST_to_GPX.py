@@ -201,7 +201,7 @@ with in_file.open(mode='rb') as f:
         pause_time = 0 # Reset pause_time
         
         # Read 14 bytes of data(1+4+1+8)
-        (unknown1, t_time, flag, symbian_time) = struct.unpack('<BIBq', f.read(14))
+        (unknown, t_time, flag, symbian_time) = struct.unpack('<BIBq', f.read(14))
         pause_address = f.tell()
         
         t_time = t_time / 100 # Totaltime in seconds
@@ -325,7 +325,7 @@ with in_file.open(mode='rb') as f:
         # Other headers which I don't know.
         else:
         
-            print('At address: ', hex(f.tell() - 2))
+            print('At address:', hex(f.tell() - 2))
             break
             
             
