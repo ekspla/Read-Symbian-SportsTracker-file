@@ -219,20 +219,25 @@ with in_file.open(mode='rb') as f:
             stoptime = unix_time
             stop_t_time = t_time
             
-        # Suspend flag = 4
-        elif flag == 4:
+        # Suspend flag = 3 (manually) or 4 (automatically)
+        elif flag == 3 or 4:
             suspend_time = unix_time
             t4_time = t_time
             
         # Resume flag = 5
-        elif flag ==5:
+        elif flag == 5:
             if (t4_time != t_time):
                 print('Error in autopause.')
                 quit()
                 
             pause_time = unix_time - suspend_time
             pause_list.append((t_time, pause_time, unix_time))
-            
+
+        # Resume flag = 8 # Not quite sure how to use the flag = 8 data.  Use it as a correction of time. 
+        elif flag == 8:
+            paus_time = 0
+            pause_list.append((t_time, pause_time, unix_time))
+
         pause_count += 1
         
     #print('Total time', '\t', 'Pause time', '\t', 'UTC', sep ='')
