@@ -219,20 +219,25 @@ with in_file.open(mode='rb') as f:
             stoptime = unix_time
             stop_t_time = t_time
             
-        # Suspend flag = 4
-        elif flag == 4:
+        # Suspend flag = 3 (manually) or 4 (automatically)
+        elif flag == 3 or 4:
             suspend_time = unix_time
             t4_time = t_time
             
         # Resume flag = 5
-        elif flag ==5:
+        elif flag == 5:
             if (t4_time != t_time):
                 print('Error in autopause.')
                 quit()
                 
             pause_time = unix_time - suspend_time
             pause_list.append((t_time, pause_time, unix_time))
-            
+
+        # Resume flag = 8 # Not quite sure how to use the flag = 8 data.  Use it as a correction of time. 
+        elif flag == 8:
+            paus_time = 0
+            pause_list.append((t_time, pause_time, unix_time))
+
         pause_count += 1
         
     #print('Total time', '\t', 'Pause time', '\t', 'UTC', sep ='')
@@ -255,8 +260,8 @@ with in_file.open(mode='rb') as f:
         (header,) = struct.unpack('B', f.read(1)) # Read the 1-byte header.
         #print(header)
         
-        # For header 0x03 or 0x02
-        if (header == 0x03)|(header == 0x02): # Read 22 bytes of data(4+4+4+4+2+4)
+        # For header 0x0*
+        if header in {0x00, 0x02, 0x03}: # Read 22 bytes of data(4+4+4+4+2+4)
             (t_time, y_ax, x_ax , z_ax, v, d_dist) = struct.unpack('<4IHI', f.read(22))
             t_time = t_time / 100 # Totaltime in seconds
             
@@ -280,10 +285,10 @@ with in_file.open(mode='rb') as f:
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, y_ax, x_ax , z_ax, v, dist, utc_time)
             
-        elif header in {0x82, 0x83, 0x92, 0x93, 0xC2, 0xC3, 0xD2, 0xD3}:
+        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0xC2, 0xC3, 0xD2, 0xD3}:
         
             # For header 0x8*.
-            if (header == 0x82)|(header == 0x83):
+            if header in {0x80, 0x82, 0x83}:
             
                 # Read 10 bytes of data(1+2+2+2+1+2).  1-byte dv.
                 (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist) = struct.unpack('<B3hbH', f.read(10))
