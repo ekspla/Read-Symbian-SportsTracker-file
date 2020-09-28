@@ -285,7 +285,7 @@ with in_file.open(mode='rb') as f:
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, y_ax, x_ax , z_ax, v, dist, utc_time)
             
-        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0xC2, 0xC3, 0xD2, 0xD3}:
+        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 0xC2, 0xC3, 0xD2, 0xD3}:
         
             # For header 0x8*.
             if header in {0x80, 0x82, 0x83}:
@@ -298,6 +298,12 @@ with in_file.open(mode='rb') as f:
             
                 # Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
                 (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist) = struct.unpack('<B4hH', f.read(11))
+
+            # For header 0x9A or 9B.
+            elif (header == 0x9A)|(header == 0x9B):
+            
+                # Read 13 bytes of data(1+2+2+2+2+2+2).  2-byte dv.
+                (dt_time, dy_ax, dx_ax , dz_ax, unknown3, dv, d_dist) = struct.unpack('<B5hH', f.read(13))
                 
             # For header 0xC*.  This case is quite rare.
             # We don't know about the additional two parameters.
