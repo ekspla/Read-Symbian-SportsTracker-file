@@ -165,8 +165,9 @@ with in_file.open(mode='rb') as f:
     # This is for localtime in JST.
     #gpx.time = datetime.datetime.fromtimestamp(start_time, datetime.timezone(datetime.timedelta(hours=+9),))
     # We can calculate the timezone by using the starttimes in Z and localtime.
+    TZ_hours = int(start_localtime - start_time) / 3600
     gpx.time = datetime.datetime.fromtimestamp(start_time, datetime.timezone(datetime.timedelta(\
-                                                hours = int(start_localtime - start_time) / 3600),))
+                                                hours = TZ_hours),))
     
     stop_time = symbian_to_unix_time(stop_time)
     #print('Stop Z : ', datetime.datetime.fromtimestamp(round(stop_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z")
@@ -200,7 +201,7 @@ with in_file.open(mode='rb') as f:
     
         pause_time = 0 # Reset pause_time
         
-        # Read 14 bytes of data(1+4+1+8)
+        # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the new version files are in UTC.
         (unknown, t_time, flag, symbian_time) = struct.unpack('<BIBq', f.read(14))
         pause_address = f.tell()
         
@@ -282,12 +283,12 @@ with in_file.open(mode='rb') as f:
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, y_ax, x_ax , z_ax, v, dist, utc_time)
             
-        elif (header == 0x87)|(header == 0x97)|(header == 0xC7)|(header == 0xD7):
+        elif header in {0x87, 0x97, 0xC7, 0xD7}:
         
             # For header 0x87**, typically, 0x8783 or 0x8782.
             if header == 0x87:
             
-                # Read 12 bytes of data(1+2+2+2+1+2+1+1)
+                # Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
                 (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B3hbH2B', f.read(12))
                 
             # For header 0x97**, typically, 0x9783 or 0x9782.
@@ -300,14 +301,14 @@ with in_file.open(mode='rb') as f:
             # We don't know about the additional two parameters.
             elif header == 0xC7:
             
-                # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1)
+                # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv, in analogy to those with 0x87** header.
                 (dt_time, unknown3, dy_ax, dx_ax , unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B5hbH2B', f.read(16))
                 
             # For header 0xD7**, typically, 0xD783 or 0xD782.  This case is quite rare.
-            # We don't know about the additional two parameters.  2-byte dv, in analogy to those with 0x97** header.
+            # We don't know about the additional two parameters.
             elif header == 0xD7:
             
-                # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1)
+                # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv, in analogy to those with 0x97** header.
                 (dt_time, unknown3, dy_ax, dx_ax , unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B6hH2B', f.read(17))
                 
             t_time += dt_time / 100 # Totaltime in seconds.
@@ -345,7 +346,6 @@ with in_file.open(mode='rb') as f:
             
                 if header != 0x07:  # Track points not starting with 0x07** need UTC times.
                 
-                    #unix_time += pause_time
                     unix_time = resume_time # There might be few second of error, which I don't care. 
                 del pause_list[0]
                 
