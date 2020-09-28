@@ -285,7 +285,7 @@ with in_file.open(mode='rb') as f:
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, y_ax, x_ax , z_ax, v, dist, utc_time)
             
-        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 0xC2, 0xC3, 0xD2, 0xD3}:
+        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
         
             # For header 0x8*.
             if header in {0x80, 0x82, 0x83}:
@@ -293,7 +293,7 @@ with in_file.open(mode='rb') as f:
                 # Read 10 bytes of data(1+2+2+2+1+2).  1-byte dv.
                 (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist) = struct.unpack('<B3hbH', f.read(10))
                 
-            # For header 0x9*.
+            # For header 0x92 or 0x93.
             elif (header == 0x92)|(header == 0x93):
             
                 # Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
@@ -312,12 +312,19 @@ with in_file.open(mode='rb') as f:
                 # Read 14 bytes of data(1+2+2+2+2+2+1+2).  1-byte dv, in analogy to those with 0x8* header.
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) = struct.unpack('<B5hbH', f.read(14))
                 
-            # For header 0xD*.  This case is quite rare.
+            # For header 0xD2 or 0xD3.  This case is quite rare.
             # We don't know about the additional two parameters.
             elif (header == 0xD2)|(header == 0xD3):
             
                 # Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv, in analogy to those with 0x9* header.
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) = struct.unpack('<B6hH', f.read(15))
+                
+            # For header 0xDA or 0xDB.
+            # We don't know about the additional two parameters.
+            elif (header == 0xDA)|(header == 0xDB):
+            
+                # Read 17 bytes of data(1+2+2+2+2+2+4).  2-byte dv. 4-byte dL.
+                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) = struct.unpack('<B6hI', f.read(17))
                 
             t_time += dt_time / 100 # Totaltime in seconds.
             
