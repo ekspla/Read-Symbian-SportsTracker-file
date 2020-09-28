@@ -34,7 +34,7 @@ if argc < 2:
     print("""Usage: # python %s input_filename' % argvs[0]\n
  This script reads track log files (*.dat) of symbian SportsTracker.
 Log files with heart-rate sensor were not tested.
-You have to modify this script to read files from old-version Nokia SportsTracker
+You have to modify this script to read files from new-version SportsTracker
 because of slightly different data format.""")
     quit()
 #print(argc)
