@@ -302,8 +302,8 @@ with in_file.open(mode='rb') as f:
             # For header 0x9A or 9B.
             elif (header == 0x9A)|(header == 0x9B):
             
-                # Read 13 bytes of data(1+2+2+2+2+2+2).  2-byte dv.
-                (dt_time, dy_ax, dx_ax , dz_ax, unknown3, dv, d_dist) = struct.unpack('<B5hH', f.read(13))
+                # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte dL.
+                (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist) = struct.unpack('<B4hI', f.read(13))
                 
             # For header 0xC*.  This case is quite rare.
             # We don't know about the additional two parameters.
