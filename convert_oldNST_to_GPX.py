@@ -345,7 +345,7 @@ with in_file.open(mode='rb') as f:
             # Just after the autopause, use the autopause data.
             # Not sure why we need the adjustments of 0.5 sec.  Possibly, a threshold for autopause?
             #if (t_time + 0.5 >= t4_time)|(unix_time + 0.5 >= resume_time):
-            if (t_time + 0.5 >= t4_time)|(unix_time + pause_time >= resume_time):
+            if (t_time + 0.5 >= t4_time)|(unix_time + pause_time >= resume_time - TZ_hours * 3600):
             
                 #unix_time += pause_time
                 unix_time = resume_time - TZ_hours * 3600 # There might be few second of error, which I don't care. 
