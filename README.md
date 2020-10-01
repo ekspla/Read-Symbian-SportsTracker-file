@@ -1,11 +1,12 @@
 # Read-Symbian-SportsTracker-file
-This python script describes how you can read symbian SportsTracker log files in binary format.
+This python script describes how you can read symbian Sports Tracker log files stored in 
+your phone as binary format.
 
-The code was tested with > 1000 of track log files copied from my Nokia phone equipped with GPS,
-never tested with heart-rate sensor, though...
+The code was tested with > 1000 of track log files copied from my Nokia phone equipped 
+with GPS receiver, never tested with heart-rate sensor, though...
 
-There are still a few unknown parts in the track logs.  So, your feedbacks are welcomed.
+There are still a few unknown part in the track logs.  So, your feedback is welcomed.
 
-You have to modify the code a bit to read old-version Nokia SportsTracker files because of 
-slightly different format. 
-(1-byte instead of 2-byte long header, start address of trackpoints is different, etc.)
+I had to modify the code a bit to read old-version Nokia SportsTracker files because of 
+slightly different format.  For details, please see the script named as 'convert_oldNST_to_GPX.py'.
+(1-byte instead of 2-byte long header, start address of trackpoint is different, etc.)
