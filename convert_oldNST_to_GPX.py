@@ -302,7 +302,7 @@ with in_file.open(mode='rb') as f:
             # For header 0x9A or 9B.
             elif (header == 0x9A)|(header == 0x9B):
             
-                # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte dL.
+                # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
                 (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist) = struct.unpack('<B4hI', f.read(13))
                 
             # For header 0xC*.  This case is quite rare.
@@ -323,7 +323,7 @@ with in_file.open(mode='rb') as f:
             # We don't know about the additional two parameters.
             elif (header == 0xDA)|(header == 0xDB):
             
-                # Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte dL.
+                # Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) = struct.unpack('<B6hI', f.read(17))
                 
             t_time += dt_time / 100 # Totaltime in seconds.
