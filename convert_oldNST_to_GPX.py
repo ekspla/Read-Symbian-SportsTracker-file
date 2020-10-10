@@ -102,7 +102,7 @@ with in_file.open(mode='rb') as f:
     #print('Net speed: ', round(net_speed, 3), ' km/h')
     
     
-    # Read Starttime and Stoptime in localtime.
+    # Read Starttime and Stoptime in localtime, 8+8 bytes.
     (start_localtime, stop_localtime) = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_localtime = symbian_to_unix_time(start_localtime)
     # Print start time in localtime.  Change the suffix according to your timezone.  There are no timezone information in Symbian.
@@ -150,7 +150,7 @@ with in_file.open(mode='rb') as f:
     # Read name of the track, which is usually the datetime.
     f.seek(0x00047, 0) # go to address 0x00047, this address is fixed.
     (track_name,) = struct.unpack('16s', f.read(16)) # The name is strings of 16 bytes.
-    #print('Track name: ', track_name.decode()) 
+    #print('Track name: ', track_name.decode())
     gpx.name = "[" + str(track_name.decode()) + "]"
     gpx.tracks[0].name = gpx.name
     
@@ -180,7 +180,7 @@ with in_file.open(mode='rb') as f:
     # Read number of autopause data, 4 bytes.
     f.seek(0x003ff, 0) # go to address 0x003ff, this address is fixed.
     (num_pause,) = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    #print('Number of pause data: ', num_pause) # print number of pause data 
+    #print('Number of pause data: ', num_pause) # print number of pause data
     pause_address = f.tell()
     
     track_address = pause_address + num_pause * 14 # Autopause data are 14 bytes.
@@ -226,7 +226,7 @@ with in_file.open(mode='rb') as f:
             
         # Resume flag = 5
         elif flag == 5:
-            if (t4_time != t_time):
+            if t4_time != t_time:
                 print('Error in autopause.')
                 quit()
                 
@@ -299,7 +299,7 @@ with in_file.open(mode='rb') as f:
                 # Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) = struct.unpack('<B4hH', f.read(11))
 
-            # For header 0x9A or 9B.
+            # For header 0x9A or 0x9B.
             elif (header == 0x9A)|(header == 0x9B):
             
                 # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
@@ -335,7 +335,7 @@ with in_file.open(mode='rb') as f:
             
             v += dv / 100 * 3.6 # Velocity, as well.  Multiply (m/s) by 3.6 to get velocity in km/h.
             
-            dist += d_dist / 100 / 1e3 # Divide by 1e3 to get total distance in km.
+            dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += dt_time / 100
             #unix_time += unknown1 / 100 # This doesn't work.
@@ -361,7 +361,7 @@ with in_file.open(mode='rb') as f:
             if (t_time + 0.5 >= t4_time)|(unix_time + pause_time + 0.5 >= resume_time - TZ_hours * 3600):
             
                 #unix_time += pause_time
-                unix_time = resume_time - TZ_hours * 3600 # There might be few second of error, which I don't care. 
+                unix_time = resume_time - TZ_hours * 3600 # There might be few second of error, which I don't care.
                 del pause_list[0]
                 
         last_t_time = t_time # Store it for the next turn.
