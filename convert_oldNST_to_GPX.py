@@ -341,7 +341,7 @@ with in_file.open(mode='rb') as f:
             #unix_time += unknown1 / 100 # This doesn't work.
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 2), datetime.timezone.utc).isoformat()
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
-            #print(t_time, dy_ax, dx_ax , z_ax, v, dist, unknown1, unknown2)
+            #print(t_time, dy_ax, dx_ax , z_ax, v, dist, unknown3, unknown4)
             
         # Other headers which I don't know.
         else:
