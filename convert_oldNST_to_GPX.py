@@ -220,7 +220,7 @@ with in_file.open(mode='rb') as f:
             stop_t_time = t_time
             
         # Suspend flag = 3 (manually) or 4 (automatically)
-        elif flag == 3 or 4:
+        elif (flag == 3)|(flag == 4):
             suspend_time = unix_time
             t4_time = t_time
             
