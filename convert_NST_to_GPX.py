@@ -342,11 +342,11 @@ with in_file.open(mode='rb') as f:
             
             # Just after the autopause, use the autopause data.
             # Not sure why we need the adjustments of 0.5 sec.  Possibly, a threshold for autopause?
-            if (t_time + 0.5 >= t4_time)|(unix_time + 0.5 >= resume_time):
+            if (t_time + 0.5 >= t4_time):
             
                 if header != 0x07:  # Track points not starting with 0x07** need UTC times.
-                
-                    unix_time = resume_time # There might be few second of error, which I don't care.
+                    unix_time = (t_time - t4_time) + resume_time # There might be few second of error, which I don't care.
+                    
                 del pause_list[0]
                 
                 
