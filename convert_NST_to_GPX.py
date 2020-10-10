@@ -151,7 +151,7 @@ with in_file.open(mode='rb') as f:
     # Read name of the track, which is usually the datetime.
     f.seek(0x0004b, 0) # go to address 0x0004b, this address is fixed.
     (track_name,) = struct.unpack('16s', f.read(16)) # The name is strings of 16 bytes.
-    #print('Track name: ', track_name.decode()) 
+    #print('Track name: ', track_name.decode())
     gpx.name = "[" + str(track_name.decode()) + "]"
     gpx.tracks[0].name = gpx.name
     
@@ -227,7 +227,7 @@ with in_file.open(mode='rb') as f:
             
         # Resume flag = 5
         elif flag == 5:
-            if (t4_time != t_time):
+            if t4_time != t_time:
                 print('Error in autopause.')
                 quit()
                 
@@ -346,7 +346,7 @@ with in_file.open(mode='rb') as f:
             
                 if header != 0x07:  # Track points not starting with 0x07** need UTC times.
                 
-                    unix_time = resume_time # There might be few second of error, which I don't care. 
+                    unix_time = resume_time # There might be few second of error, which I don't care.
                 del pause_list[0]
                 
                 
