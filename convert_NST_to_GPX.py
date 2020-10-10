@@ -81,17 +81,17 @@ gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
 
 with in_file.open(mode='rb') as f:
-    # Read Track ID and Totaltime, 4 bytes.
+    # Read Track ID and Totaltime, 4+4 bytes.
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     #print(f.tell())
-    (track_id, total_time) = struct.unpack('<2I', f.read(8)) # little endian U32, returns tuple
+    (track_id, total_time) = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
     #print('Track ID: ', track_id) # print Track ID.
     
     total_time /= 100 # Totaltime in seconds.
     #print('Total time: ', datetime.datetime.fromtimestamp(round(total_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3])
     
     
-    # Read Total Distance.
+    # Read Total Distance, 4 bytes.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (total_distance,) = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     total_distance /= 1e5 # Total distance in km
@@ -100,11 +100,11 @@ with in_file.open(mode='rb') as f:
     
     # Calculate Net speed in km/h.
     net_speed = total_distance / (total_time / 3600) # km/h
-    #print('Net speed: ', round(net_speed, 3), ' km/h') 
+    #print('Net speed: ', round(net_speed, 3), ' km/h')
     
     
     # Read Starttime and Stoptime in localtime.
-    (start_localtime, stop_localtime) = struct.unpack('<2q', f.read(16)) # little endian I64, returns tuple
+    (start_localtime, stop_localtime) = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_localtime = symbian_to_unix_time(start_localtime)
     # Print start time in localtime.  Change the suffix according to your timezone.  There are no timezone information in Symbian.
     # Take difference of starttime in localtime and those in UTC (see below) to see the timezone+DST.
@@ -151,14 +151,14 @@ with in_file.open(mode='rb') as f:
     # Read name of the track, which is usually the datetime.
     f.seek(0x0004b, 0) # go to address 0x0004b, this address is fixed.
     (track_name,) = struct.unpack('16s', f.read(16)) # The name is strings of 16 bytes.
-    #print('Track name: ', track_name) 
+    #print('Track name: ', track_name.decode()) 
     gpx.name = "[" + str(track_name.decode()) + "]"
     gpx.tracks[0].name = gpx.name
     
     
     # Read Starttime & Stoptime in UTC.
     f.seek(0x00192, 0) # go to 0x00192, this address is fixed.
-    (start_time, stop_time) = struct.unpack('<2q', f.read(16)) # little endian I64, returns tuple
+    (start_time, stop_time) = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
     #print('Start Z: ', datetime.datetime.fromtimestamp(round(start_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z")
     
@@ -261,7 +261,7 @@ with in_file.open(mode='rb') as f:
         
         # For header 0x07**, typically, 0x0782 or 0x0783.
         if header == 0x07: # Read 30 bytes of data(4+4+4+4+2+4+8)
-            (t_time, y_ax, x_ax , z_ax, v, d_dist, symbian_time) = struct.unpack('<4IHIq', f.read(30))
+            (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) = struct.unpack('<4IHIq', f.read(30))
             t_time = t_time / 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
@@ -289,27 +289,27 @@ with in_file.open(mode='rb') as f:
             if header == 0x87:
             
                 # Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
-                (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B3hbH2B', f.read(12))
+                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B3hbH2B', f.read(12))
                 
             # For header 0x97**, typically, 0x9783 or 0x9782.
             elif header == 0x97:
             
                 # Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
-                (dt_time, dy_ax, dx_ax , dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B4hH2B', f.read(13))
+                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B4hH2B', f.read(13))
                 
             # For header 0xC7**, typically, 0xC783 or 0xC782.  This case is quite rare.
             # We don't know about the additional two parameters.
             elif header == 0xC7:
             
                 # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv, in analogy to those with 0x87** header.
-                (dt_time, unknown3, dy_ax, dx_ax , unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B5hbH2B', f.read(16))
+                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B5hbH2B', f.read(16))
                 
             # For header 0xD7**, typically, 0xD783 or 0xD782.  This case is quite rare.
             # We don't know about the additional two parameters.
             elif header == 0xD7:
             
                 # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv, in analogy to those with 0x97** header.
-                (dt_time, unknown3, dy_ax, dx_ax , unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B6hH2B', f.read(17))
+                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) = struct.unpack('<B6hH2B', f.read(17))
                 
             t_time += dt_time / 100 # Totaltime in seconds.
             
