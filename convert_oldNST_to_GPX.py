@@ -356,12 +356,12 @@ with in_file.open(mode='rb') as f:
             #print(datetime.timedelta(seconds=round(t4_time, 3)), datetime.timedelta(seconds=round(pause_time, 3)))
             
             # Just after the autopause, use the autopause data.
-            # Not sure why we need the adjustments of 0.5 sec.  Possibly, a threshold for autopause?
-            #if (t_time + 0.5 >= t4_time)|(unix_time + 0.5 >= resume_time):
-            if (t_time + 0.5 >= t4_time)|(unix_time + pause_time + 0.5 >= resume_time - TZ_hours * 3600):
+            # Still not quite sure if this works.
+            if (t_time >= t4_time):
             
-                #unix_time += pause_time
-                unix_time = resume_time - TZ_hours * 3600 # There might be few second of error, which I don't care.
+                if (unix_time < resume_time - TZ_hours * 3600):
+                    unix_time = (t_time - t4_time) + (resume_time - TZ_hours * 3600) # There might be few second of error, which I don't care.
+                    
                 del pause_list[0]
                 
         last_t_time = t_time # Store it for the next turn.
