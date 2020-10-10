@@ -236,7 +236,7 @@ with in_file.open(mode='rb') as f:
 
         # Resume flag = 8 # Not quite sure how to use the flag = 8 data.  Use it as a correction of time. 
         elif flag == 8:
-            paus_time = 0
+            pause_time = 0
             pause_list.append((t_time, pause_time, unix_time))
 
         pause_count += 1
