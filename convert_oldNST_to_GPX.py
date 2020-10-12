@@ -226,7 +226,7 @@ with in_file.open(mode='rb') as f:
             
         # Resume flag = 5
         elif flag == 5:
-            if t4_time != t_time:
+            if t4_time != t_time: # A pair of flag-4 (also flag-3) and flag-5 data should have a common totaltime.
                 print('Error in autopause.')
                 quit()
                 
