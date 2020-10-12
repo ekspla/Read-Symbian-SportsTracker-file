@@ -247,10 +247,11 @@ with in_file.open(mode='rb') as f:
     #          datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z", sep = '')
     #quit()
     
+    
     # Go to the first trackpoint.
     f.seek(track_address, 0)
     
-    t_time = 0
+    t_time = 0 # Reset totaltime in seconds.
     dist = 0 #  Total distance in km.
     v = 0 # Velocity in km/h.
     track_count = 0
