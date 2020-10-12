@@ -103,7 +103,7 @@ with in_file.open(mode='rb') as f:
     #print('Net speed: ', round(net_speed, 3), ' km/h')
     
     
-    # Read Starttime and Stoptime in localtime.
+    # Read Starttime and Stoptime in localtime, 8+8 bytes.
     (start_localtime, stop_localtime) = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_localtime = symbian_to_unix_time(start_localtime)
     # Print start time in localtime.  Change the suffix according to your timezone.  There are no timezone information in Symbian.
@@ -156,7 +156,7 @@ with in_file.open(mode='rb') as f:
     gpx.tracks[0].name = gpx.name
     
     
-    # Read Starttime & Stoptime in UTC.
+    # Read Starttime & Stoptime in UTC, 8+8 byes.
     f.seek(0x00192, 0) # go to 0x00192, this address is fixed.
     (start_time, stop_time) = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
@@ -181,7 +181,7 @@ with in_file.open(mode='rb') as f:
     # Read number of autopause data, 4 bytes.
     f.seek(0x007ff, 0) # go to address 0x007ff, this address is fixed.
     (num_pause,) = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    #print('Number of pause data: ', num_pause) # print number of pause data 
+    #print('Number of pause data: ', num_pause) # print number of pause data
     pause_address = f.tell()
     
     track_address = pause_address + num_pause * 14 # Autopause data are 14 bytes.
@@ -259,7 +259,7 @@ with in_file.open(mode='rb') as f:
         (header, header1) = struct.unpack('2B', f.read(2)) # Read the first byte of 2-byte header.
         #print(header, header1)
         
-        # For header 0x07**, typically, 0x0782 or 0x0783.
+        # For header 0x07**, typically, 0x0783 or 0x0782.
         if header == 0x07: # Read 30 bytes of data(4+4+4+4+2+4+8)
             (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) = struct.unpack('<4IHIq', f.read(30))
             t_time = t_time / 100 # Totaltime in seconds
