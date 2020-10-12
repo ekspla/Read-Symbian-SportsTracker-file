@@ -155,7 +155,7 @@ with in_file.open(mode='rb') as f:
     gpx.tracks[0].name = gpx.name
     
     
-    # Read Starttime & Stoptime in UTC.
+    # Read Starttime & Stoptime in UTC, 8+8 bytes.
     f.seek(0x0018E, 0) # go to 0x0018E, this address is fixed.
     (start_time, stop_time) = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
