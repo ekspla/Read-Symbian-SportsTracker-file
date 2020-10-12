@@ -251,6 +251,8 @@ with in_file.open(mode='rb') as f:
     f.seek(track_address, 0)
     
     t_time = 0
+    dist = 0 #  Total distance in km.
+    v = 0 # Velocity in km/h.
     track_count = 0
     unix_time = start_time
     last_t_time = 0
