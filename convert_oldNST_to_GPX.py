@@ -48,10 +48,6 @@ in_file = Path(argvs[1])
 
 
 
-dist = 0 #  Total distance in km.
-t_time = 0 # Totaltime in seconds.
-v = 0 # Velocity in km/h.
-unix_time = 0 # unix time.
 fmt = "%Y-%m-%dT%H:%M:%S.%f" # ISO-8601 format.
 fmt1 = "%H:%M:%S.%f" # Format for totaltime and realtime.
 
@@ -190,16 +186,19 @@ with in_file.open(mode='rb') as f:
     #print('Number of track pts: ', num_trackpt)
     track_address = f.tell()
     
-    t_time = 0
-    pause_count = 0
+    
+    # Go to the first pause data.
+    f.seek(pause_address, 0)
+    
+    t_time = 0 # Totaltime in seconds.
+    unix_time = 0 # unix time.
     utc_time = ''
+    pause_time = 0 # Time between suspend and resume.
+    pause_count = 0
     pause_list = []
     
-    f.seek(pause_address, 0)
     while pause_count < num_pause:
     
-        pause_time = 0 # Reset pause_time
-        
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the old version files are in localtime zone.
         (unknown, t_time, flag, symbian_time) = struct.unpack('<BIBq', f.read(14))
         pause_address = f.tell()
@@ -255,6 +254,7 @@ with in_file.open(mode='rb') as f:
     track_count = 0
     unix_time = start_time
     last_t_time = 0
+    
     while track_count < num_trackpt:
     
         (header,) = struct.unpack('B', f.read(1)) # Read the 1-byte header.
