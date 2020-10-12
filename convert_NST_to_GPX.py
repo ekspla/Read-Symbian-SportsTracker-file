@@ -227,7 +227,7 @@ with in_file.open(mode='rb') as f:
             
         # Resume flag = 5
         elif flag == 5:
-            if t4_time != t_time:
+            if t4_time != t_time: # A pair of flag-4 (also flag-3) and flag-5 data should have a common totaltime.
                 print('Error in autopause.')
                 quit()
                 
@@ -320,7 +320,7 @@ with in_file.open(mode='rb') as f:
             
             v += dv / 100 * 3.6 # Velocity, as well.  Multiply (m/s) by 3.6 to get velocity in km/h.
             
-            dist += d_dist / 100 / 1e3 # Divide by 1e3 to get total distance in km.
+            dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += dt_time / 100
             #unix_time += unknown1 / 100 # This doesn't work.
