@@ -360,7 +360,7 @@ with in_file.open(mode='rb') as f:
             
             # Just after the autopause, use the autopause data.
             # Still not quite sure if this works.
-            if (t_time >= t4_time):
+            if (t_time + 0.5 >= t4_time):
             
                 if (unix_time < resume_time - TZ_hours * 3600):
                     unix_time = (t_time - t4_time) + (resume_time - TZ_hours * 3600) # There might be few second of error, which I don't care.
