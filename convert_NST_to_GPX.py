@@ -112,7 +112,7 @@ with in_file.open(mode='rb') as f:
     
     # Calculate Realtime, which is different from Totaltime if autopause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
-    # Never use the following line if your track is longer than a day.  This is an ad-hoc implimentation.
+    # Never use the following line if your track is longer than a day.  This is an ad-hoc implementation.
     #print('Realtime: ', datetime.datetime.fromtimestamp(round(real_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3])
     
     
@@ -170,7 +170,7 @@ with in_file.open(mode='rb') as f:
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
-    # Never use the following line if your track is longer than a day.  This is an ad-hoc implimentation.
+    # Never use the following line if your track is longer than a day.  This is an ad-hoc implementation.
     #print('Realtime Z: ', datetime.datetime.fromtimestamp(round(real_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3])
     
     
@@ -355,7 +355,7 @@ with in_file.open(mode='rb') as f:
                 
         # Print delimited text.
         #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
-        # Never use the following line if your track is longer than a day.  This is an ad-hoc implimentation.
+        # Never use the following line if your track is longer than a day.  This is an ad-hoc implementation.
         #to_time = datetime.datetime.fromtimestamp(round(t_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3]
         #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', \
         #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', round(z_ax, 1), '\t', \
