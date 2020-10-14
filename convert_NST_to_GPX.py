@@ -79,7 +79,6 @@ gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 with in_file.open(mode='rb') as f:
     # Read Track ID and Totaltime, 4+4 bytes.
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
-    #print(f.tell())
     (track_id, total_time) = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
     #print('Track ID: ', track_id) # print Track ID.
     
@@ -283,7 +282,7 @@ with in_file.open(mode='rb') as f:
             unix_time = symbian_to_unix_time(symbian_time)
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 2), datetime.timezone.utc).isoformat()
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
-            #print(t_time, y_ax, x_ax , z_ax, v, dist, utc_time)
+            #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
         
@@ -328,7 +327,7 @@ with in_file.open(mode='rb') as f:
             #unix_time += unknown1 / 100 # This doesn't work.
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 2), datetime.timezone.utc).isoformat()
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
-            #print(t_time, dy_ax, dx_ax , z_ax, v, dist, unknown1, unknown2)
+            #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown1, unknown2)
             
         # Other headers which I don't know.
         else:
