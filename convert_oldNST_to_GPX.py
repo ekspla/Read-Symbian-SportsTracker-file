@@ -201,7 +201,6 @@ with in_file.open(mode='rb') as f:
     
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the old version files are in localtime zone.
         (unknown, t_time, flag, symbian_time) = struct.unpack('<BIBq', f.read(14))
-        pause_address = f.tell()
         
         t_time = t_time / 100 # Totaltime in seconds
         unix_time = symbian_to_unix_time(symbian_time)
