@@ -267,8 +267,8 @@ with in_file.open(mode='rb') as f:
             t_time = t_time / 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
-            y_degree = int(y_ax / 1e6)
-            x_degree = int(x_ax / 1e6)
+            y_degree = y_ax // 1e6
+            x_degree = x_ax // 1e6
             y_mm_mmmm = y_ax % 1e6
             x_mm_mmmm = x_ax % 1e6
             y_degree += y_mm_mmmm / 1e4 / 60 # Convert minutes to degrees.
