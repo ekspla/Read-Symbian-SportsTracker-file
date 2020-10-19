@@ -65,14 +65,16 @@ gpx.tracks.append(gpx_track)
 # Create the first segment in the GPX track:
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
 gpx_track.segments.append(gpx_segment)
+
 # definition of extension
-# Add TrackPointExtension namespace
+# Add TrackPointExtension namespace and schema location
 gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
-#add extension to header
-#nsmap = {namespace[1:-1]:'https://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd'}
-#gpx.nsmap = nsmap
+gpx.schema_locations += ['http://www.garmin.com/xmlschemas/GpxExtensions/v3',
+                         'http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
+                         'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
+                         'http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd']
 
 
 
