@@ -71,7 +71,9 @@ gpx_track.segments.append(gpx_segment)
 gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
-gpx.schema_locations += ['http://www.garmin.com/xmlschemas/GpxExtensions/v3',
+gpx.schema_locations = ['http://www.topografix.com/GPX/1/1',
+                         'http://www.topografix.com/GPX/1/1/gpx.xsd',
+                         'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
                          'http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
                          'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
                          'http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd']
