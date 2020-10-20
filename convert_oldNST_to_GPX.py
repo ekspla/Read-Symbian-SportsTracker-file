@@ -179,9 +179,8 @@ with in_file.open(mode='rb') as f:
     #print('Number of pause data: ', num_pause) # print number of pause data
     pause_address = f.tell()
     
-    track_address = pause_address + num_pause * 14 # Autopause data are 14 bytes.
     # Read number of track points, 4 bytes.
-    f.seek(track_address, 0) # skip autopause data part
+    f.seek(num_pause * 14, 1) # Autopause data are 14 bytes.  Skip autopause data part.
     (num_trackpt,) = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of track pts: ', num_trackpt)
     track_address = f.tell()
