@@ -49,7 +49,6 @@ in_file = Path(argvs[1])
 
 
 fmt = "%Y-%m-%dT%H:%M:%S.%f" # ISO-8601 format.
-fmt1 = "%H:%M:%S.%f" # Format for totaltime and realtime.
 
 
 
@@ -87,7 +86,7 @@ with in_file.open(mode='rb') as f:
     #print('Track ID: ', track_id) # print Track ID.
     
     total_time /= 100 # Totaltime in seconds.
-    #print('Total time: ', datetime.datetime.fromtimestamp(round(total_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3])
+    #print('Total time: ', str(datetime.timedelta(seconds = round(total_time, 3)))[:-3])
     
     
     # Read Total Distance, 4 bytes.
@@ -115,8 +114,7 @@ with in_file.open(mode='rb') as f:
     
     # Calculate Realtime, which is different from Totaltime if autopause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
-    # Never use the following line if your track is longer than a day.  This is an ad-hoc implementation.
-    #print('Realtime: ', datetime.datetime.fromtimestamp(round(real_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3])
+    #print('Realtime: ', str(datetime.timedelta(seconds = round(real_time, 3)))[:-3])
     
     
     # Calculate Gross speed in km/h.
@@ -173,8 +171,7 @@ with in_file.open(mode='rb') as f:
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
-    # Never use the following line if your track is longer than a day.  This is an ad-hoc implementation.
-    #print('Realtime Z: ', datetime.datetime.fromtimestamp(round(real_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3])
+    #print('Realtime Z: ', str(datetime.timedelta(seconds = round(real_time, 3)))[:-3])
     
     
     # Read number of autopause data, 4 bytes.
@@ -357,8 +354,7 @@ with in_file.open(mode='rb') as f:
                 
         # Print delimited text.
         #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
-        # Never use the following line if your track is longer than a day.  This is an ad-hoc implementation.
-        #to_time = datetime.datetime.fromtimestamp(round(t_time, 3), datetime.timezone.utc).strftime(fmt1)[:-3]
+        #to_time = str(datetime.timedelta(seconds = round(t_time, 3)))[:-3]
         #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', \
         #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', round(z_ax, 1), '\t', \
         #      round(v, 2), sep='')
