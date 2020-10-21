@@ -336,7 +336,7 @@ with in_file.open(mode='rb') as f:
             break
             
             
-        if len(pause_list) > 0:
+        if pause_list:
         
             t4_time, pause_time, resume_time = pause_list[0]
             #print(datetime.timedelta(seconds=round(t4_time, 3)), datetime.timedelta(seconds=round(pause_time, 3)))
