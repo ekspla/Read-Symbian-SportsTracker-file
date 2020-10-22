@@ -360,8 +360,10 @@ with in_file.open(mode='rb') as f:
             # Still not quite sure if this works.
             if (t_time + 0.5 >= t4_time):
             
-                if (unix_time < resume_time - TZ_hours * 3600):
-                    unix_time = (t_time - t4_time) + (resume_time - TZ_hours * 3600) # There might be few second of error, which I don't care.
+                resume_time -= TZ_hours * 3600 # From localtime to UTC.
+                
+                if unix_time < resume_time:
+                    unix_time = (t_time - t4_time) + resume_time # There might be few second of error, which I don't care.
                     
                 del pause_list[0]
                 
