@@ -70,12 +70,13 @@ gpx_track.segments.append(gpx_segment)
 gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
-gpx.schema_locations = ['http://www.topografix.com/GPX/1/1',
-                         'http://www.topografix.com/GPX/1/1/gpx.xsd',
-                         'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
-                         'http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
-                         'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
-                         'http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd']
+gpx.schema_locations = [
+    'http://www.topografix.com/GPX/1/1',
+    'http://www.topografix.com/GPX/1/1/gpx.xsd',
+    'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
+    'http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
+    'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
+    'http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd']
 
 
 
@@ -162,8 +163,8 @@ with in_file.open(mode='rb') as f:
     #gpx.time = datetime.datetime.fromtimestamp(start_time, datetime.timezone(datetime.timedelta(hours=+9),))
     # We can calculate the timezone by using the starttimes in Z and localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
-    gpx.time = datetime.datetime.fromtimestamp(start_time, datetime.timezone(datetime.timedelta(\
-                                                hours = TZ_hours),))
+    gpx.time = datetime.datetime.fromtimestamp(start_time, 
+                                                datetime.timezone(datetime.timedelta(hours = TZ_hours),))
     
     stop_time = symbian_to_unix_time(stop_time)
     #print('Stop Z : ', datetime.datetime.fromtimestamp(round(stop_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z")
@@ -201,7 +202,7 @@ with in_file.open(mode='rb') as f:
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the old version files are in localtime zone.
         (unknown, t_time, flag, symbian_time) = struct.unpack('<BIBq', f.read(14))
         
-        t_time = t_time / 100 # Totaltime in seconds
+        t_time /= 100 # Totaltime in seconds
         unix_time = symbian_to_unix_time(symbian_time)
         #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
         #print(unknown, '\t', datetime.timedelta(seconds=round(t_time, 3)), '\t',  flag, '\t', utc_time, sep = '')
@@ -280,13 +281,18 @@ with in_file.open(mode='rb') as f:
             
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
-            unix_time = unix_time + (t_time - last_t_time)
+            unix_time += (t_time - last_t_time)
             
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 2), datetime.timezone.utc).isoformat()
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
-        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
+        elif header in {0x80, 0x82, 0x83, 
+                        0x92, 0x93, 
+                        0x9A, 0x9B, 
+                        0xC2, 0xC3, 
+                        0xD2, 0xD3, 
+                        0xDA, 0xDB}:
         
             # For header 0x8*.
             if header in {0x80, 0x82, 0x83}:
@@ -339,7 +345,6 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += dt_time / 100
-            #unix_time += unknown1 / 100 # This doesn't work.
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 2), datetime.timezone.utc).isoformat()
             #utc_time = datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc).strftime(fmt)[:-3] + "Z"
             #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown3, unknown4)
@@ -379,22 +384,23 @@ with in_file.open(mode='rb') as f:
         
         
         # Print gpx xml.
-        gpx_point=gpxpy.gpx.GPXTrackPoint(latitude=round(y_degree, 10), longitude=round(x_degree, 10), \
-                                            elevation=round(z_ax, 1), \
-                                            time=datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc), \
-                                            name=str(track_count + 1))
+        gpx_point=gpxpy.gpx.GPXTrackPoint(
+            latitude=round(y_degree, 10), 
+            longitude=round(x_degree, 10), 
+            elevation=round(z_ax, 1), 
+            time=datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc), 
+            name=str(track_count + 1))
         gpx_segment.points.append(gpx_point)
         
         # This part may be informative.  Comment it out, if not necessary. 
-        gpx_point.description='Speed ' + str(round(v, 3)) + ' km/h ' + 'Distance ' + str(round(dist, 3)) + ' km'
+        gpx_point.description = 'Speed ' + str(round(v, 3)) + ' km/h ' + 'Distance ' + str(round(dist, 3)) + ' km'
         
         # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
         speed = round(v / 3.6, 3) # velocity in m/s
-        gpx_extension_speed = mod_etree.fromstring(f"""<gpxtpx:TrackPointExtension \
-                                                    xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\
-                                                    <gpxtpx:speed>{speed}</gpxtpx:speed>\
-                                                    </gpxtpx:TrackPointExtension>\
-                                                    """)
+        gpx_extension_speed = mod_etree.fromstring(
+            f"""<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\
+            <gpxtpx:speed>{speed}</gpxtpx:speed>\
+            </gpxtpx:TrackPointExtension>""")
         gpx_point.extensions.append(gpx_extension_speed)
         
         
