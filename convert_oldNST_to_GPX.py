@@ -306,7 +306,7 @@ with in_file.open(mode='rb') as f:
                 # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) = struct.unpack('<B4hI', f.read(13))
                 
-            # For header 0xC*.  This case is quite rare.
+            # For header 0xC2 or 0xC3.  This case is quite rare.
             # We don't know about the additional two parameters.
             elif (header == 0xC2)|(header == 0xC3):
             
