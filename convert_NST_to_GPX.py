@@ -132,18 +132,16 @@ with in_file.open(mode='rb') as f:
     # Read type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity,) = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
-    if activity == 0:
-        #print('Activity: Walking')
-        gpx.description = "[" + 'Walking' + "]"
-    elif activity == 1:
-        #print('Activity: Running')
-        gpx.description = "[" + 'Running' + "]"
-    elif activity == 2:
-        #print('Activity: Cycling')
-        gpx.description = "[" + 'Cycling' + "]"
+    activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
+                  'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
+                  'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
+    if activity >= len(activities):
+        description = str(activity)
     else:
-        #print('Activity: ', activity) # Please see config.dat.
-        gpx.description = "[" + str(activity) + "]"
+        description = activities[activity]
+    description = "[" + description + "]"
+    #print('Activity: ', description)
+    gpx.description = description
     
     
     # Read name of the track, which is usually the datetime.
