@@ -129,6 +129,7 @@ with in_file.open(mode='rb') as f:
     gross_speed = total_distance / (real_time / 3600) # km/h
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
+    
     # Add comments in track.
     gpx.tracks[0].comment = "[" \
         + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
@@ -139,6 +140,7 @@ with in_file.open(mode='rb') as f:
         + "Real time: " + format_timedelta(round(real_time, 3)) + '; '\
         + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
         + "]"
+    
     
     # Read User ID, please see config.dat.
     (user_id,) \
@@ -220,6 +222,7 @@ with in_file.open(mode='rb') as f:
     while pause_count < num_pause:
     
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the new version files are in UTC.
+        # The unknown part seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) \
             = struct.unpack('<BIBq', f.read(14))
         
@@ -314,6 +317,7 @@ with in_file.open(mode='rb') as f:
             if header == 0x87:
             
                 # Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
+                # Unknown1 & 2 might be related to heart rate sensor.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B3hbH2B', f.read(12))
                 
@@ -321,6 +325,7 @@ with in_file.open(mode='rb') as f:
             elif header == 0x97:
             
                 # Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
+                # Unknown1 & 2 might be related to heart rate sensor.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B4hH2B', f.read(13))
                 
@@ -329,6 +334,7 @@ with in_file.open(mode='rb') as f:
             elif header == 0xC7:
             
                 # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv, in analogy to those with 0x87** header.
+                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B5hbH2B', f.read(16))
                 
@@ -337,6 +343,7 @@ with in_file.open(mode='rb') as f:
             elif header == 0xD7:
             
                 # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv, in analogy to those with 0x97** header.
+                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B6hH2B', f.read(17))
                 
