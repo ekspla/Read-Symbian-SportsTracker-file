@@ -386,8 +386,8 @@ with in_file.open(mode='rb') as f:
         gpx_segment.points.append(gpx_point)
         
         # This part may be informative.  Comment it out, if not necessary. 
-        description = ['Speed', round(v, 3), 'km/h', 'Distance', round(dist, 3), 'km']
-        gpx_point.description = ' '.join([str(n) for n in description])
+        gpx_point.description \
+            = 'Speed ' + str(round(v, 3)) + ' km/h ' + 'Distance ' + str(round(dist, 3)) + ' km'
         
         # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
         speed = round(v / 3.6, 3) # velocity in m/s
