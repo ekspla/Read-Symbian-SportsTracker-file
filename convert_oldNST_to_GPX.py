@@ -128,13 +128,22 @@ with in_file.open(mode='rb') as f:
     gross_speed = total_distance / (real_time / 3600) # km/h
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
+    # Add comments in track.
+    gpx.tracks[0].comment = "[" \
+        + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
+        + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
+        + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
+        + "Start localtime: " + format_datetime(round(start_localtime, 3)) + '; '\
+        + "Stop localtime: " + format_datetime(round(stop_localtime, 3)) + '; '\
+        + "Real time: " + format_timedelta(round(real_time, 3)) + '; '\
+        + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
+        + "]"
     
     # Read User ID, please see config.dat.
     (user_id,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('User id: ', user_id)
-    gpx.author_name = str(user_id)
-    
+    gpx.author_name = str(user_id)    
     
     # Read type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
@@ -147,8 +156,8 @@ with in_file.open(mode='rb') as f:
         description = str(activity)
     else:
         description = activities[activity]
-    description = "[" + description + "]"
     #print('Activity: ', description)
+    description = "[" + description + "]"
     gpx.description = description
     
     
@@ -278,7 +287,7 @@ with in_file.open(mode='rb') as f:
         if header in {0x00, 0x02, 0x03}: # Read 22 bytes of data(4+4+4+4+2+4)
             (t_time, y_ax, x_ax, z_ax, v, d_dist) \
                 = struct.unpack('<4IHI', f.read(22))
-            t_time = t_time / 100 # Totaltime in seconds
+            t_time /= 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
             y_degree = y_ax // 1e6
