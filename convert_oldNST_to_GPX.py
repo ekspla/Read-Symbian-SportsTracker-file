@@ -128,6 +128,7 @@ with in_file.open(mode='rb') as f:
     gross_speed = total_distance / (real_time / 3600) # km/h
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
+    
     # Add comments in track.
     gpx.tracks[0].comment = "[" \
         + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
@@ -139,11 +140,13 @@ with in_file.open(mode='rb') as f:
         + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
         + "]"
     
+    
     # Read User ID, please see config.dat.
     (user_id,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('User id: ', user_id)
-    gpx.author_name = str(user_id)    
+    gpx.author_name = str(user_id)
+    
     
     # Read type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
@@ -218,6 +221,7 @@ with in_file.open(mode='rb') as f:
     while pause_count < num_pause:
     
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the old version files are in localtime zone.
+        # The unknown part seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) \
             = struct.unpack('<BIBq', f.read(14))
         
@@ -349,6 +353,7 @@ with in_file.open(mode='rb') as f:
             elif (header == 0xD2)|(header == 0xD3):
             
                 # Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv, in analogy to those with 0x9* header.
+                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
                     = struct.unpack('<B6hH', f.read(15))
                 
@@ -357,6 +362,7 @@ with in_file.open(mode='rb') as f:
             elif (header == 0xDA)|(header == 0xDB):
             
                 # Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
+                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
                     = struct.unpack('<B6hI', f.read(17))
                 
