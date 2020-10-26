@@ -222,7 +222,7 @@ with in_file.open(mode='rb') as f:
     while pause_count < num_pause:
     
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the new version files are in UTC.
-        # The unknown part seems to have no meaning because it is always 0x01.
+        # The first unknown field seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) \
             = struct.unpack('<BIBq', f.read(14))
         
@@ -286,8 +286,8 @@ with in_file.open(mode='rb') as f:
             = struct.unpack('2B', f.read(2)) # Read the first byte of 2-byte header.
         #print(header, header1)
         
-        # For header 0x07**, typically, 0x0783 or 0x0782.
-        if header == 0x07: # Read 30 bytes of data(4+4+4+4+2+4+8)
+        if header == 0x07: # Typically, 0x0783 or 0x0782.
+            # Read 30 bytes of data(4+4+4+4+2+4+8)
             (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
                 = struct.unpack('<4IHIq', f.read(30))
             t_time /= 100 # Totaltime in seconds
@@ -313,34 +313,28 @@ with in_file.open(mode='rb') as f:
             
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
         
-            # For header 0x87**, typically, 0x8783 or 0x8782.
-            if header == 0x87:
+            if header == 0x87: # Typically, 0x8783 or 0x8782.
             
                 # Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
                 # Unknown1 & 2 might be related to heart rate sensor.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B3hbH2B', f.read(12))
                 
-            # For header 0x97**, typically, 0x9783 or 0x9782.
-            elif header == 0x97:
+            elif header == 0x97: # Typically, 0x9783 or 0x9782.
             
                 # Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown1 & 2 might be related to heart rate sensor.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B4hH2B', f.read(13))
                 
-            # For header 0xC7**, typically, 0xC783 or 0xC782.  This case is quite rare.
-            # We don't know about the additional two parameters.
-            elif header == 0xC7:
+            elif header == 0xC7: # Typically, 0xC783 or 0xC782.  This case is quite rare.
             
                 # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv, in analogy to those with 0x87** header.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B5hbH2B', f.read(16))
                 
-            # For header 0xD7**, typically, 0xD783 or 0xD782.  This case is quite rare.
-            # We don't know about the additional two parameters.
-            elif header == 0xD7:
+            elif header == 0xD7: # Typically, 0xD783 or 0xD782.  This case is quite rare.
             
                 # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv, in analogy to those with 0x97** header.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
