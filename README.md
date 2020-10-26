@@ -1,5 +1,5 @@
 # Read-Symbian-SportsTracker-file
- This python script describes how you can read **symbian (Nokia) Sports Tracker log files (dat)** stored 
+ This python script, `convert_NST_to_GPX.py`, describes how you can read **symbian (Nokia) Sports Tracker log files (dat)** stored 
 in your phone as **binary format**.  You can use this code, as it is, to **convert from dat to gpx**.
 
  The code was tested with > 1000 of track log files copied from my Nokia phone equipped 
