@@ -9,6 +9,6 @@ with GPS receiver, never tested with heart-rate sensor, though...
 
  For track log files created by the old Nokia Sports Tracker, use 'convert_oldNST_to_GPX.py.' 
 This is because the file format of old version Sports Tracker seems different from those 
-of the new version released from Sports Tracking Technologies Ltd.  For details, please see 
+of the new version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  For details, please see 
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
 etc.)
