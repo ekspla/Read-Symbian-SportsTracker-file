@@ -220,8 +220,9 @@ with in_file.open(mode='rb') as f:
     
     while pause_count < num_pause:
     
-        # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the old version files are in localtime zone.
-        # The unknown part seems to have no meaning because it is always 0x01.
+        # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are in localtime zone,
+        # while those of the new version in UTC (Z).
+        # The first unknown field seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) \
             = struct.unpack('<BIBq', f.read(14))
         
@@ -278,6 +279,9 @@ with in_file.open(mode='rb') as f:
     dist = 0 #  Total distance in km.
     v = 0 # Velocity in km/h.
     track_count = 0
+
+    # We have to calculate the timestamps in all of the trackpoints because of no Symbiantimes 
+    # given in the trackpoint part of old version.  This is very different from the new version.
     unix_time = start_time
     last_t_time = 0
     
@@ -287,8 +291,8 @@ with in_file.open(mode='rb') as f:
             = struct.unpack('B', f.read(1)) # Read the 1-byte header.
         #print(header)
         
-        # For header 0x0*
-        if header in {0x00, 0x02, 0x03}: # Read 22 bytes of data(4+4+4+4+2+4)
+        if header in {0x00, 0x02, 0x03}: 
+            # Read 22 bytes of data(4+4+4+4+2+4)
             (t_time, y_ax, x_ax, z_ax, v, d_dist) \
                 = struct.unpack('<4IHI', f.read(22))
             t_time /= 100 # Totaltime in seconds
@@ -319,47 +323,39 @@ with in_file.open(mode='rb') as f:
                         0xD2, 0xD3, 
                         0xDA, 0xDB}:
         
-            # For header 0x8*.
             if header in {0x80, 0x82, 0x83}:
             
                 # Read 10 bytes of data(1+2+2+2+1+2).  1-byte dv.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) \
                     = struct.unpack('<B3hbH', f.read(10))
                 
-            # For header 0x92 or 0x93.
             elif (header == 0x92)|(header == 0x93):
             
                 # Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) \
                     = struct.unpack('<B4hH', f.read(11))
                 
-            # For header 0x9A or 0x9B.
             elif (header == 0x9A)|(header == 0x9B):
             
                 # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) \
                     = struct.unpack('<B4hI', f.read(13))
                 
-            # For header 0xC2 or 0xC3.  This case is quite rare.
-            # We don't know about the additional two parameters.
-            elif (header == 0xC2)|(header == 0xC3):
+            elif (header == 0xC2)|(header == 0xC3): # This case is quite rare.
             
-                # Read 14 bytes of data(1+2+2+2+2+2+1+2).  1-byte dv, in analogy to those with 0x8* header.
+                # Read 14 bytes of data(1+2+2+2+2+2+1+2).  1-byte dv.
+                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
                     = struct.unpack('<B5hbH', f.read(14))
                 
-            # For header 0xD2 or 0xD3.  This case is quite rare.
-            # We don't know about the additional two parameters.
-            elif (header == 0xD2)|(header == 0xD3):
+            elif (header == 0xD2)|(header == 0xD3): # This case is quite rare.
             
-                # Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv, in analogy to those with 0x9* header.
+                # Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
                     = struct.unpack('<B6hH', f.read(15))
                 
-            # For header 0xDA or 0xDB.
-            # We don't know about the additional two parameters.
-            elif (header == 0xDA)|(header == 0xDB):
+            elif (header == 0xDA)|(header == 0xDB): # I saw this only once in my track files.
             
                 # Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
