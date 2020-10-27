@@ -13,7 +13,7 @@ of the new version released from [Sports Tracking Technologies Ltd](http://www.s
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
 etc.)
 
- This code is **not based on reverse engineering of the app.**, but is based on careful analysis of the track log files.
+ This code is **not based on reverse engineering of the app.** itself, but is based on careful analysis of the track log files.
  
 ## TODO
 - A few unknown fields in the track points.
