@@ -13,9 +13,9 @@ of the new version released from [Sports Tracking Technologies Ltd](http://www.s
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
 etc.)
 
- This code is not based on reverse engineering of the app., but is based on careful analysis of the track log files.
+ This code is **not based on reverse engineering of the app.**, but is based on careful analysis of the track log files.
  
 ## TODO
-- A few unknown fields in the trackpoints.
-- Support for heart rate in trackfiles of the new version.
+- A few unknown fields in the track points.
+- Support for heart rate in track log files of the new version.
 - Read and check the version number of Sports Tracker app. used to create the track log files.  It is stored as WORD at 0x0008.
