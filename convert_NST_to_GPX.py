@@ -56,8 +56,6 @@ in_file = Path(argvs[1])
 
 
 # Creating a new GPX:
-# --------------------
-    
 gpx = gpxpy.gpx.GPX()
 
 # Create the first track in the GPX:
@@ -130,7 +128,7 @@ with in_file.open(mode='rb') as f:
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
     
-    # Add comments in track.
+    # Add comments in track.  This part may be informative.
     gpx.tracks[0].comment = "[" \
         + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
         + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
@@ -161,8 +159,7 @@ with in_file.open(mode='rb') as f:
     else:
         description = activities[activity]
     #print('Activity: ', description)
-    description = "[" + description + "]"
-    gpx.description = description
+    gpx.description = "[" + description + "]"
     
     
     # Read name of the track, which is usually the datetime.
@@ -329,14 +326,14 @@ with in_file.open(mode='rb') as f:
                 
             elif header == 0xC7: # Typically, 0xC783 or 0xC782.  This case is quite rare.
             
-                # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv, in analogy to those with 0x87** header.
+                # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B5hbH2B', f.read(16))
                 
             elif header == 0xD7: # Typically, 0xD783 or 0xD782.  This case is quite rare.
             
-                # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv, in analogy to those with 0x97** header.
+                # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = struct.unpack('<B6hH2B', f.read(17))
@@ -388,12 +385,12 @@ with in_file.open(mode='rb') as f:
         
         
         # Print gpx xml.
-        gpx_point=gpxpy.gpx.GPXTrackPoint(
-            latitude=round(y_degree, 10), 
-            longitude=round(x_degree, 10), 
-            elevation=round(z_ax, 1), 
-            time=datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc), 
-            name=str(track_count + 1))
+        gpx_point = gpxpy.gpx.GPXTrackPoint(
+            latitude = round(y_degree, 10), 
+            longitude = round(x_degree, 10), 
+            elevation = round(z_ax, 1), 
+            time = datetime.datetime.fromtimestamp(unix_time, datetime.timezone.utc), 
+            name = str(track_count + 1))
         gpx_segment.points.append(gpx_point)
         
         # This part may be informative.  Comment it out, if not necessary. 
