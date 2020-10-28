@@ -56,8 +56,6 @@ in_file = Path(argvs[1])
 
 
 # Creating a new GPX:
-# --------------------
-    
 gpx = gpxpy.gpx.GPX()
 
 # Create the first track in the GPX:
@@ -129,7 +127,7 @@ with in_file.open(mode='rb') as f:
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
     
-    # Add comments in track.
+    # Add comments in track.  This part may be informative.
     gpx.tracks[0].comment = "[" \
         + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
         + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
@@ -160,8 +158,7 @@ with in_file.open(mode='rb') as f:
     else:
         description = activities[activity]
     #print('Activity: ', description)
-    description = "[" + description + "]"
-    gpx.description = description
+    gpx.description = "[" + description + "]"
     
     
     # Read name of the track, which is usually the datetime.
@@ -291,7 +288,7 @@ with in_file.open(mode='rb') as f:
             = struct.unpack('B', f.read(1)) # Read the 1-byte header.
         #print(header)
         
-        if header in {0x00, 0x02, 0x03}: 
+        if header in {0x00, 0x02, 0x03}:
             # Read 22 bytes of data(4+4+4+4+2+4)
             (t_time, y_ax, x_ax, z_ax, v, d_dist) \
                 = struct.unpack('<4IHI', f.read(22))
@@ -413,12 +410,12 @@ with in_file.open(mode='rb') as f:
         
         
         # Print gpx xml.
-        gpx_point=gpxpy.gpx.GPXTrackPoint(
-            latitude=round(y_degree, 10), 
-            longitude=round(x_degree, 10), 
-            elevation=round(z_ax, 1), 
-            time=datetime.datetime.fromtimestamp(round(unix_time, 3), datetime.timezone.utc), 
-            name=str(track_count + 1))
+        gpx_point = gpxpy.gpx.GPXTrackPoint(
+            latitude = round(y_degree, 10), 
+            longitude = round(x_degree, 10), 
+            elevation = round(z_ax, 1), 
+            time = datetime.datetime.fromtimestamp(unix_time, datetime.timezone.utc), 
+            name = str(track_count + 1))
         gpx_segment.points.append(gpx_point)
         
         # This part may be informative.  Comment it out, if not necessary. 
