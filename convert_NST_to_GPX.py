@@ -82,6 +82,21 @@ gpx.schema_locations = [
 
 
 with in_file.open(mode='rb') as f:
+    # Preliminary version check. 
+    # Read version number.  2 bytes.
+    f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
+    (version, ) \
+        = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
+    #print('Version: ', version) # print Version number.
+    
+    if 10000 <= version < 20000: # I don't know about the format.
+        pass
+        
+    elif version < 10000: # Use script for the old format.
+        print('Version number less than expected:', version)
+        quit()
+        
+        
     # Read Track ID and Totaltime, 4+4 bytes.
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     (track_id, total_time) \
