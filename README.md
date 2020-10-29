@@ -15,7 +15,7 @@ etc.)
 
  The file formats of symbian are completely different from those of Android and iOS.
 
- This code is **not based on reverse engineering of the app.** itself, but on careful analysis of the track log files.
+ These codes are **not based on reverse engineering of the app.** itself, but on careful analysis of the track log files.
  
 ## TODO
 - A few unknown fields in the track points.
