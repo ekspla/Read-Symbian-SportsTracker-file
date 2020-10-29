@@ -13,7 +13,7 @@ of the new version released from [Sports Tracking Technologies Ltd](http://www.s
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
 etc.)
 
- The file format of the symbian version is completely different from those of Android and iOS.
+ The file formats of the symbian are completely different from those of Android and iOS.
 
  This code is **not based on reverse engineering of the app.** itself, but is based on careful analysis of the track log files.
  
