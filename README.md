@@ -21,3 +21,4 @@ etc.)
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
 - Read and check the version number of Sports Tracker app. used to create the track log files.  It is stored as WORD at 0x0008.
+The oldNST and the new NST code, respectively, were tested for versions of 9991-9998 and 20001-20002.
