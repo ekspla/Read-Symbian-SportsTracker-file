@@ -178,9 +178,12 @@ with in_file.open(mode='rb') as f:
     
     
     # Read name of the track, which is usually the datetime.
-    f.seek(0x0004b, 0) # go to address 0x0004b, this address is fixed.
+    f.seek(0x0004A, 0) # go to address 0x0004A, this address is fixed.
+    (track_name_size,) \
+        = struct.unpack('B', f.read(1)) # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 /4 = 16 bytes.
+    track_name_size = int(track_name_size / 4)
     (track_name,) \
-        = struct.unpack('16s', f.read(16)) # The name is strings of 16 bytes.
+        = struct.unpack(str(track_name_size)+'s', f.read(track_name_size)) # The name is usually strings of 16 bytes.
     #print('Track name: ', track_name.decode())
     gpx.name = "[" + str(track_name.decode()) + "]"
     gpx.tracks[0].name = gpx.name
