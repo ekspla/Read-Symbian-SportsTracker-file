@@ -179,7 +179,7 @@ with in_file.open(mode='rb') as f:
     # Read name of the track, which is usually the datetime.
     f.seek(0x00046, 0) # go to address 0x00046, this address is fixed.
     (track_name_size,) \
-        = struct.unpack('B', f.read(1)) # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 /4 = 16 bytes.
+        = struct.unpack('B', f.read(1)) # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 bytes.
     track_name_size = int(track_name_size / 4)
     (track_name,) \
         = struct.unpack(str(track_name_size)+'s', f.read(track_name_size)) # The name is usually strings of 16 bytes.
@@ -189,7 +189,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read Starttime & Stoptime in UTC, 8+8 bytes.
-    f.seek(0x0018E, 0) # go to 0x0018E, this address is fixed.
+    f.seek(0x0018e, 0) # go to 0x0018e, this address is fixed.
     (start_time, stop_time) \
         = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
@@ -408,7 +408,7 @@ with in_file.open(mode='rb') as f:
             # Still not quite sure if this works.
             if (t_time + 0.5 >= t4_time):
             
-                resume_time -= TZ_hours * 3600 # From localtime to UTC.
+                resume_time -= TZ_hours * 3600 # Conversion from localtime to UTC.
                 
                 if unix_time < resume_time:
                     # There might be few second of error, which I don't care.
