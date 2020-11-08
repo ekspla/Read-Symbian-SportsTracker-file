@@ -179,13 +179,18 @@ with in_file.open(mode='rb') as f:
     
     # Read name of the track, which is usually the datetime.
     f.seek(0x0004a, 0) # go to address 0x0004a, this address is fixed.
+    # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 characters.
     (track_name_size,) \
-        = struct.unpack('B', f.read(1)) # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 bytes.
+        = struct.unpack('B', f.read(1))
+    # In most cases, the name is usually ASCII characters, strings of 16 bytes, such as 
+    # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
+    # are encoded with SCSU (simple compression scheme for unicode).  We will igonore the 
+    # non-ASCII characters because there is no appropriate library to decode SCSU in python.
     track_name_size = int(track_name_size / 4)
     (track_name,) \
-        = struct.unpack(str(track_name_size)+'s', f.read(track_name_size)) # The name is usually strings of 16 bytes.
-    #print('Track name: ', track_name.decode())
-    gpx.name = "[" + str(track_name.decode()) + "]"
+        = struct.unpack(str(track_name_size)+'s', f.read(track_name_size))
+    #print('Track name: ', track_name.decode("utf-8", "ignore"))
+    gpx.name = "[" + str(track_name.decode("utf-8", "ignore")) + "]"
     gpx.tracks[0].name = gpx.name
     
     
