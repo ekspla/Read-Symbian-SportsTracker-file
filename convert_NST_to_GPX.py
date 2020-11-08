@@ -82,7 +82,7 @@ gpx.schema_locations = [
 
 
 with in_file.open(mode='rb') as f:
-    # Preliminary version check. 
+    # Preliminary version check.
     # Read version number.  2 bytes.
     f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
     (version, ) \
@@ -178,9 +178,9 @@ with in_file.open(mode='rb') as f:
     
     
     # Read name of the track, which is usually the datetime.
-    f.seek(0x0004A, 0) # go to address 0x0004A, this address is fixed.
+    f.seek(0x0004a, 0) # go to address 0x0004a, this address is fixed.
     (track_name_size,) \
-        = struct.unpack('B', f.read(1)) # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 /4 = 16 bytes.
+        = struct.unpack('B', f.read(1)) # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 bytes.
     track_name_size = int(track_name_size / 4)
     (track_name,) \
         = struct.unpack(str(track_name_size)+'s', f.read(track_name_size)) # The name is usually strings of 16 bytes.
@@ -236,7 +236,8 @@ with in_file.open(mode='rb') as f:
     
     while pause_count < num_pause:
     
-        # Read 14 bytes of data(1+4+1+8).  Symbiantimes in the new version files are in UTC.
+        # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the new version are in UTC,
+        # while those of the old version in localtime.
         # The first unknown field seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) \
             = struct.unpack('<BIBq', f.read(14))
@@ -384,10 +385,10 @@ with in_file.open(mode='rb') as f:
             #print(format_timedelta(round(t4_time, 3)), format_timedelta(round(pause_time, 3)))
             
             # Just after the autopause, use the autopause data.
-            # Not sure why we need the adjustments of 0.5 sec.  Possibly, a threshold for autopause?
+            # Still not quite sure if this works.
             if (t_time + 0.5 >= t4_time):
             
-                if header != 0x07:  # Track points not starting with 0x07** need UTC times.
+                if header != 0x07:  # Track points not starting with 0x07 need UTC times.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
                     
