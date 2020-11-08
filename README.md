@@ -17,6 +17,10 @@ etc.)
 
  These codes are **not based on reverse engineering of the app.** itself, but on careful analysis of the track log files.
  
+## Limitation
+- Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are not supported. 
+Handlings of such non ASCII characters are beyond the scope of this project.
+
 ## TODO
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
@@ -25,3 +29,4 @@ The oldNST and the new NST code, respectively, were tested for versions of 9991-
 
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
+- [Standard Compression Scheme for Unicode](https://en.wikipedia.org/wiki/Standard_Compression_Scheme_for_Unicode)
