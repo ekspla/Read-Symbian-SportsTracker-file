@@ -182,7 +182,7 @@ with in_file.open(mode='rb') as f:
     # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 characters.
     (track_name_size,) \
         = struct.unpack('B', f.read(1))
-    # In most cases, the name is usually ASCII characters, strings of 16 bytes, such as 
+    # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
     # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
     # are encoded with SCSU (simple compression scheme for unicode).  We will igonore the 
     # non-ASCII characters because there is no appropriate library to decode SCSU in python.
