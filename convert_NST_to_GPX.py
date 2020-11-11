@@ -82,6 +82,26 @@ gpx.schema_locations = [
 
 
 with in_file.open(mode='rb') as f:
+    
+    # Reader for SCSU encoded data of variable length.
+    def scsu_reader(address):
+        f.seek(address, 0)
+        # Read the size * 4 in bytes.
+        (size,) = struct.unpack('B', f.read(1))
+        #print(size)
+        start_of_scsu = f.tell()
+        (byte_array,) = struct.unpack(str(size)+'s', f.read(size))
+        size = int(size / 4) # Divide by 4 to obtain the length of characters.
+        (output_array, byte_length, character_length) = scsu.decode(byte_array, size)
+        decoded_strings = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
+        if len(decoded_strings) != size:
+            print('SCSU decode failed.', comment)
+            quit()
+        f.seek(start_of_scsu + byte_length, 0) # Go to the next field.
+        #print(hex(f.tell()), len(byte_array), decoded_strings, output_array, byte_length, character_length)
+        return decoded_strings
+        
+        
     # Preliminary version check.
     # Read version number.  2 bytes.
     f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
@@ -177,26 +197,13 @@ with in_file.open(mode='rb') as f:
     gpx.description = "[" + description + "]"
     
     
-    # Read name of the track, which is usually the datetime.
-    f.seek(0x0004a, 0) # go to address 0x0004a, this address is fixed.
-    # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 characters.
-    (track_name_size,) \
-        = struct.unpack('B', f.read(1))
+    # Read SCSU encoded name of the track, which is usually the datetime.
+    # 
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
     # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
     # can be encoded with SCSU (simple compression scheme for unicode).
     #
-    # Read the size * 4 bytes including SCSU encoded data and decode it with external module, scsu.py.
-    start_of_scsu = f.tell()
-    (byte_array,) \
-        = struct.unpack(str(track_name_size)+'s', f.read(track_name_size))
-    track_name_size = int(track_name_size / 4) # Divide by 4 to obtain the length of characters.
-    (output_array, byte_length, character_length) = scsu.decode(byte_array, track_name_size)
-    track_name = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
-    if len(track_name) != track_name_size:
-        print('SCSU decode failed.', output_array)
-        quit()
-    f.seek(start_of_scsu + byte_length, 0) # Go back to the next field.
+    track_name = scsu_reader(0x0004a) # This address is fixed.
     #print('Track name: ', track_name)
     gpx.name = "[" + str(track_name) + "]"
     gpx.tracks[0].name = gpx.name
@@ -223,22 +230,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read SCSU encoded user comment of variable length.
-    f.seek(0x00222, 0) # go to address 0x00222, this address is fixed.
-    # Read the size * 4 in bytes.
-    (comment_size,) \
-        = struct.unpack('B', f.read(1))
-    start_of_scsu = f.tell()
-    (byte_array,) \
-        = struct.unpack(str(comment_size)+'s', f.read(comment_size))
-    comment_size = int(comment_size / 4) # Divide by 4 to obtain the length of characters.
-    (output_array, byte_length, character_length) = scsu.decode(byte_array, comment_size)
-    comment = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
-    if len(comment) != comment_size:
-        print('SCSU decode failed.', comment)
-        quit()
-    #print(comment)
-    f.seek(start_of_scsu + byte_length, 0) # Go back to the next field.
-    gpx.tracks[0].comment = comment
+    gpx.tracks[0].comment = scsu_reader(0x00222) # This address is fixed.
     
     
     # Read number of autopause data, 4 bytes.
