@@ -30,3 +30,4 @@ The oldNST and the new NST code, respectively, were tested for versions of 9991-
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
 - [Standard Compression Scheme for Unicode](https://en.wikipedia.org/wiki/Standard_Compression_Scheme_for_Unicode)
+- [The SCSU charset -- Roman Czyborra's decoder](http://czyborra.com/scsu/)
