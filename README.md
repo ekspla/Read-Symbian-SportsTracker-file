@@ -19,7 +19,7 @@ etc.)
  
 ## Limitation
 - Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are not supported. 
-Handlings of such non ASCII characters are beyond the scope of this project.
+~~Handlings of such non ASCII characters are beyond the scope of this project.~~ Experimental support in `dev_scsu` branch.
 
 ## TODO
 - A few unknown fields in the track points.
