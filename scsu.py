@@ -1,4 +1,4 @@
-﻿#coding:utf-8
+#coding:utf-8
 
 # This is a translated version of the following code written in C.
 #
@@ -75,7 +75,6 @@ def nextchar(input_array):
 active = 0
 mode= 0
 input_array = bytearray()
-counter = 0 # Number of bytes read from the input bytearray.
 
 start=[0x0000,0x0080,0x0100,0x0300,0x2000,0x2080,0x2100,0x3000]
 slide=[0x0080,0x00C0,0x0400,0x0600,0x0900,0x3040,0x30A0,0xFF00]
@@ -119,6 +118,8 @@ def decode(byte_array, size = 0):
     input_array = bytearray(byte_array)
     char_counter = 0 # Number of decoded characters.
     output_array = bytearray()
+    global counter # Number of bytes read from the input bytearray.
+    counter = 0
     if size == 0:
         size = len(input_array) # Maximum length of decoded characters.
     
