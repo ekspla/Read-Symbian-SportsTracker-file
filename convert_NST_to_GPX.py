@@ -13,8 +13,8 @@ except:
         import xml.etree.cElementTree as mod_etree # type: ignore
     except:
         import xml.etree.ElementTree as mod_etree # type: ignore
-
 import scsu
+
 
 #  The native Symbian time format is a 64-bit value that represents microseconds 
 #  since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
@@ -79,8 +79,7 @@ gpx.schema_locations = [
     'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
     'http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd']
 
-global byte_array
-byte_array = bytearray()
+
 
 with in_file.open(mode='rb') as f:
     # Preliminary version check.
@@ -144,7 +143,7 @@ with in_file.open(mode='rb') as f:
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
     
-    # Add summary of the track.  This part may be informative.
+    # Add a summary of the track.  This part may be informative.
     gpx.tracks[0].description = "[" \
         + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
         + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
@@ -186,8 +185,8 @@ with in_file.open(mode='rb') as f:
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
     # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
     # can be encoded with SCSU (simple compression scheme for unicode).
-    # Read the size * 4 bytes of SCSU encoded data and decode it with external module, scsu.py.
     #
+    # Read the size * 4 bytes including SCSU encoded data and decode it with external module, scsu.py.
     start_of_scsu = f.tell()
     (byte_array,) \
         = struct.unpack(str(track_name_size)+'s', f.read(track_name_size))
@@ -195,7 +194,7 @@ with in_file.open(mode='rb') as f:
     (output_array, byte_length, character_length) = scsu.decode(byte_array, track_name_size)
     track_name = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
     if len(track_name) != track_name_size:
-        print('SCSU decode failed.', track_name)
+        print('SCSU decode failed.', output_array)
         quit()
     f.seek(start_of_scsu + byte_length, 0) # Go back to the next field.
     #print('Track name: ', track_name)
@@ -225,7 +224,7 @@ with in_file.open(mode='rb') as f:
     
     # Read SCSU encoded user comment of variable length.
     f.seek(0x00222, 0) # go to address 0x00222, this address is fixed.
-    # Read the size * 4.
+    # Read the size * 4 in bytes.
     (comment_size,) \
         = struct.unpack('B', f.read(1))
     start_of_scsu = f.tell()
