@@ -19,6 +19,9 @@ etc.)
  
  Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are decoded by using an external module, `scsu.py`.  This is a translated version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), `scsu.c`.
 
+## Limitation
+- Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
+
 ## TODO
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
