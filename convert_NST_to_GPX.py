@@ -229,6 +229,7 @@ with in_file.open(mode='rb') as f:
     # Read SCSU encoded user comment of variable length.
     comment = scsu_reader(0x00222) # This address is fixed.
     if comment:
+        #print('Comment:', comment)
         gpx.tracks[0].comment = comment
     
     
