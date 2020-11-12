@@ -17,9 +17,7 @@ etc.)
 
  These codes are **not based on reverse engineering of the app.** itself, but on careful analysis of the track log files.
  
-~~## Limitation~~
-- Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are ~~not~~ supported. 
- ~~Handlings of such non ASCII characters are beyond the scope of this project.~~ 
+ Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are decoded by using an external module, `scsu.py`.  This is a translated version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), `scsu.c`.
 
 ## TODO
 - A few unknown fields in the track points.
