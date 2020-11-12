@@ -28,6 +28,8 @@
 
 
 def output(c, output_array):    
+    char_count = 0
+    
     # /* join UTF-16 surrogates without any pairing sanity checks */
     
     if (0xD800 <= c <= 0xDBFF):
@@ -40,23 +42,27 @@ def output(c, output_array):
     # /* output one character as UTF-8 multibyte sequence */
     if (c < 0x80):
         output_array.append(c)
+        char_count += 1
         
     elif (c < 0x800):
         output_array.append(0xC0 | c>>6)
         output_array.append(0x80 | c & 0x3F)
+        char_count += 1
         
     elif (c < 0x10000):
         output_array.append(0xE0 | c>>12)
         output_array.append(0x80 | c>>6 & 0x3F)
         output_array.append(0x80 | c & 0x3F)
+        char_count += 1
         
     elif (c < 0x200000):
         output_array.append(0xF0 | c>>18)
         output_array.append(0x80 | c>>12 & 0x3F)
         output_array.append(0x80 | c>>6 & 0x3F)
         output_array.append(0x80 | c & 0x3F)
+        char_count += 1
         
-    return
+    return char_count
 
 
 def nextchar(input_array):
@@ -128,25 +134,21 @@ def decode(byte_array, size = 0):
             c = nextchar(input_array)
             
             if (c >= 0x80):
-                output(c - 0x80 + slide[active], output_array)
-                char_counter +=1
+                char_counter += output(c - 0x80 + slide[active], output_array)
                 
             elif (0x20 <= c <= 0x7F):
-                output(c, output_array)
-                char_counter +=1
+                char_counter += output(c, output_array)
                 
             elif c in {0x0, 0x9, 0xA, 0xC, 0xD}:
-                output(c, output_array)
-                char_counter +=1
+                char_counter += output(c, output_array)
                 
             elif (0x1 <= c <= 0x8): #/* SQn */
                 #/* single quote */ 
                 d = nextchar(input_array)
                 if (d < 0x80):
-                    output(d + start[c - 0x1], output_array)
+                    char_counter += output(d + start[c - 0x1], output_array)
                 else: 
-                    output(d - 0x80 + slide[c - 0x1], output_array)
-                char_counter +=1
+                    char_counter += output(d - 0x80 + slide[c - 0x1], output_array)
                 
             elif (0x10 <= c <= 0x17): #/* SCn */
                 #/* change window */ 
@@ -165,8 +167,7 @@ def decode(byte_array, size = 0):
                 
             elif (c == 0xE): # /* SQU */
                 c = nextchar(input_array)
-                output(c << 8 | nextchar(input_array), output_array)
-                char_counter +=1
+                char_counter += output(c << 8 | nextchar(input_array), output_array)
                 
             elif (c == 0xF): # /* SCU */
                 #/* change to Unicode mode */ 
@@ -176,13 +177,11 @@ def decode(byte_array, size = 0):
                     c = nextchar(input_array)
                     
                     if (c <= 0xDF) | (c >= 0xF3):
-                        output(c << 8 | nextchar(input_array), output_array)
-                        char_counter +=1
+                        char_counter += output(c << 8 | nextchar(input_array), output_array)
                         
                     elif (c == 0xF0): # /* UQU */
                         c = nextchar(input_array)
-                        output(c << 8 | nextchar(input_array), output_array)
-                        char_counter +=1
+                        char_counter += output(c << 8 | nextchar(input_array), output_array)
                         
                     elif (0xE0 <= c <= 0xE7): #/* UCn */
                         active = c - 0xE0
