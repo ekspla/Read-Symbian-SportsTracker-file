@@ -127,7 +127,7 @@ def decode(byte_array, size = 0):
     global counter # Number of bytes read from the input bytearray.
     counter = 0
     if size == 0:
-        size = len(input_array) # Maximum length of decoded characters.
+        size = len(input_array) # Maximum length of characters to be decoded.
     
     while char_counter < size:
         try:
