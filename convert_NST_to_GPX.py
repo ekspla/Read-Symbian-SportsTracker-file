@@ -86,19 +86,16 @@ with in_file.open(mode='rb') as f:
     # Reader for SCSU encoded data of variable length.
     def scsu_reader(address):
         f.seek(address, 0)
-        # Read the size * 4 in bytes.
-        (size,) = struct.unpack('B', f.read(1))
-        #print(size)
+        (size,) = struct.unpack('B', f.read(1)) # Read the size * 4 in bytes.
         start_of_scsu = f.tell()
-        (byte_array,) = struct.unpack(str(size)+'s', f.read(size))
+        byte_array = f.read(size) # Returns bytes.
         size = int(size / 4) # Divide by 4 to obtain the length of characters.
         (output_array, byte_length, character_length) = scsu.decode(byte_array, size)
         decoded_strings = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
         if len(decoded_strings) != size:
-            print('SCSU decode failed.', comment)
+            print('SCSU decode failed.', output_array)
             quit()
         f.seek(start_of_scsu + byte_length, 0) # Go to the next field.
-        #print(hex(f.tell()), len(byte_array), decoded_strings, output_array, byte_length, character_length)
         return decoded_strings
         
         
@@ -205,7 +202,7 @@ with in_file.open(mode='rb') as f:
     #
     track_name = scsu_reader(0x0004a) # This address is fixed.
     #print('Track name: ', track_name)
-    gpx.name = "[" + str(track_name) + "]"
+    gpx.name = "[" + track_name + "]"
     gpx.tracks[0].name = gpx.name
     
     
@@ -216,7 +213,7 @@ with in_file.open(mode='rb') as f:
     start_time = symbian_to_unix_time(start_time)
     #print('Start Z: ', format_datetime(round(start_time, 3)) + "Z")
     
-    # We can calculate the timezone by using the starttimes in Z and localtime.
+    # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
     gpx.time = datetime.datetime.fromtimestamp(
         start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours),))
@@ -230,7 +227,9 @@ with in_file.open(mode='rb') as f:
     
     
     # Read SCSU encoded user comment of variable length.
-    gpx.tracks[0].comment = scsu_reader(0x00222) # This address is fixed.
+    comment = scsu_reader(0x00222) # This address is fixed.
+    if comment:
+        gpx.tracks[0].comment = comment
     
     
     # Read number of autopause data, 4 bytes.
