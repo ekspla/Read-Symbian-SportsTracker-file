@@ -13,7 +13,7 @@ except:
         import xml.etree.cElementTree as mod_etree # type: ignore
     except:
         import xml.etree.ElementTree as mod_etree # type: ignore
-
+import scsu
 
 
 #  The native Symbian time format is a 64-bit value that represents microseconds 
@@ -82,6 +82,23 @@ gpx.schema_locations = [
 
 
 with in_file.open(mode='rb') as f:
+    
+    # Reader for SCSU encoded data of variable length.
+    def scsu_reader(address):
+        f.seek(address, 0)
+        (size,) = struct.unpack('B', f.read(1)) # Read the size * 4 in bytes.
+        start_of_scsu = f.tell()
+        byte_array = f.read(size) # Returns bytes.
+        size = int(size / 4) # Divide by 4 to obtain the length of characters.
+        (output_array, byte_length, character_length) = scsu.decode(byte_array, size)
+        decoded_strings = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
+        if len(decoded_strings) != size:
+            print('SCSU decode failed.', output_array)
+            quit()
+        f.seek(start_of_scsu + byte_length, 0) # Go to the next field.
+        return decoded_strings
+        
+        
     # Preliminary version check.
     # Read version number.  2 bytes.
     f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
@@ -142,8 +159,8 @@ with in_file.open(mode='rb') as f:
     #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
     
-    # Add comments in track.  This part may be informative.
-    gpx.tracks[0].comment = "[" \
+    # Add a summary of the track.  This part may be informative.
+    gpx.tracks[0].description = "[" \
         + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
         + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
         + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
@@ -176,20 +193,15 @@ with in_file.open(mode='rb') as f:
     gpx.description = "[" + description + "]"
     
     
-    # Read name of the track, which is usually the datetime.
-    f.seek(0x00046, 0) # go to address 0x00046, this address is fixed.
-    # Read the size * 4 of the name.  Usually 0x40 = 64, so 64 / 4 = 16 characters.
-    (track_name_size,) \
-        = struct.unpack('B', f.read(1))
+    # Read SCSU encoded name of the track, which is usually the datetime.
+    # 
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
     # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
-    # are encoded with SCSU (simple compression scheme for unicode).  We will igonore the 
-    # non-ASCII characters because there is no appropriate library to decode SCSU in python.
-    track_name_size = int(track_name_size / 4)
-    (track_name,) \
-        = struct.unpack(str(track_name_size)+'s', f.read(track_name_size))
-    #print('Track name: ', track_name.decode("utf-8", "ignore"))
-    gpx.name = "[" + str(track_name.decode("utf-8", "ignore")) + "]"
+    # can be encoded with SCSU (simple compression scheme for unicode).
+    #
+    track_name = scsu_reader(0x00046) # This address is fixed.
+    #print('Track name: ', track_name)
+    gpx.name = "[" + track_name + "]"
     gpx.tracks[0].name = gpx.name
     
     
@@ -200,7 +212,7 @@ with in_file.open(mode='rb') as f:
     start_time = symbian_to_unix_time(start_time)
     #print('Start Z: ', format_datetime(round(start_time, 3)) + "Z")
     
-    # We can calculate the timezone by using the starttimes in Z and localtime.
+    # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
     gpx.time = datetime.datetime.fromtimestamp(
         start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours),))
