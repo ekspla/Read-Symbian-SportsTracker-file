@@ -125,7 +125,12 @@ def decode(byte_array, size = None):
     
     Args:
         byte_array: SCSU encoded bytes or bytearray.  The length can be longer than neccessary.
-        size: length of the characters to be decoded, defaults to the full length of the byte_array.
+        size: number of the characters to be decoded, defaults to the full length of the byte_array.
+        
+    Returns:
+        output_array: decoded bytearray in UTF-8.
+        counter: number of bytes read from the input byte_array.
+        char_counter: number of characters decoded.
     """
     input_array = bytearray(byte_array)
     char_counter = 0 # Number of decoded characters.
