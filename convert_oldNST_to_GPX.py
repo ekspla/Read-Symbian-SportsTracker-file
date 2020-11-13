@@ -33,6 +33,30 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
+def scsu_reader(file_object, address):
+    """Reads SCSU encoded bytes of variable length from file_object and returns decoded utf-8 using external decoder.
+    
+    Args: 
+        file_object: file object to be read.
+        address: start address of the SCSU encoded part.  The data is preceeded by one byte integer (U8) 
+                 which indicates the length of the character multiplied by four.
+                 
+    Returns:
+        decoded_strings: a bytearray of decoded UTF-8.
+    """
+    file_object.seek(address, 0)
+    (size,) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
+    start_of_scsu = file_object.tell()
+    byte_array = file_object.read(size) # Returns bytes.
+    size = int(size / 4) # Divide by 4 to obtain the length of characters.
+    (output_array, byte_length, character_length) = scsu.decode(byte_array, size)
+    decoded_strings = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
+    if len(decoded_strings) != size:
+        print('SCSU decode failed.', output_array)
+        quit()
+    file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
+    return decoded_strings
+
 
 # Arguments and help
 argvs = sys.argv
@@ -83,22 +107,6 @@ gpx.schema_locations = [
 
 with in_file.open(mode='rb') as f:
     
-    # Reader for SCSU encoded data of variable length.
-    def scsu_reader(address):
-        f.seek(address, 0)
-        (size,) = struct.unpack('B', f.read(1)) # Read the size * 4 in bytes.
-        start_of_scsu = f.tell()
-        byte_array = f.read(size) # Returns bytes.
-        size = int(size / 4) # Divide by 4 to obtain the length of characters.
-        (output_array, byte_length, character_length) = scsu.decode(byte_array, size)
-        decoded_strings = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
-        if len(decoded_strings) != size:
-            print('SCSU decode failed.', output_array)
-            quit()
-        f.seek(start_of_scsu + byte_length, 0) # Go to the next field.
-        return decoded_strings
-        
-        
     # Preliminary version check.
     # Read version number.  2 bytes.
     f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
@@ -199,7 +207,7 @@ with in_file.open(mode='rb') as f:
     # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
     # can be encoded with SCSU (simple compression scheme for unicode).
     #
-    track_name = scsu_reader(0x00046) # This address is fixed.
+    track_name = scsu_reader(f, 0x00046) # This address is fixed.
     #print('Track name: ', track_name)
     gpx.name = "[" + track_name + "]"
     gpx.tracks[0].name = gpx.name
