@@ -120,13 +120,13 @@ win=[
 
 # /* deflation algorithm */
 
-def decode(byte_array, size = 0):
+def decode(byte_array, size = None):
     input_array = bytearray(byte_array)
     char_counter = 0 # Number of decoded characters.
     output_array = bytearray()
     global counter # Number of bytes read from the input bytearray.
     counter = 0
-    if size == 0:
+    if size == None:
         size = len(input_array) # Maximum length of characters to be decoded.
     
     while char_counter < size:
