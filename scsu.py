@@ -121,6 +121,12 @@ win=[
 # /* deflation algorithm */
 
 def decode(byte_array, size = None):
+    """Decode SCSU encoded bytes/bytearray to UTF-8
+    
+    Args:
+        byte_array: SCSU encoded bytes or bytearray.  The length can be longer than neccessary.
+        size: length of the characters to be decoded, defaults to the full length of the byte_array.
+    """
     input_array = bytearray(byte_array)
     char_counter = 0 # Number of decoded characters.
     output_array = bytearray()
