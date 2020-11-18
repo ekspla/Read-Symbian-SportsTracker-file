@@ -83,7 +83,7 @@ for i in output_array:
     print(hex(i), ' ', sep='', end='')
 print('\n')
 
-# UTF surrogate pairs, '叱𠮷', 2 characters.
+# Surrogate pairs, '叱𠮷', 2 characters.
 byte_array = bytearray(b'\x0F\x53\xF1\xD8\x42\xDF\xB7')
 # In UTF-8, this should be converted to: E5 8F B1 F0 A0 AE B7
 # Code points: "\u20b9f\u20bb7"
