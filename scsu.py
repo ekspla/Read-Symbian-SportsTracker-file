@@ -29,12 +29,13 @@
 
 def output(c, output_array):    
     char_count = 0
+    global d
     
     # /* join UTF-16 surrogates without any pairing sanity checks */
     
     if (0xD800 <= c <= 0xDBFF):
         d = c & 0x3FF
-        return
+        return char_count
         
     if (0xDC00 <= c <= 0xDFFF):
         c = c + 0x2400 + d * 0x400
