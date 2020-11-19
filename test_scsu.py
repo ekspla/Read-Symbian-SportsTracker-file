@@ -86,7 +86,7 @@ print('\n')
 # Surrogate pairs, '叱𠮷', 2 characters.
 byte_array = bytearray(b'\x0F\x53\xF1\xD8\x42\xDF\xB7')
 # In UTF-8, this should be converted to: E5 8F B1 F0 A0 AE B7
-# Code points: "\u20b9f\u20bb7"
+# Code points: "\U00020b9f\U00020bb7"
 output_array, counter, char_counter = scsu.decode(byte_array, None) # decode all characters.
 print('Surrogate pairs:', output_array.decode("utf-8", "ignore"), ', bytes:', 
       counter, ', characters:' ,char_counter)
