@@ -129,7 +129,7 @@ with in_file.open(mode='rb') as f:
     #print('Track ID: ', track_id) # print Track ID.
     
     total_time /= 100 # Totaltime in seconds.
-    #print('Total time: ', format_timedelta(round(total_time, 3)))
+    #print('Total time: ', format_timedelta(total_time))
     
     
     # Read Total Distance, 4 bytes.
@@ -151,15 +151,15 @@ with in_file.open(mode='rb') as f:
     # Print start time in localtime.  Change the suffix according to your timezone, 
     # because there is no timezone information in Symbian.
     # Take difference of starttime in localtime and those in UTC (see below) to see the timezone+DST.
-    #print('Start: ', format_datetime(round(start_localtime, 3)) + "+09:00")
+    #print('Start: ', format_datetime(start_localtime) + "+09:00")
     
     stop_localtime = symbian_to_unix_time(stop_localtime)
-    #print('Stop : ', format_datetime(round(stop_localtime, 3)) + "+09:00")
+    #print('Stop : ', format_datetime(stop_localtime) + "+09:00")
     
     
     # Calculate Realtime, which is different from Totaltime if autopause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
-    #print('Realtime: ', format_timedelta(round(real_time, 3)))
+    #print('Realtime: ', format_timedelta(real_time))
     
     
     # Calculate Gross speed in km/h.
@@ -169,12 +169,12 @@ with in_file.open(mode='rb') as f:
     
     # Add a summary of the track.  This part may be informative.
     gpx.tracks[0].description = "[" \
-        + "Total time: " + format_timedelta(round(total_time, 3)) + '; '\
+        + "Total time: " + format_timedelta(total_time) + '; '\
         + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
         + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
-        + "Start localtime: " + format_datetime(round(start_localtime, 3)) + '; '\
-        + "Stop localtime: " + format_datetime(round(stop_localtime, 3)) + '; '\
-        + "Real time: " + format_timedelta(round(real_time, 3)) + '; '\
+        + "Start localtime: " + format_datetime(start_localtime) + '; '\
+        + "Stop localtime: " + format_datetime(stop_localtime) + '; '\
+        + "Real time: " + format_timedelta(real_time) + '; '\
         + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
         + "]"
     
@@ -218,7 +218,7 @@ with in_file.open(mode='rb') as f:
     (start_time, stop_time) \
         = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
-    #print('Start Z: ', format_datetime(round(start_time, 3)) + "Z")
+    #print('Start Z: ', format_datetime(start_time) + "Z")
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
@@ -226,11 +226,11 @@ with in_file.open(mode='rb') as f:
         start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours),))
     
     stop_time = symbian_to_unix_time(stop_time)
-    #print('Stop Z : ', format_datetime(round(stop_time, 3)) + "Z")
+    #print('Stop Z : ', format_datetime(stop_time) + "Z")
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
-    #print('Realtime Z: ', format_timedelta(round(real_time, 3)))
+    #print('Realtime Z: ', format_timedelta(real_time))
     
     
     # Read number of autopause data, 4 bytes.
@@ -268,8 +268,8 @@ with in_file.open(mode='rb') as f:
         
         t_time /= 100 # Totaltime in seconds
         unix_time = symbian_to_unix_time(symbian_time)
-        #utc_time = format_datetime(round(unix_time, 3)) #+ "Z"
-        #print(unknown, '\t', format_timedelta(round(t_time, 3)), '\t', flag, '\t', utc_time, sep = '')
+        #utc_time = format_datetime(unix_time) #+ "Z"
+        #print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', utc_time, sep = '')
         
         # Start flag = 1, we don't use these data.  Just store them for the future purposes.
         if flag == 1:
@@ -306,9 +306,9 @@ with in_file.open(mode='rb') as f:
     #print('Total time', '\t', 'Pause time', '\t', 'Datetime', sep ='')
     #for pause in pause_list:
     #    t_time, pause_time, unix_time = pause
-    #    print(format_timedelta(round(t_time, 3)), '\t', 
-    #          format_timedelta(round(pause_time, 3)), '\t', 
-    #          format_datetime(round(unix_time, 3)) + "I", sep = '')
+    #    print(format_timedelta(t_time), '\t', 
+    #          format_timedelta(pause_time), '\t', 
+    #          format_datetime(unix_time) + "I", sep = '')
     #quit()
     
     
@@ -353,7 +353,7 @@ with in_file.open(mode='rb') as f:
             
             unix_time += (t_time - last_t_time)
             
-            #utc_time = format_datetime(round(unix_time, 3)) + "Z"
+            #utc_time = format_datetime(unix_time) + "Z"
             #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
         elif header in {0x80, 0x82, 0x83, 
@@ -414,7 +414,7 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += dt_time / 100
-            #utc_time = format_datetime(round(unix_time, 3)) + "Z"
+            #utc_time = format_datetime(unix_time) + "Z"
             #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown3, unknown4)
             
         # Other headers which I don't know.
@@ -427,7 +427,7 @@ with in_file.open(mode='rb') as f:
         if pause_list:
         
             t4_time, pause_time, resume_time = pause_list[0]
-            #print(format_timedelta(round(t4_time, 3)), format_timedelta(round(pause_time, 3)))
+            #print(format_timedelta(t4_time), format_timedelta(pause_time))
             
             # Just after the autopause, use the autopause data.
             # Still not quite sure if this works.
@@ -445,8 +445,8 @@ with in_file.open(mode='rb') as f:
         
         
         # Print delimited text.
-        #utc_time = format_datetime(round(unix_time, 3)) + "Z"
-        #to_time = format_timedelta(round(t_time, 3))
+        #utc_time = format_datetime(unix_time) + "Z"
+        #to_time = format_timedelta(t_time)
         #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', 
         #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', 
         #      round(z_ax, 1), '\t', round(v, 2), sep='')
