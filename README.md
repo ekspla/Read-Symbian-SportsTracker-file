@@ -17,9 +17,10 @@ etc.)
 
  These codes are **not based on reverse engineering of the app.** itself, but on careful analysis of the track log files.
  
+ Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are decoded by using an external module, `scsu.py`.  This is a translated version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), `scsu.c`.
+
 ## Limitation
-- Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are not supported. 
-~~Handlings of such non ASCII characters are beyond the scope of this project.~~ Experimental support in `dev_scsu` branch.
+- Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
 
 ## TODO
 - A few unknown fields in the track points.
@@ -30,3 +31,4 @@ The oldNST and the new NST code, respectively, were tested for versions of 9991-
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
 - [Standard Compression Scheme for Unicode](https://en.wikipedia.org/wiki/Standard_Compression_Scheme_for_Unicode)
+- [The SCSU charset -- Roman Czyborra's decoder](http://czyborra.com/scsu/)
