@@ -38,7 +38,7 @@ def scsu_reader(file_object, address):
     
     Args: 
         file_object: file object to be read.
-        address: start address of the SCSU encoded part.  The data is preceeded by one byte integer (U8) 
+        address: start address of the SCSU encoded part.  The data is preceded by one byte integer (U8) 
                  which indicates the length of the character multiplied by four.
                  
     Returns:
