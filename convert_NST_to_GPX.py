@@ -92,16 +92,16 @@ gpx_track.segments.append(gpx_segment)
 
 # definition of extension
 # Add TrackPointExtension namespace and schema location
-gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
+gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
 gpx.schema_locations = [
     'http://www.topografix.com/GPX/1/1',
     'http://www.topografix.com/GPX/1/1/gpx.xsd',
     'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
-    'http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
-    'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
-    'http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd']
+    'http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
+    'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
+    'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
 
 
@@ -452,7 +452,7 @@ with in_file.open(mode='rb') as f:
         speed = round(v / 3.6, 3) # velocity in m/s
         gpx_extension_speed = mod_etree.fromstring(
             f"""<gpxtpx:TrackPointExtension \
-            xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\
+            xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">\
             <gpxtpx:speed>{speed}</gpxtpx:speed>\
             </gpxtpx:TrackPointExtension>""")
         gpx_point.extensions.append(gpx_extension_speed)
