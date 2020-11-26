@@ -13,6 +13,12 @@ of the new version released from [Sports Tracking Technologies Ltd](http://www.s
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
 etc.)
 
+The version number of the app used to create the file is stored as WORD at 0x0008.
+    # Track log files of the old Nokia SportsTracker:          version < 10000.
+    # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
+    # Track log files of Symbian SportsTracker:       20000 <= version
+The track log readers of oldNST and the new NST, respectively, were tested for versions of 9991-9998 and 20001-20002.
+
  The file formats of symbian are completely different from those of Android and iOS.
 
  These codes are **not based on reverse engineering of the app.** itself, but on careful analysis of the track log files.
@@ -25,8 +31,6 @@ etc.)
 ## TODO
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
-- Read and check the version number of Sports Tracker app. used to create the track log files.  It is stored as WORD at 0x0008.
-The oldNST and the new NST code, respectively, were tested for versions of 9991-9998 and 20001-20002.
 
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
