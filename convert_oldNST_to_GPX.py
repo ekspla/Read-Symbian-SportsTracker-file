@@ -63,10 +63,7 @@ argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
     print("""Usage: # python %s input_filename' % argvs[0]\n
- This script reads track log files (*.dat) of symbian SportsTracker.
-Log files with heart-rate sensor were not tested.
-You have to modify this script to read files from new-version SportsTracker
-because of slightly different data format.""")
+ This script reads track log files (*.dat) of old-version Nokia SportsTracker.""")
     quit()
 #print(argc)
 #print(argvs[1])
@@ -112,12 +109,12 @@ with in_file.open(mode='rb') as f:
     f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
     (version, ) \
         = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
-    #print('Version: ', version) # print Version number.
-    
-    if 10000 <= version < 20000: # I don't know about the format.
-        pass
-        
-    elif version >= 20000: # Use script for the new format.
+    #print('Version: ', version)
+    # 
+    # Track log files of the old Nokia SportsTracker:          version < 10000.
+    # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
+    # Track log files of Symbian SportsTracker:       20000 <= version
+    if version >= 10000:
         print('Version number greater than expected:', version)
         quit()
         
