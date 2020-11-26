@@ -14,9 +14,9 @@ the script.  (1-byte instead of 2-byte long header, start address of trackpoint 
 etc.)
 
 The version number of the app used to create the file is stored as WORD at 0x0008.
-    # Track log files of the old Nokia SportsTracker:          version < 10000.
-    # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
-    # Track log files of Symbian SportsTracker:       20000 <= version
+- Track log files of the old Nokia SportsTracker:          version < 10000.
+- Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
+- Track log files of Symbian SportsTracker:       20000 <= version.
 The track log readers of oldNST and the new NST, respectively, were tested for versions of 9991-9998 and 20001-20002.
 
  The file formats of symbian are completely different from those of Android and iOS.
