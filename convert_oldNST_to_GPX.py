@@ -201,8 +201,8 @@ with in_file.open(mode='rb') as f:
     # Read SCSU encoded name of the track, which is usually the datetime.
     # 
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
-    # '24/12/2019 12:34'.  They are, in principle, not fully compatible with utf-8 but 
-    # can be encoded with SCSU (simple compression scheme for unicode).
+    # '24/12/2019 12:34'.  The strings are, in principle, not fully compatible with utf-8 but 
+    # can be non-ASCII characters encoded with SCSU (simple compression scheme for unicode).
     #
     track_name = scsu_reader(f, 0x00046) # This address is fixed.
     #print('Track name: ', track_name)
