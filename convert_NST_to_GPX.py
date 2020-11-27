@@ -34,7 +34,7 @@ def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
 def scsu_reader(file_object, address):
-    """Reads SCSU encoded bytes of variable length from file_object and returns decoded utf-8 using external decoder.
+    """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
     
     Args: 
         file_object: file object to be read.
@@ -74,7 +74,7 @@ Log files with heart-rate sensor were not tested.""")
 #path = Path('.')
 in_file = Path(argvs[1])
 #print(in_file)
-
+#gpx_file = Path(argvs[1][:-3] + 'gpx')
 
 
 # Creating a new GPX:
@@ -243,11 +243,11 @@ with in_file.open(mode='rb') as f:
     f.seek(0x007ff, 0) # go to address 0x007ff, this address is fixed.
     (num_pause,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    #print('Number of pause data: ', num_pause) # print number of pause data
+    #print('Number of pause data: ', num_pause)
     pause_address = f.tell()
     
     # Read number of track points, 4 bytes.
-    f.seek(num_pause * 14, 1) # Autopause data are 14 bytes.  Skip autopause data part.
+    f.seek(num_pause * 14, 1) # Autopause data are 14 bytes each.  Skip autopause data part.
     (num_trackpt,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of track pts: ', num_trackpt)
@@ -353,7 +353,6 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
             unix_time = symbian_to_unix_time(symbian_time)
-            
             #utc_time = format_datetime(unix_time) + "Z"
             #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
@@ -461,8 +460,7 @@ with in_file.open(mode='rb') as f:
         
     # Handling of errors.
     if track_count != num_trackpt:
-        print('Track points count error: ', track_count, num_trackpt)
-        #print(track_count, num_trackpt)
+        print('Track point count error: ', track_count, num_trackpt)
         quit()
         
         
