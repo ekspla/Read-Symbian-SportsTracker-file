@@ -1,4 +1,4 @@
-﻿#coding:utf-8
+#coding:utf-8
 import sys
 from pathlib import Path
 import struct
@@ -34,7 +34,7 @@ def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
 def scsu_reader(file_object, address):
-    """Reads SCSU encoded bytes of variable length from file_object and returns decoded utf-8 using external decoder.
+    """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
     
     Args: 
         file_object: file object to be read.
@@ -73,7 +73,7 @@ if argc < 2:
 #path = Path('.')
 in_file = Path(argvs[1])
 #print(in_file)
-
+#gpx_file = Path(argvs[1][:-3] + 'gpx')
 
 
 # Creating a new GPX:
@@ -119,7 +119,7 @@ with in_file.open(mode='rb') as f:
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     (route_id, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    #print('Route ID: ', route_id) # print Track ID.
+    #print('Route ID: ', route_id) # print Route ID.
     
     
     # Read SCSU encoded name of the route.
@@ -160,7 +160,7 @@ with in_file.open(mode='rb') as f:
     # We have to calculate the timestamps in all of the trackpoints because of no Symbiantimes 
     # given in the trackpoint part of old version.  This is very different from the new version.
     # We will use mtime as starttime, because the start/stop times stored in the route files are 
-    # always 0, which means 1970-01-01T00:00:00.
+    # always 0, which means January 1st 0 AD 00:00:00.
     unix_time = in_file.stat().st_mtime
     last_t_time = 0
     
@@ -191,7 +191,6 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
             unix_time += (t_time - last_t_time)
-            
             #utc_time = format_datetime(unix_time) + "Z"
             #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
@@ -311,8 +310,7 @@ with in_file.open(mode='rb') as f:
     
     # Handling of errors.
     if track_count != num_trackpt:
-        print('Track points count error: ', track_count, num_trackpt)
-        #print(track_count, num_trackpt)
+        print('Track point count error: ', track_count, num_trackpt)
         quit()
         
         
