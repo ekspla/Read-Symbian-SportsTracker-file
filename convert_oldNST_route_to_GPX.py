@@ -1,4 +1,4 @@
-#coding:utf-8
+﻿#coding:utf-8
 import sys
 from pathlib import Path
 import struct
@@ -20,10 +20,9 @@ import scsu
 #  since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
 #  BC dates are represented by negative values.
 #
-#  unix_time = symbian_time/1e6 - 62168256000
-#
-def symbian_to_unix_time(tdelta):
-    return tdelta / 1e6 - 62168256000
+def symbian_to_unix_time(symbian_time):
+    unix_time = symbian_time / 1e6 - 62168256000
+    return unix_time
 
 def format_datetime(timestamp):
     fmt = "%Y-%m-%dT%H:%M:%S.%f" # ISO-8601 format.
@@ -45,7 +44,7 @@ def scsu_reader(file_object, address):
         decoded_strings: a bytearray of decoded UTF-8.
     """
     file_object.seek(address, 0)
-    (size,) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
+    (size, ) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
     size = int(size / 4) # Divide by 4 to obtain the length of characters.
@@ -119,7 +118,7 @@ with in_file.open(mode='rb') as f:
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     (route_id, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    #print('Route ID: ', route_id) # print Route ID.
+    #print('Route ID: ', route_id)
     
     
     # Read SCSU encoded name of the route.
@@ -131,7 +130,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read Total Distance, 4 bytes.
-    (total_distance,) \
+    (total_distance, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     total_distance /= 1e5 # Total distance in km
     #print('Total distance: ', round(total_distance, 3), ' km')
@@ -145,7 +144,7 @@ with in_file.open(mode='rb') as f:
     
     # Read number of track points, 4 bytes.
     f.seek(0x000ff, 0) # This address is fixed.
-    (num_trackpt,) \
+    (num_trackpt, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of route pts: ', num_trackpt)
     
@@ -166,7 +165,7 @@ with in_file.open(mode='rb') as f:
     
     while track_count < num_trackpt:
     
-        (header,) \
+        (header, ) \
             = struct.unpack('B', f.read(1)) # Read the 1-byte header.
         #print(header)
         
