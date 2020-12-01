@@ -20,10 +20,9 @@ import scsu
 #  since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
 #  BC dates are represented by negative values.
 #
-#  unix_time = symbian_time/1e6 - 62168256000
-#
-def symbian_to_unix_time(tdelta):
-    return tdelta / 1e6 - 62168256000
+def symbian_to_unix_time(symbian_time):
+    unix_time = symbian_time / 1e6 - 62168256000
+    return unix_time
 
 def format_datetime(timestamp):
     fmt = "%Y-%m-%dT%H:%M:%S.%f" # ISO-8601 format.
@@ -45,7 +44,7 @@ def scsu_reader(file_object, address):
         decoded_strings: a bytearray of decoded UTF-8.
     """
     file_object.seek(address, 0)
-    (size,) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
+    (size, ) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
     size = int(size / 4) # Divide by 4 to obtain the length of characters.
@@ -123,14 +122,14 @@ with in_file.open(mode='rb') as f:
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     (track_id, total_time) \
         = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
-    #print('Track ID: ', track_id) # print Track ID.
+    #print('Track ID: ', track_id)
     
     total_time /= 100 # Totaltime in seconds.
     #print('Total time: ', format_timedelta(total_time))
     
     
     # Read Total Distance, 4 bytes.
-    (total_distance,) \
+    (total_distance, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     total_distance /= 1e5 # Total distance in km
     #print('Total distance: ', round(total_distance, 3), ' km')
@@ -177,7 +176,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read User ID, please see config.dat.
-    (user_id,) \
+    (user_id, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('User id: ', user_id)
     gpx.author_name = str(user_id)
@@ -185,7 +184,7 @@ with in_file.open(mode='rb') as f:
     
     # Read type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
-    (activity,) \
+    (activity, ) \
         = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
     activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
@@ -220,7 +219,7 @@ with in_file.open(mode='rb') as f:
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
     gpx.time = datetime.datetime.fromtimestamp(
-        start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours),))
+        start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours), ))
     
     stop_time = symbian_to_unix_time(stop_time)
     #print('Stop Z : ', format_datetime(stop_time) + "Z")
@@ -232,14 +231,14 @@ with in_file.open(mode='rb') as f:
     
     # Read number of autopause data, 4 bytes.
     f.seek(0x003ff, 0) # go to address 0x003ff, this address is fixed.
-    (num_pause,) \
+    (num_pause, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of pause data: ', num_pause)
     pause_address = f.tell()
     
     # Read number of track points, 4 bytes.
     f.seek(num_pause * 14, 1) # Autopause data are 14 bytes each.  Skip autopause data part.
-    (num_trackpt,) \
+    (num_trackpt, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of track pts: ', num_trackpt)
     track_address = f.tell()
@@ -324,7 +323,7 @@ with in_file.open(mode='rb') as f:
     
     while track_count < num_trackpt:
     
-        (header,) \
+        (header, ) \
             = struct.unpack('B', f.read(1)) # Read the 1-byte header.
         #print(header)
         
