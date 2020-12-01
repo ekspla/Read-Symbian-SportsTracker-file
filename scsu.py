@@ -71,7 +71,7 @@ def nextchar(input_array):
     global counter
     if input_array:
         c = input_array.pop(0)
-        counter +=1
+        counter += 1
         return c
     else:
         raise LookupError
@@ -79,9 +79,9 @@ def nextchar(input_array):
 
 # /* SCSU uses the following variables and default values: */
 
-start=[0x0000,0x0080,0x0100,0x0300,0x2000,0x2080,0x2100,0x3000]
-slide=[0x0080,0x00C0,0x0400,0x0600,0x0900,0x3040,0x30A0,0xFF00]
-win=[
+start = [0x0000,0x0080,0x0100,0x0300,0x2000,0x2080,0x2100,0x3000]
+slide = [0x0080,0x00C0,0x0400,0x0600,0x0900,0x3040,0x30A0,0xFF00]
+win = [
        0x0000, 0x0080, 0x0100, 0x0180, 0x0200, 0x0280, 0x0300, 0x0380,
        0x0400, 0x0480, 0x0500, 0x0580, 0x0600, 0x0680, 0x0700, 0x0780,
        0x0800, 0x0880, 0x0900, 0x0980, 0x0A00, 0x0A80, 0x0B00, 0x0B80,
@@ -171,7 +171,7 @@ def decode(byte_array, size = None):
             elif (c == 0xB): #/* SDX */
                 c = nextchar(input_array)
                 d = nextchar(input_array)
-                active = c>>5
+                active = c >> 5
                 slide[active] = 0x10000 + (((c & 0x1F) << 8 | d) << 7)
                 
             elif (c == 0xE): # /* SQU */
@@ -204,7 +204,7 @@ def decode(byte_array, size = None):
                     elif (c == 0xF1): # /* UDX */
                         c = nextchar(input_array)
                         d = nextchar(input_array)
-                        active = c>>5
+                        active = c >> 5
                         slide[active] = 0x10000 + (((c & 0x1F) << 8 | d) << 7)
                         mode = 0
                         
