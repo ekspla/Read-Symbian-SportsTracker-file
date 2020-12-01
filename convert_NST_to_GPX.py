@@ -3,6 +3,16 @@ import sys
 from pathlib import Path
 import struct
 import datetime
+import gpxpy
+import gpxpy.gpx
+try:
+    # Load LXML or fallback to cET or ET 
+    import lxml.etree as mod_etree  # type: ignore
+except:
+    try:
+        import xml.etree.cElementTree as mod_etree # type: ignore
+    except:
+        import xml.etree.ElementTree as mod_etree # type: ignore
 import scsu
 
 
@@ -10,9 +20,10 @@ import scsu
 #  since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
 #  BC dates are represented by negative values.
 #
-def symbian_to_unix_time(symbian_time):
-    unix_time = symbian_time / 1e6 - 62168256000
-    return unix_time
+#  unix_time = symbian_time/1e6 - 62168256000
+#
+def symbian_to_unix_time(tdelta):
+    return tdelta / 1e6 - 62168256000
 
 def format_datetime(timestamp):
     fmt = "%Y-%m-%dT%H:%M:%S.%f" # ISO-8601 format.
@@ -34,7 +45,7 @@ def scsu_reader(file_object, address):
         decoded_strings: a bytearray of decoded UTF-8.
     """
     file_object.seek(address, 0)
-    (size, ) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
+    (size,) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
     size = int(size / 4) # Divide by 4 to obtain the length of characters.
@@ -52,7 +63,8 @@ argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
     print("""Usage: # python %s input_filename' % argvs[0]\n
- This script reads track log files (*.dat) of old-version Nokia SportsTracker.""")
+ This script reads track log files (*.dat) of symbian SportsTracker.
+Log files with heart-rate sensor were not tested.""")
     quit()
 #print(argc)
 #print(argvs[1])
@@ -63,6 +75,32 @@ if argc < 2:
 in_file = Path(argvs[1])
 #print(in_file)
 #gpx_file = Path(argvs[1][:-3] + 'gpx')
+
+
+# Creating a new GPX:
+gpx = gpxpy.gpx.GPX()
+
+# Create the first track in the GPX:
+gpx_track = gpxpy.gpx.GPXTrack()
+gpx.tracks.append(gpx_track)
+
+# Create the first segment in the GPX track:
+gpx_segment = gpxpy.gpx.GPXTrackSegment()
+gpx_track.segments.append(gpx_segment)
+
+# definition of extension
+# Add TrackPointExtension namespace and schema location
+gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
+gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
+
+gpx.schema_locations = [
+    'http://www.topografix.com/GPX/1/1',
+    'http://www.topografix.com/GPX/1/1/gpx.xsd',
+    'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
+    'http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
+    'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
+    'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
+
 
 
 with in_file.open(mode='rb') as f:
@@ -77,8 +115,8 @@ with in_file.open(mode='rb') as f:
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
     # Track log files of Symbian SportsTracker:       20000 <= version
-    elif version >= 10000:
-        print('Version number greater than expected:', version)
+    if version < 20000:
+        print('Version number less than expected:', version)
         quit()
         
         
@@ -86,22 +124,23 @@ with in_file.open(mode='rb') as f:
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     (track_id, total_time) \
         = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
-    print('Track ID: ', track_id)
+    #print('Track ID: ', track_id) # print Track ID.
     
     total_time /= 100 # Totaltime in seconds.
-    print('Total time: ', format_timedelta(total_time))
+    #print('Total time: ', format_timedelta(total_time))
     
     
     # Read Total Distance, 4 bytes.
-    (total_distance, ) \
+    f.seek(0x00004, 1) # Skip 4 bytes.
+    (total_distance,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     total_distance /= 1e5 # Total distance in km
-    print('Total distance: ', round(total_distance, 3), ' km')
+    #print('Total distance: ', round(total_distance, 3), ' km')
     
     
     # Calculate Net speed in km/h.
     net_speed = total_distance / (total_time / 3600) # km/h
-    print('Net speed: ', round(net_speed, 3), ' km/h')
+    #print('Net speed: ', round(net_speed, 3), ' km/h')
     
     
     # Read Starttime and Stoptime in localtime, 8+8 bytes.
@@ -111,31 +150,44 @@ with in_file.open(mode='rb') as f:
     # Print start time in localtime.  Change the suffix according to your timezone, 
     # because there is no timezone information in Symbian.
     # Take difference of starttime in localtime and those in UTC (see below) to see the timezone+DST.
-    print('Start: ', format_datetime(start_localtime) + "+09:00")
+    #print('Start: ', format_datetime(start_localtime) + "+09:00")
     
     stop_localtime = symbian_to_unix_time(stop_localtime)
-    print('Stop : ', format_datetime(stop_localtime) + "+09:00")
+    #print('Stop : ', format_datetime(stop_localtime) + "+09:00")
     
     
     # Calculate Realtime, which is different from Totaltime if autopause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
-    print('Realtime: ', format_timedelta(real_time))
+    #print('Realtime: ', format_timedelta(real_time))
     
     
     # Calculate Gross speed in km/h.
     gross_speed = total_distance / (real_time / 3600) # km/h
-    print('Gross speed: ', round(gross_speed, 3), ' km/h')
+    #print('Gross speed: ', round(gross_speed, 3), ' km/h')
+    
+    
+    # Add a summary of the track.  This part may be informative.
+    gpx.tracks[0].description = "[" \
+        + "Total time: " + format_timedelta(total_time) + '; '\
+        + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
+        + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
+        + "Start localtime: " + format_datetime(start_localtime) + '; '\
+        + "Stop localtime: " + format_datetime(stop_localtime) + '; '\
+        + "Real time: " + format_timedelta(real_time) + '; '\
+        + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
+        + "]"
     
     
     # Read User ID, please see config.dat.
-    (user_id, ) \
+    (user_id,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    print('User id: ', user_id)
+    #print('User id: ', user_id)
+    gpx.author_name = str(user_id)
     
     
     # Read type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
-    (activity, ) \
+    (activity,) \
         = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
     activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
@@ -144,14 +196,8 @@ with in_file.open(mode='rb') as f:
         description = str(activity)
     else:
         description = activities[activity]
-    print('Activity: ', description)
-    
-    
-    f.seek(0x00008, 1) # Skip 8 bytes which I don't know.
-    # Read weight in kg.
-    (weight, ) \
-        = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
-    print('Weight: ', weight, ' kg')
+    #print('Activity: ', description)
+    gpx.description = "[" + description + "]"
     
     
     # Read SCSU encoded name of the track, which is usually the datetime.
@@ -160,49 +206,52 @@ with in_file.open(mode='rb') as f:
     # '24/12/2019 12:34'.  The strings are, in principle, not fully compatible with utf-8 but 
     # can be non-ASCII characters encoded with SCSU (simple compression scheme for unicode).
     #
-    track_name = scsu_reader(f, 0x00046) # This address is fixed.
-    print('Track name: ', track_name)
+    track_name = scsu_reader(f, 0x0004a) # This address is fixed.
+    #print('Track name: ', track_name)
+    gpx.name = "[" + track_name + "]"
+    gpx.tracks[0].name = gpx.name
     
     
     # Read Starttime & Stoptime in UTC, 8+8 bytes.
-    f.seek(0x0018e, 0) # go to 0x0018e, this address is fixed.
+    f.seek(0x00192, 0) # go to 0x00192, this address is fixed.
     (start_time, stop_time) \
         = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
-    print('Start Z: ', format_datetime(start_time) + "Z")
+    #print('Start Z: ', format_datetime(start_time) + "Z")
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
+    gpx.time = datetime.datetime.fromtimestamp(
+        start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours),))
     
     stop_time = symbian_to_unix_time(stop_time)
-    print('Stop Z : ', format_datetime(stop_time) + "Z")
+    #print('Stop Z : ', format_datetime(stop_time) + "Z")
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
-    print('Realtime Z: ', format_timedelta(real_time))
+    #print('Realtime Z: ', format_timedelta(real_time))
     
     
-    # Read Machine UID
-    (machine_id, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    print('Machine UID: ', hex(machine_id)) # 0x20002496 = Nokia E90.
+    # Read SCSU encoded user comment of variable length.
+    comment = scsu_reader(f, 0x00222) # This address is fixed.
+    if comment:
+        #print('Comment:', comment)
+        gpx.tracks[0].comment = comment
     
     
     # Read number of autopause data, 4 bytes.
-    f.seek(0x003ff, 0) # go to address 0x003ff, this address is fixed.
-    (num_pause, ) \
+    f.seek(0x007ff, 0) # go to address 0x007ff, this address is fixed.
+    (num_pause,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    print('Number of pause data: ', num_pause)
+    #print('Number of pause data: ', num_pause)
     pause_address = f.tell()
-    print('Pause address:', hex(pause_address))
     
     # Read number of track points, 4 bytes.
     f.seek(num_pause * 14, 1) # Autopause data are 14 bytes each.  Skip autopause data part.
-    (num_trackpt, ) \
+    (num_trackpt,) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    print('Number of track pts: ', num_trackpt)
+    #print('Number of track pts: ', num_trackpt)
     track_address = f.tell()
-    print('Track address:', hex(track_address))
     
     
     # Go to the first pause data.
@@ -217,16 +266,16 @@ with in_file.open(mode='rb') as f:
     
     while pause_count < num_pause:
     
-        # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are in localtime zone,
-        # while those of the new version in UTC (Z).
+        # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the new version are in UTC,
+        # while those of the old version in localtime.
         # The first unknown field seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) \
             = struct.unpack('<BIBq', f.read(14))
         
         t_time /= 100 # Totaltime in seconds
         unix_time = symbian_to_unix_time(symbian_time)
-        utc_time = format_datetime(unix_time) #+ "Z"
-        print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', utc_time, sep = '')
+        #utc_time = format_datetime(unix_time) + "Z"
+        #print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', utc_time, sep = '')
         
         # Start flag = 1, we don't use these data.  Just store them for the future purposes.
         if flag == 1:
@@ -260,13 +309,12 @@ with in_file.open(mode='rb') as f:
             
         pause_count += 1
         
-    print('Total time', '\t', 'Pause time', '\t', 'Datetime', sep ='')
-    for pause in pause_list:
-        t_time, pause_time, unix_time = pause
-        print(format_timedelta(t_time), '\t', 
-              format_timedelta(pause_time), '\t', 
-              format_datetime(unix_time) + "I", sep = '')
-    print()
+    #print('Total time', '\t', 'Pause time', '\t', 'Datetime', sep ='')
+    #for pause in pause_list:
+    #    t_time, pause_time, unix_time = pause
+    #    print(format_timedelta(t_time), '\t', 
+    #          format_timedelta(pause_time), '\t', 
+    #          format_datetime(unix_time) + "Z", sep = '')
     #quit()
     
     
@@ -277,22 +325,17 @@ with in_file.open(mode='rb') as f:
     dist = 0 #  Total distance in km.
     v = 0 # Velocity in km/h.
     track_count = 0
-
-    # We have to calculate the timestamps in all of the trackpoints because of no Symbiantimes 
-    # given in the trackpoint part of old version.  This is very different from the new version.
-    unix_time = start_time
-    last_t_time = 0
     
     while track_count < num_trackpt:
     
-        (header, ) \
-            = struct.unpack('B', f.read(1)) # Read the 1-byte header.
-        #print(header)
+        (header, header1) \
+            = struct.unpack('2B', f.read(2)) # Read the first byte of 2-byte header.
+        #print(header, header1)
         
-        if header in {0x00, 0x02, 0x03}:
-            # Read 22 bytes of data(4+4+4+4+2+4)
-            (t_time, y_ax, x_ax, z_ax, v, d_dist) \
-                = struct.unpack('<4IHI', f.read(22))
+        if header == 0x07: # Typically, 0x0783 or 0x0782.
+            # Read 30 bytes of data(4+4+4+4+2+4+8)
+            (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
+                = struct.unpack('<4IHIq', f.read(30))
             t_time /= 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
@@ -309,55 +352,39 @@ with in_file.open(mode='rb') as f:
             
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
-            unix_time += (t_time - last_t_time)
-            utc_time = format_datetime(unix_time) + "Z"
-            print(hex(f.tell()), t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
+            unix_time = symbian_to_unix_time(symbian_time)
+            #utc_time = format_datetime(unix_time) + "Z"
+            #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
-        elif header in {0x80, 0x82, 0x83, 
-                        0x92, 0x93, 
-                        0x9A, 0x9B, 
-                        0xC2, 0xC3, 
-                        0xD2, 0xD3, 
-                        0xDA, 0xDB}:
+        elif header in {0x87, 0x97, 0xC7, 0xD7}:
         
-            if header in {0x80, 0x82, 0x83}:
+            if header == 0x87: # Typically, 0x8783 or 0x8782.
             
-                # Read 10 bytes of data(1+2+2+2+1+2).  1-byte dv.
-                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) \
-                    = struct.unpack('<B3hbH', f.read(10))
+                # Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
+                # Unknown1 & 2 might be related to heart rate sensor.
+                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
+                    = struct.unpack('<B3hbH2B', f.read(12))
                 
-            elif (header == 0x92)|(header == 0x93):
+            elif header == 0x97: # Typically, 0x9783 or 0x9782.
             
-                # Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
-                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) \
-                    = struct.unpack('<B4hH', f.read(11))
+                # Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
+                # Unknown1 & 2 might be related to heart rate sensor.
+                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
+                    = struct.unpack('<B4hH2B', f.read(13))
                 
-            elif (header == 0x9A)|(header == 0x9B):
+            elif header == 0xC7: # Typically, 0xC783 or 0xC782.  This case is quite rare.
             
-                # Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
-                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) \
-                    = struct.unpack('<B4hI', f.read(13))
-                
-            elif (header == 0xC2)|(header == 0xC3): # This case is quite rare.
-            
-                # Read 14 bytes of data(1+2+2+2+2+2+1+2).  1-byte dv.
+                # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
-                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
-                    = struct.unpack('<B5hbH', f.read(14))
+                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
+                    = struct.unpack('<B5hbH2B', f.read(16))
                 
-            elif (header == 0xD2)|(header == 0xD3): # This case is quite rare.
+            elif header == 0xD7: # Typically, 0xD783 or 0xD782.  This case is quite rare.
             
-                # Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv.
+                # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
-                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
-                    = struct.unpack('<B6hH', f.read(15))
-                
-            elif (header == 0xDA)|(header == 0xDB): # I saw this only once in my track files.
-            
-                # Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
-                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
-                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) \
-                    = struct.unpack('<B6hI', f.read(17))
+                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
+                    = struct.unpack('<B6hH2B', f.read(17))
                 
             t_time += dt_time / 100 # Totaltime in seconds.
             
@@ -372,16 +399,12 @@ with in_file.open(mode='rb') as f:
             
             unix_time += dt_time / 100
             #utc_time = format_datetime(unix_time) + "Z"
-            #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown3, unknown4)
-            print(hex(f.tell()), t_time, dy_ax, dx_ax , z_ax, v, dist)
+            #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown1, unknown2)
             
         # Other headers which I don't know.
         else:
         
-            print(header, "Error in the track point header: ", track_count, num_trackpt)
-            print('At address:', hex(f.tell() - 1))
-            print(dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist)
-            print(t_time, y_degree, x_degree, z_ax, v, d_dist)
+            print('At address:', hex(f.tell() - 2))
             break
             
             
@@ -394,23 +417,42 @@ with in_file.open(mode='rb') as f:
             # Still not quite sure if this works.
             if (t_time + 0.5 >= t4_time):
             
-                resume_time -= TZ_hours * 3600 # Conversion from localtime to UTC.
-                
-                if unix_time < resume_time:
+                if header != 0x07:  # Track points not starting with 0x07 need UTC times.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
                     
                 del pause_list[0]
                 
-        last_t_time = t_time # Store it for the next turn.
-        
-        
+                
         # Print delimited text.
         #utc_time = format_datetime(unix_time) + "Z"
         #to_time = format_timedelta(t_time)
         #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', 
         #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', 
         #      round(z_ax, 1), '\t', round(v, 2), sep='')
+        
+        
+        # Print gpx xml.
+        gpx_point = gpxpy.gpx.GPXTrackPoint(
+            latitude = round(y_degree, 10), 
+            longitude = round(x_degree, 10), 
+            elevation = round(z_ax, 1), 
+            time = datetime.datetime.fromtimestamp(unix_time, datetime.timezone.utc), 
+            name = str(track_count + 1))
+        gpx_segment.points.append(gpx_point)
+        
+        # This part may be informative.  Comment it out, if not necessary. 
+        gpx_point.description \
+            = 'Speed ' + str(round(v, 3)) + ' km/h ' + 'Distance ' + str(round(dist, 3)) + ' km'
+        
+        # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
+        speed = round(v / 3.6, 3) # velocity in m/s
+        gpx_extension_speed = mod_etree.fromstring(
+            f"""<gpxtpx:TrackPointExtension \
+            xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">\
+            <gpxtpx:speed>{speed}</gpxtpx:speed>\
+            </gpxtpx:TrackPointExtension>""")
+        gpx_point.extensions.append(gpx_extension_speed)
         
         
         track_count += 1
@@ -420,3 +462,13 @@ with in_file.open(mode='rb') as f:
     if track_count != num_trackpt:
         print('Track point count error: ', track_count, num_trackpt)
         quit()
+        
+        
+    # Finally, print or write the gpx. 
+    print(gpx.to_xml('1.1'))
+    
+    #result = gpx.to_xml('1.1')
+    #result_file = open(gpx_file, 'w')
+    #result_file.write(result)
+    #result_file.close()
+    
