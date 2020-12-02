@@ -121,7 +121,7 @@ with in_file.open(mode='rb') as f:
     #print('Route ID: ', route_id)
     
     
-    # Read SCSU encoded name of the route.
+    # Read SCSU encoded name of the route.  Its length is variable.
     #
     route_name = scsu_reader(f, 0x00018) # This address is fixed.
     #print('Route name: ', route_name)
