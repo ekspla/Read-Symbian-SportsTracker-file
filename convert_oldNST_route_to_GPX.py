@@ -1,4 +1,10 @@
 ﻿#coding:utf-8
+#
+# (c) 2020 ekspla.
+# This code is written by ekspla and distributed at the following site
+# under LGPL v2.1 license.
+# https://github.com/ekspla/Read-Symbian-SportsTracker-file
+#
 import sys
 from pathlib import Path
 import struct
