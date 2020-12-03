@@ -1,6 +1,5 @@
-#coding:utf-8
-
-import sys
+﻿#coding:utf-8
+# A test code of scsu decoder, scsu.py.
 import scsu
 
 # ASCII, 'Nautical', 8 characters.

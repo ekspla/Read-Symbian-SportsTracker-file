@@ -1,6 +1,5 @@
-#coding:utf-8
-
-import sys
+﻿#coding:utf-8
+# Another test code of scsu decoder, scsu.py.
 import scsu
 
 # Define a list of example sentences.
