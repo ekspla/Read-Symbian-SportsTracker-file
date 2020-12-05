@@ -30,6 +30,7 @@ The track log readers of oldNST and the new NST, respectively, were tested for v
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
 
 ## TODO
+- Read and process the temporally Rec*.tmp files.  These files are used to generate compressed track log files, but we see them only when application crashes.  A file useful to test was obtained in the internet, but more example is needed.
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
 
