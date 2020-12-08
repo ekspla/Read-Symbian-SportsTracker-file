@@ -214,10 +214,10 @@ with in_file.open(mode='rb') as f:
     
 
 
-    f.seek(0x250, 0)
+    f.seek(0x250, 0) # Not quite sure if this is a good starting point to read the track.
     t_time = 0 # Totaltime in seconds.
     last_t_time = 0
-    unix_time = start_time # unix time.
+    unix_time = start_time # unixtime.
     last_unix_time = start_time
     utc_time = ''
     dist = 0 #  Total distance in km.
@@ -225,11 +225,11 @@ with in_file.open(mode='rb') as f:
     v = 0 # Velocity in km/h.
     track_count = 0
     
-    start = 0
+    start = 0 # A pointer for the data, see below.
     start_address = f.tell()
     data = f.read()
     
-    while start + 4 < len(data):
+    while start + 36 <= len(data):
         if (data[start:start + 4] == b'\x02\x00\x00\x00') & (data[start + 4:start + 6] != b'\x00\x00'):
             (header, header1) \
                 = struct.unpack('2B', data[start + 4: start + 6]) # Read the first byte of 2-byte header.
@@ -261,13 +261,13 @@ with in_file.open(mode='rb') as f:
                 #print(unix_time)
                 
                 # For removing noise.
-                if not (last_unix_time <= unix_time < last_unix_time + 1 * 3600): # Up to 1 hr.
+                if not (last_unix_time <= unix_time < last_unix_time + 1 * 3600): # Up to 1 hr.  Don't take a big lunch.
                     unix_time = last_unix_time + (t_time - last_t_time)
                     print('Strange timestamp.  At:', hex(start_address + start - 6))
                 if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
                     t_time = last_t_time + (unix_time - last_unix_time)
                     print('Strange totaltime.  At:', hex(start_address + start - 6))
-                if (track_count != 0):
+                if track_count != 0:
                     if not (last_y_degree -0.001 < y_degree < last_y_degree + 0.001): # Threshold of 0.001 deg.
                         y_degree = last_y_degree
                         print('Strange y.  At:', hex(start_address + start - 6))
@@ -319,6 +319,7 @@ with in_file.open(mode='rb') as f:
                 </gpxtpx:TrackPointExtension>""")
             gpx_point.extensions.append(gpx_extension_speed)
             
+            # For removing noise.
             last_t_time = t_time
             last_unix_time = unix_time
             last_y_degree = y_degree
