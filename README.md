@@ -33,13 +33,12 @@ There are files as followings in the directory named **drive_name:\SportsTracker
 - `config.dat`: contains a lot of **personal data**, including `id -- name` lookup tables of user and activity, etc. 
 - `W*.dat`: **track log** files of binary format.  The file formats of the new and old versions are slightly different each other. 
 - `R*.dat`: **route** files of binary format in the **old version**.
-- `Rec*.tmp`: **temporal track log files** we see on application crash.  See `Dev_Rec_files` branch for details.
+- `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` for details.
 
 ## Limitation
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
 
 ## TODO
-- Read and process the temporal `Rec*.tmp` files.  Because these files are deleted when track log files are generated after the stop, we see them on application crash or battery fault.  More example is needed, yet [a file useful to test was obtained from the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` for details.
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
 
