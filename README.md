@@ -30,7 +30,7 @@ The track log readers of oldNST and the new NST, respectively, were tested for v
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
 
 ## TODO
-- Read and process the temporal `Rec*.tmp` files.  Because these files are deleted when track log files are generated after the stop, we see them on application crash or battery fault.  More example is needed, yet a file useful to test was obtained from the internet.  The file format seems to be very simple, see `Rec211109168_dump.txt` for details.
+- Read and process the temporal `Rec*.tmp` files.  Because these files are deleted when track log files are generated after the stop, we see them on application crash or battery fault.  More example is needed, yet [a file useful to test was obtained from the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` for details.
 - A few unknown fields in the track points.
 - Support for heart rate in track log files of the new version.
 
