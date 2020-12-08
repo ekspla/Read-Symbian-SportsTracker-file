@@ -68,7 +68,7 @@ argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
     print("""Usage: # python %s input_filename' % argvs[0]\n
- This script reads temporal log files (Rec*.tmp) of symbian SportsTracker.
+ This script reads temporal track log files (Rec*.tmp) of symbian SportsTracker.
 Log files with heart-rate sensor were not tested.""")
     quit()
 #print(argc)
@@ -143,11 +143,6 @@ with in_file.open(mode='rb') as f:
     print('Total distance: ', round(total_distance, 3), ' km')
     
     
-    # Calculate Net speed in km/h.
-    #net_speed = total_distance / (total_time / 3600) # km/h
-    #print('Net speed: ', round(net_speed, 3), ' km/h')
-    
-    
     # Read Starttime and Stoptime in localtime, 8+8 bytes.
     (start_localtime, stop_localtime) \
         = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
@@ -159,16 +154,6 @@ with in_file.open(mode='rb') as f:
     
     stop_localtime = symbian_to_unix_time(stop_localtime)
     #print('Stop : ', format_datetime(stop_localtime) + "+07:00")
-    
-    
-    # Calculate Realtime, which is different from Totaltime if autopause is used.
-    real_time = stop_localtime - start_localtime # Realtime in seconds.
-    #print('Realtime: ', format_timedelta(real_time))
-    
-    
-    # Calculate Gross speed in km/h.
-    gross_speed = total_distance / (real_time / 3600) # km/h
-    #print('Gross speed: ', round(gross_speed, 3), ' km/h')
     
     
     # Read User ID, please see config.dat.
@@ -219,10 +204,6 @@ with in_file.open(mode='rb') as f:
     
     stop_time = symbian_to_unix_time(stop_time)
     #print('Stop Z : ', format_datetime(stop_time) + "Z")
-    
-    # This will overwrite the realtime shown above.
-    real_time = stop_time - start_time # Realtime in seconds.
-    #print('Realtime Z: ', format_timedelta(real_time))
     
     
     # Read SCSU encoded user comment of variable length.
@@ -352,18 +333,21 @@ with in_file.open(mode='rb') as f:
         
         
     # Add a summary of the track.  This part may be informative.
-    total_time = t_time
-    total_distance = dist
+    if total_time == 0:
+        total_time = t_time
+    if total_distance == 0:
+        total_distance = dist
     net_speed = total_distance / (total_time / 3600) # km/h
-    stop_time = unix_time
-    real_time = stop_time - start_time
+    if stop_localtime == symbian_to_unix_time(0):
+        stop_localtime = unix_time + TZ_hours * 3600
+    real_time = stop_localtime - start_localtime
     gross_speed = total_distance / (real_time / 3600) # km/h
     gpx.tracks[0].description = "[" \
         + "Total time: " + format_timedelta(total_time) + '; '\
         + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
         + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
-        + "Start time Z: " + format_datetime(start_time) + '; '\
-        + "Stop time Z: " + format_datetime(stop_time) + '; '\
+        + "Start time: " + format_datetime(start_localtime) + '; '\
+        + "Stop time: " + format_datetime(stop_localtime) + '; '\
         + "Real time: " + format_timedelta(real_time) + '; '\
         + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
         + "]"
