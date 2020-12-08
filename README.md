@@ -30,7 +30,7 @@ The track log readers of oldNST and the new NST, respectively, were tested for v
 There are files as followings in the directory named **drive_name:\SportsTracker\\** (old version) or **drive_name:\SportsTracker2\\** (new version).
 `drive_name` (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
 
-- `config.dat`: contains a lot of personal data, including `id` -- `name` lookup tables of user and activity, etc. 
+- `config.dat`: contains a lot of personal data, including `id -- name` lookup tables of user and activity, etc. 
 - `W*.dat`: track log files of binary format.  The file formats of the new and old versions are slightly different each other. 
 - `R*.dat`: route files of binary format in the old version.
 - `Rec*.tmp`: temporal track log files we see on application crash.  See `Dev_Rec_files` branch for details.
