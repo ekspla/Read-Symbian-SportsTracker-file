@@ -214,32 +214,39 @@ with in_file.open(mode='rb') as f:
     
 
 
-    f.seek(0x250, 0) # Not quite sure if this is a good starting point to read the track.
     t_time = 0 # Totaltime in seconds.
-    last_t_time = 0
     unix_time = start_time # unixtime.
-    last_unix_time = start_time
     utc_time = ''
     dist = 0 #  Total distance in km.
-    last_dist = 0
     v = 0 # Velocity in km/h.
     track_count = 0
     
-    start = 0 # A pointer for the data, see below.
-    start_address = f.tell()
+    # For removing noise.
+    last_t_time = 0
+    last_unix_time = start_time
+    last_dist = 0
+    
+    start_address = 0x250 # Not quite sure if this is a good starting point to read.
+    f.seek(start_address, 0)
     data = f.read()
+    start = 0 # A pointer for the data, see below.
     
     while start + 36 <= len(data):
-        if (data[start:start + 4] == b'\x02\x00\x00\x00') & (data[start + 4:start + 6] != b'\x00\x00'):
+        # Trackpoint and pause data, respectively, are preceded by b'\x02\x00\x00\x00' 
+        # and b'\x01\x00\x00\x00'. The trackpoint data is always starting with 0x07 header, 
+        # which means data with symbian_time. Read the trackpoint data exclusively 
+        # because we don't have to use pause data to see the symbian_time.
+        if data[start:start + 4] == b'\x02\x00\x00\x00':
             (header, header1) \
-                = struct.unpack('2B', data[start + 4: start + 6]) # Read the first byte of 2-byte header.
-            #print(hex(header), hex(header1), hex(start_address + start))
+                = struct.unpack('2B', data[start + 4:start + 6]) # Read the 2-byte header.
+            start += 6
+            #print(header, header1)
             
             if (header == 0x07) & (header1 == 0x83 or header1 == 0x82): # Typically, 0x0783 or 0x0782.
-                start += 6
                 # Read 30 bytes of data(4+4+4+4+2+4+8)
                 (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
-                    = struct.unpack('<4IHIq', data[start: start + 30])
+                    = struct.unpack('<4IHIq', data[start:start + 30])
+                start += 30
                 
                 t_time /= 100 # Totaltime in seconds
                 
@@ -263,30 +270,28 @@ with in_file.open(mode='rb') as f:
                 # For removing noise.
                 if not (last_unix_time <= unix_time < last_unix_time + 1 * 3600): # Up to 1 hr.  Don't take a big lunch.
                     unix_time = last_unix_time + (t_time - last_t_time)
-                    print('Strange timestamp.  At:', hex(start_address + start - 6))
+                    print('Strange timestamp.  At:', hex(start_address + start - 36))
                 if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
                     t_time = last_t_time + (unix_time - last_unix_time)
-                    print('Strange totaltime.  At:', hex(start_address + start - 6))
+                    print('Strange totaltime.  At:', hex(start_address + start - 36))
                 if track_count != 0:
                     if not (last_y_degree -0.001 < y_degree < last_y_degree + 0.001): # Threshold of 0.001 deg.
                         y_degree = last_y_degree
-                        print('Strange y.  At:', hex(start_address + start - 6))
+                        print('Strange y.  At:', hex(start_address + start - 36))
                     if not (last_x_degree -0.001 < x_degree < last_x_degree + 0.001):
                         x_degree = last_x_degree
-                        print('Strange x.  At:', hex(start_address + start - 6))
+                        print('Strange x.  At:', hex(start_address + start - 36))
                 if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
                     dist = last_dist
                     
                 utc_time = format_datetime(unix_time) + "Z"
                 print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
                 
-                start += 29
                 
             # Other headers which I don't know.
             else:
             
-                print('At address:', hex(start_address + start))
-                start += 1
+                print('At address:', hex(start_address + start - 6))
                 continue
                 #break
                 
@@ -327,9 +332,10 @@ with in_file.open(mode='rb') as f:
             last_dist = dist
             
             track_count += 1
-                
-        
-        start += 1
+            
+            
+        else:
+            start += 1 # Seek forward.
         
         
         
