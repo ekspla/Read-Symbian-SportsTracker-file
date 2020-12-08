@@ -290,8 +290,8 @@ with in_file.open(mode='rb') as f:
                 
             # Other headers which I don't know.
             else:
-            
-                print('At address:', hex(start_address + start - 6))
+                if not (header == 0x00 and header1 == 0x00):
+                    print('At address:', hex(start_address + start - 6))
                 continue
                 #break
                 
