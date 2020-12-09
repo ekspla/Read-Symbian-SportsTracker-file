@@ -228,25 +228,29 @@ with in_file.open(mode='rb') as f:
     
     start_address = 0x250 # Not quite sure if this is a good starting point to read.
     f.seek(start_address, 0)
-    data = f.read()
-    start = 0 # A pointer for the data, see below.
     
-    while start + 36 <= len(data):
+    while True: # We don't know how many trackpoints exist in the temporal file.
         # Trackpoint and pause data, respectively, are preceded by b'\x02\x00\x00\x00' 
         # and b'\x01\x00\x00\x00'. The trackpoint data is always starting with 0x07 header, 
         # which means data with symbian_time. Read the trackpoint data exclusively 
         # because we don't have to use pause data to see the symbian_time.
-        if data[start:start + 4] == b'\x02\x00\x00\x00':
+        preceding_code = f.read(4)
+        if not preceding_code: # Check end of file.
+            break
+        elif preceding_code == b'\x02\x00\x00\x00':
+            headers = f.read(2) # Read the 2-byte header.
+            if not headers: # Check end of file.
+                break
             (header, header1) \
-                = struct.unpack('2B', data[start + 4:start + 6]) # Read the 2-byte header.
-            start += 6
+                = struct.unpack('2B', headers) # Read the 2-byte header.
             #print(header, header1)
-            
             if (header == 0x07) & (header1 == 0x83 or header1 == 0x82): # Typically, 0x0783 or 0x0782.
                 # Read 30 bytes of data(4+4+4+4+2+4+8)
+                track_data = f.read(30)
+                if not track_data: # Check end of file.
+                    break
                 (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
-                    = struct.unpack('<4IHIq', data[start:start + 30])
-                start += 30
+                    = struct.unpack('<4IHIq', track_data)
                 
                 t_time /= 100 # Totaltime in seconds
                 
@@ -270,17 +274,17 @@ with in_file.open(mode='rb') as f:
                 # For removing noise.
                 if not (last_unix_time <= unix_time < last_unix_time + 1 * 3600): # Up to 1 hr.  Don't take a big lunch.
                     unix_time = last_unix_time + (t_time - last_t_time)
-                    print('Strange timestamp.  At:', hex(start_address + start - 36))
+                    print('Strange timestamp.  At:', hex(f.tell() - 36))
                 if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
                     t_time = last_t_time + (unix_time - last_unix_time)
-                    print('Strange totaltime.  At:', hex(start_address + start - 36))
+                    print('Strange totaltime.  At:', hex(f.tell() - 36))
                 if track_count != 0:
                     if not (last_y_degree -0.001 < y_degree < last_y_degree + 0.001): # Threshold of 0.001 deg.
                         y_degree = last_y_degree
-                        print('Strange y.  At:', hex(start_address + start - 36))
+                        print('Strange y.  At:', hex(f.tell() - 36))
                     if not (last_x_degree -0.001 < x_degree < last_x_degree + 0.001):
                         x_degree = last_x_degree
-                        print('Strange x.  At:', hex(start_address + start - 36))
+                        print('Strange x.  At:', hex(f.tell() - 36))
                 if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
                     dist = last_dist
                     
@@ -291,7 +295,7 @@ with in_file.open(mode='rb') as f:
             # Other headers which I don't know.
             else:
                 if not (header == 0x00 and header1 == 0x00):
-                    print('At address:', hex(start_address + start - 6))
+                    print('At address:', hex(f.tell() - 6))
                 continue
                 #break
                 
@@ -335,35 +339,35 @@ with in_file.open(mode='rb') as f:
             
             
         else:
-            start += 1 # Seek forward.
+            f.seek(-3, 1) # Seek forward (4 - 3 = +1 byte).
         
         
         
-    # Add a summary of the track.  This part may be informative.
-    if total_time == 0:
-        total_time = t_time
-    if total_distance == 0:
-        total_distance = dist
-    net_speed = total_distance / (total_time / 3600) # km/h
-    if stop_localtime == symbian_to_unix_time(0):
-        stop_localtime = unix_time + TZ_hours * 3600
-    real_time = stop_localtime - start_localtime
-    gross_speed = total_distance / (real_time / 3600) # km/h
-    gpx.tracks[0].description = "[" \
-        + "Total time: " + format_timedelta(total_time) + '; '\
-        + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
-        + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
-        + "Start time: " + format_datetime(start_localtime) + '; '\
-        + "Stop time: " + format_datetime(stop_localtime) + '; '\
-        + "Real time: " + format_timedelta(real_time) + '; '\
-        + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
-        + "]"
+# Add a summary of the track.  This part may be informative.
+if total_time == 0:
+    total_time = t_time
+if total_distance == 0:
+    total_distance = dist
+net_speed = total_distance / (total_time / 3600) # km/h
+if stop_localtime == symbian_to_unix_time(0):
+    stop_localtime = unix_time + TZ_hours * 3600
+real_time = stop_localtime - start_localtime
+gross_speed = total_distance / (real_time / 3600) # km/h
+gpx.tracks[0].description = "[" \
+    + "Total time: " + format_timedelta(total_time) + '; '\
+    + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
+    + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
+    + "Start time: " + format_datetime(start_localtime) + '; '\
+    + "Stop time: " + format_datetime(stop_localtime) + '; '\
+    + "Real time: " + format_timedelta(real_time) + '; '\
+    + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
+    + "]"
     
-    # Finally, print or write the gpx. 
-    #print(gpx.to_xml('1.1'))
-    
-    result = gpx.to_xml('1.1')
-    result_file = open(gpx_file, 'w')
-    result_file.write(result)
-    result_file.close()
+# Finally, print or write the gpx. 
+#print(gpx.to_xml('1.1'))
+
+result = gpx.to_xml('1.1')
+result_file = open(gpx_file, 'w')
+result_file.write(result)
+result_file.close()
     
