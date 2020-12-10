@@ -105,6 +105,17 @@ gpx.schema_locations = [
 
 with in_file.open(mode='rb') as f:
     
+    # Check if this is a route file.
+    # E835490E ; Application ID.
+    # 03000000 ; (c.f. 0x01 = config, 0x02 = Track, 0x03 = Route, 0x04 = tmp)
+    #f.seek(0x00000, 0)
+    (app_id, file_type) \
+        = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
+    if not (app_id == 0x0e4935e8 and file_type == 0x3):
+        print('Unexpected file type:', file_type)
+        quit()
+        
+        
     # Preliminary version check.
     # Read version number.  2 bytes.
     f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
