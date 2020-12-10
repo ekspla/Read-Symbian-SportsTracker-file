@@ -7,6 +7,8 @@ E835490E ; Application ID.
 
 04000000 ; 0x04 (c.f. 0x01 = config, 0x02 = Track, 0x03 = Route)
 
+
+; Chunks of data in this teporal file always start from here.
 00000000 ; This part (4 bytes) is not included in the track log files of W*.dat.
 
 224E ; <version> = 20002, new version ST.
@@ -21,11 +23,11 @@ E835490E ; Application ID.
 
 3045950C ; Track id = 211109168, at 0x00018( = 0x00014 + 0x4).
 
-00000000 ; Total time (NA)
+00000000 ; Total time = 0, because this is before the first chunk.
 
 00000000 
 
-00000000 ; Total distance (NA)
+00000000 ; Total distance = 0, because this is before the first chunk.
 
 41D8FDE9 5A8AE100 ; Start time in localtime
 00000000 00000000 ; Stop time (NA)
@@ -98,15 +100,15 @@ E835490E FFFF FFFF0200
 1C 6F72646F727562 ; 0x1c = 28 / 4 =  7 characters, unknown_string3 = 'ordorub', user name?
 
 
-01000000 ; number of pause data = 1 (start point)
+01000000 ; number of pause data = 1 (start)
 
-00000000 ; number of track points = 0.  Because this is the first chunk, there is no previous chunk.
+00000000 ; number of track points = 0, because this is before the first chunk.
 
 00000000 
 00000000 00000000 00000000
 00
 
-01000000 ; This means autopause data (at 0x0025b).
+01000000 ; This label means autopause data (at 0x0025b).
 ;  t_time  flag symbian_time
 01 00000000 01 415CF40B 558AE100 ; Start flag = 1, 2011-09-11T03:27:17.314625Z
 01000000
@@ -121,7 +123,7 @@ E835490E FFFF FFFF0200
 ; We don't have to read data starting 0x01000000 (pause data) because all
 ; of the track points are starting with 0x07 header (with symbian time).
 ;
-02000000 ; This means track data.
+02000000 ; This label means track data.
 ;    t_time   y        x        z        v    dL       Time in UTC
 0783 57000000 33B74003 842BF404 70030000 4C00 00000000 77536B0D 558AE100 ; the first trackpoint, 2011-09-11T03:27:41.888375Z
 02000000
