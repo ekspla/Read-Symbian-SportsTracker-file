@@ -7,7 +7,7 @@ with GPS receiver, never tested with heart-rate sensor, though...
 
  There is still a few unknown part in the track logs.  So, your feedback is welcomed.
 
- For track log files created by the old Nokia Sports Tracker, use `convert_oldNST_to_GPX.py`. 
+ For track log files created by **the old Nokia Sports Tracker**, use `convert_oldNST_to_GPX.py`. 
 This is because the file format of the old version Sports Tracker is a bit different from those 
 of the new version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  For details, please see 
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
@@ -31,8 +31,8 @@ There are files as followings in the directory named **drive_name:\SportsTracker
 `drive_name` (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
 
 - `config.dat`: contains a lot of **personal data**, including `id -- name` lookup tables of user and activity, etc. 
-- `W*.dat`: **track log** files of binary format.  The file formats of the new and old versions are slightly different each other. 
-- `R*.dat`: **route** files of binary format in the **old version**.
+- `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other. 
+- `R*.dat`: **route** files of the **old version** in binary format.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` for details.
 
 ## Limitation
@@ -40,7 +40,7 @@ There are files as followings in the directory named **drive_name:\SportsTracker
 
 ## TODO
 - A few unknown fields in the track points.
-- Support for heart rate in track log files of the new version.
+- Support for heart rate in track log files of the new version (example files needed). 
 
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
