@@ -110,9 +110,21 @@ gpx.schema_locations = [
 
 with in_file.open(mode='rb') as f:
     
+    # Check if this is a temproal track log file.
+    # E835490E ; Application ID.
+    # 04000000 ; (c.f. 0x01 = config, 0x02 = Track, 0x03 = Route, 0x04 = tmp)
+    # Chunks of data in the temporal file always start with b'\x00\x00\x00\x00' blank.
+    #f.seek(0x00000, 0)
+    (app_id, file_type, blank) \
+        = struct.unpack('<3I', f.read(12)) # little endian U32+U32+U32, returns tuple
+    if not (app_id == 0x0e4935e8 and file_type == 0x4 and blank == 0x0):
+        print('Unexpected file type:', file_type)
+        quit()
+        
+        
     # Preliminary version check.
     # Read version number.  2 bytes.
-    f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, is this address fixed?
+    #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, is this address fixed?
     (version, ) \
         = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
     print('Version: ', version)
@@ -230,21 +242,22 @@ with in_file.open(mode='rb') as f:
     f.seek(start_address, 0)
     
     while True: # We don't know how many trackpoints exist in the temporal file.
-        # Trackpoint and pause data, respectively, are preceded by b'\x02\x00\x00\x00' 
+    
+        # Trackpoint and pause data, respectively, are labeled by b'\x02\x00\x00\x00' 
         # and b'\x01\x00\x00\x00'. The trackpoint data is always starting with 0x07 header, 
         # which means data with symbian_time. Read the trackpoint data exclusively 
         # because we don't have to use pause data to see the symbian_time.
-        preceding_code = f.read(4)
-        if not preceding_code: # Check end of file.
+        preceding_label = f.read(4)
+        if not preceding_label: # Check end of file.
             break
-        elif preceding_code == b'\x02\x00\x00\x00':
+        elif preceding_label == b'\x02\x00\x00\x00':
             headers = f.read(2) # Read the 2-byte header.
             if not headers: # Check end of file.
                 break
             (header, header1) \
-                = struct.unpack('2B', headers) # Read the 2-byte header.
+                = struct.unpack('2B', headers)
             #print(header, header1)
-            if (header == 0x07) & (header1 == 0x83 or header1 == 0x82): # Typically, 0x0783 or 0x0782.
+            if (header == 0x07) & (header1 == 0x83 or header1 == 0x82): # Typically, 0783 or 0782.
                 # Read 30 bytes of data(4+4+4+4+2+4+8)
                 track_data = f.read(30)
                 if not track_data: # Check end of file.
