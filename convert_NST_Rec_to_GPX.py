@@ -111,9 +111,11 @@ gpx.schema_locations = [
 with in_file.open(mode='rb') as f:
     
     # Check if this is a temproal track log file.
-    # E835490E ; Application ID.
-    # 04000000 ; (c.f. 0x01 = config, 0x02 = Track, 0x03 = Route, 0x04 = tmp)
+    # 0x0E4935E8 ; Application ID.
+    # 0x00000004 ; File type (c.f. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
+    #
     # Chunks of data in the temporal file always start with b'\x00\x00\x00\x00' blank.
+    # Because of this blank, there is a 4-byte offset to the addresses shown below.
     #f.seek(0x00000, 0)
     (app_id, file_type, blank) \
         = struct.unpack('<3I', f.read(12)) # little endian U32+U32+U32, returns tuple
@@ -124,7 +126,7 @@ with in_file.open(mode='rb') as f:
         
     # Preliminary version check.
     # Read version number.  2 bytes.
-    #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, is this address fixed?
+    #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, this address fixed.
     (version, ) \
         = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
     print('Version: ', version)
@@ -138,7 +140,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Read Track ID and Totaltime, 4+4 bytes.
-    f.seek(0x00014 + 0x4, 0) # go to 0x00014 + 0x4, is this address fixed?
+    f.seek(0x00014 + 0x4, 0) # go to 0x00014 + 0x4, this address fixed.
     (track_id, total_time) \
         = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
     print('Track ID: ', track_id)
@@ -196,14 +198,14 @@ with in_file.open(mode='rb') as f:
     # '24/12/2019 12:34'.  The strings are, in principle, not fully compatible with utf-8 but 
     # can be non-ASCII characters encoded with SCSU (simple compression scheme for unicode).
     #
-    track_name = scsu_reader(f, 0x0004a + 0x4) # Is this address fixed?
+    track_name = scsu_reader(f, 0x0004a + 0x4) # This address fixed.
     print('Track name: ', track_name)
     gpx.name = "[" + track_name + "]"
     gpx.tracks[0].name = gpx.name
     
     
     # Read Starttime & Stoptime in UTC, 8+8 bytes.
-    f.seek(0x00192 + 0x4, 0) # go to 0x00192 + 0x4, is this address fixed?
+    f.seek(0x00192 + 0x4, 0) # go to 0x00192 + 0x4, this address fixed.
     (start_time, stop_time) \
         = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
@@ -219,7 +221,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read SCSU encoded user comment of variable length.
-    comment = scsu_reader(f, 0x00222 + 0x4) # Is this address fixed?
+    comment = scsu_reader(f, 0x00222 + 0x4) # This address fixed.
     if comment:
         print('Comment:', comment)
         gpx.tracks[0].comment = comment

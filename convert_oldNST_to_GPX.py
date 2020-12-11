@@ -110,8 +110,8 @@ gpx.schema_locations = [
 with in_file.open(mode='rb') as f:
     
     # Check if this is a track log file.
-    # E835490E ; Application ID.
-    # 02000000 ; (c.f. 0x01 = config, 0x02 = Track, 0x03 = Route, 0x04 = tmp)
+    # 0x0E4935E8 ; Application ID.
+    # 0x00000002 ; File type (c.f. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
     #f.seek(0x00000, 0)
     (app_id, file_type) \
         = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
