@@ -39,7 +39,7 @@ There are files as followings in the directory named **drive_name:\SportsTracker
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
 
 ## TODO
-- A few unknown fields in the track points.
+- A few unknown field in the track points.
 - Support for heart rate in track log files of the new version (example files needed). 
 
 ## Reference
