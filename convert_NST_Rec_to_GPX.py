@@ -243,7 +243,7 @@ with in_file.open(mode='rb') as f:
     
     while True: # We don't know how many trackpoints exist in the temporal file.
     
-        # Trackpoint and pause data, respectively, are labeled by b'\x02\x00\x00\x00' 
+        # Trackpoints and pause data, respectively, are labeled by b'\x02\x00\x00\x00' 
         # and b'\x01\x00\x00\x00'. The trackpoint data is always starting with 0x07 header, 
         # which means data with symbian_time. Read the trackpoint data exclusively 
         # because we don't have to use pause data to see the symbian_time.
