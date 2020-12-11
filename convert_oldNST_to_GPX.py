@@ -170,7 +170,7 @@ with in_file.open(mode='rb') as f:
     #print('Stop : ', format_datetime(stop_localtime) + "+09:00")
     
     
-    # Calculate Realtime, which is different from Totaltime if autopause is used.
+    # Calculate Realtime, which is different from Totaltime if pause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
     #print('Realtime: ', format_timedelta(real_time))
     
@@ -246,7 +246,7 @@ with in_file.open(mode='rb') as f:
     #print('Realtime Z: ', format_timedelta(real_time))
     
     
-    # Read number of autopause data, 4 bytes.
+    # Read number of pause data, 4 bytes.
     f.seek(0x003ff, 0) # go to address 0x003ff, this address is fixed.
     (num_pause, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
@@ -254,7 +254,7 @@ with in_file.open(mode='rb') as f:
     pause_address = f.tell()
     
     # Read number of track points, 4 bytes.
-    f.seek(num_pause * 14, 1) # Autopause data are 14 bytes each.  Skip autopause data part.
+    f.seek(num_pause * 14, 1) # Pause data are 14 bytes each.  Skip pause data part.
     (num_trackpt, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of track pts: ', num_trackpt)
@@ -303,7 +303,7 @@ with in_file.open(mode='rb') as f:
         elif flag == 5:
             # A pair of flag-4 (also flag-3) and flag-5 data should have a common totaltime.
             if t4_time != t_time:
-                print('Error in autopause.')
+                print('Error in pause.')
                 quit()
                 
             pause_time = unix_time - suspend_time
@@ -334,7 +334,7 @@ with in_file.open(mode='rb') as f:
     track_count = 0
 
     # We have to calculate the timestamps in all of the trackpoints because of no Symbiantimes 
-    # given in the trackpoint part of old version.  This is very different from the new version.
+    # given in the trackpoint part of the old version.  This is very different from the new version.
     unix_time = start_time
     last_t_time = 0
     
@@ -441,7 +441,7 @@ with in_file.open(mode='rb') as f:
             t4_time, pause_time, resume_time = pause_list[0]
             #print(format_timedelta(t4_time), format_timedelta(pause_time))
             
-            # Just after the autopause, use the autopause data.
+            # Just after the pause, use the pause data.
             # Still not quite sure if this works.
             if (t_time + 0.5 >= t4_time):
             

@@ -120,7 +120,7 @@ E835490E FFFF FFFF0200
 01000000
 01 57000000 05 5F576B0D 558AE100 ; Resume flag = 5
 
-; We don't have to read data starting 0x01000000 (pause data) because all
+; We don't have to read data starting 01000000 (pause data) because all
 ; of the track points are starting with 0x07 header (with symbian time).
 ;
 02000000 ; This label means track data.

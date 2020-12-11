@@ -118,7 +118,7 @@ with in_file.open(mode='rb') as f:
         
     # Preliminary version check.
     # Read version number.  2 bytes.
-    f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
+    #f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
     (version, ) \
         = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
     #print('Version: ', version)
@@ -166,6 +166,7 @@ with in_file.open(mode='rb') as f:
     #print('Number of route pts: ', num_trackpt)
     
     
+    # There are no pause data in route files.   
     # Go to the first trackpoint.
     
     t_time = 0 # Reset totaltime in seconds.
@@ -174,7 +175,7 @@ with in_file.open(mode='rb') as f:
     track_count = 0
 
     # We have to calculate the timestamps in all of the trackpoints because of no Symbiantimes 
-    # given in the trackpoint part of old version.  This is very different from the new version.
+    # given in the trackpoint part of the old version.  This is very different from the new version.
     # We will use mtime as starttime, because the start/stop times stored in the route files are 
     # always 0, which means January 1st 0 AD 00:00:00.
     unix_time = in_file.stat().st_mtime
