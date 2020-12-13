@@ -128,7 +128,7 @@ with in_file.open(mode='rb') as f:
     # Read version number.  2 bytes.
     #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, this address fixed.
     (version, ) \
-        = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
+        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     print('Version: ', version)
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
