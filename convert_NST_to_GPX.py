@@ -144,10 +144,10 @@ with in_file.open(mode='rb') as f:
     #     the old route 0x0100 = 0x00ff + 0x1
     # but can be changed in a very rare case.
     # 
-    (pause_address, ) \
+    (start_address, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
-    pause_address -= 1
-    #print('Main part address: ', hex(pause_address))
+    start_address -= 1
+    #print('Main part address: ', hex(start_address))
     
     
     # Read Track ID and Totaltime, 4+4 bytes.
@@ -271,11 +271,11 @@ with in_file.open(mode='rb') as f:
     
     # Read number of pause data, 4 bytes.
     #f.seek(0x007ff, 0)
-    f.seek(pause_address, 0) # go to the start address of the main part, which is usually 0x007ff.
+    f.seek(start_address, 0) # go to the start address of the main part, which is usually 0x007ff.
     (num_pause, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of pause data: ', num_pause)
-    pause_address = f.tell() # pause_address += 4
+    pause_address = f.tell() # start_address + 4
     
     # Read number of track points, 4 bytes.
     f.seek(num_pause * 14, 1) # Pause data are 14 bytes each.  Skip pause data part.
