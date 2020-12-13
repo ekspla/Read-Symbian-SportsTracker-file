@@ -11,11 +11,11 @@ E835490E ; Application ID.
 ; Chunks of data in this teporal file always start from here.
 00000000 ; This part (4 bytes) is not included in the track log files of W*.dat.
 
-224E ; <version> = 20002, new version ST.
+224E0000 ; <version> = 20002, new version ST.
 
-0000 00 08 ; (c.f. For the new track 0x08, the old track 0x04, the old route 0x01)
+00080000 ; (c.f. For the new track 0x0800 = 0x07ff + 0x1, the old track 0x0400 = 0x03ff + 0x1 and the old route 0x0100 = 0x00ff + 0x1)
+; This is usually indicating the start address of the main part (pause and trackpoint data), which is not the case in the temporal files. 
 
-0000
 
 0020 ; 0x2000 Male = <features> = 8192
 

@@ -120,7 +120,7 @@ with in_file.open(mode='rb') as f:
     # Read version number.  2 bytes.
     #f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
     (version, ) \
-        = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
+        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Version: ', version)
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
@@ -131,6 +131,20 @@ with in_file.open(mode='rb') as f:
         quit()
         
         
+    # Read start address of the main part (pause and trackpoint data)
+    #f.seek(0x0000C, 0) # go to 0x0000C, this address is fixed.
+    # Usually the numbers are for 
+    #     the new track 0x0800 = 0x07ff + 0x1, 
+    #     the old track 0x0400 = 0x03ff + 0x1 and 
+    #     the old route 0x0100 = 0x00ff + 0x1
+    # but can be changed in a very rare case.
+    # 
+    (pause_address, ) \
+        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    pause_address -= 1
+    #print('Main part address: ', hex(pause_address))
+    
+    
     # Read Route ID, 4 bytes.
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
     (route_id, ) \
@@ -160,7 +174,8 @@ with in_file.open(mode='rb') as f:
     
     
     # Read number of track points, 4 bytes.
-    f.seek(0x000ff, 0) # This address is fixed.
+    #f.seek(0x000ff, 0)
+    f.seek(pause_address, 0) # go to the start address of the main part, which is usually 0x000ff.
     (num_trackpt, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     #print('Number of route pts: ', num_trackpt)
