@@ -68,7 +68,7 @@ argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
     print("""Usage: # python %s input_filename' % argvs[0]\n
- This script reads track log files (*.dat) of old-version Nokia SportsTracker.""")
+ This script reads track log files (W*.dat) of old-version Nokia SportsTracker.""")
     quit()
 #print(argc)
 #print(argvs[1])
