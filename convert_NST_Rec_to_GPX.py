@@ -126,7 +126,7 @@ with in_file.open(mode='rb') as f:
         
     # Preliminary version check.
     # Read version number.  2 bytes.
-    #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, this address fixed.
+    #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, this address is fixed.
     (version, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
     print('Version: ', version)
@@ -140,7 +140,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Read Track ID and Totaltime, 4+4 bytes.
-    f.seek(0x00014 + 0x4, 0) # go to 0x00014 + 0x4, this address fixed.
+    f.seek(0x00014 + 0x4, 0) # go to 0x00014 + 0x4, this address is fixed.
     (track_id, total_time) \
         = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
     print('Track ID: ', track_id)
@@ -198,14 +198,14 @@ with in_file.open(mode='rb') as f:
     # '24/12/2019 12:34'.  The strings are, in principle, not fully compatible with utf-8 but 
     # can be non-ASCII characters encoded with SCSU (simple compression scheme for unicode).
     #
-    track_name = scsu_reader(f, 0x0004a + 0x4) # This address fixed.
+    track_name = scsu_reader(f, 0x0004a + 0x4) # This address is fixed.
     print('Track name: ', track_name)
     gpx.name = "[" + track_name + "]"
     gpx.tracks[0].name = gpx.name
     
     
     # Read Starttime & Stoptime in UTC, 8+8 bytes.
-    f.seek(0x00192 + 0x4, 0) # go to 0x00192 + 0x4, this address fixed.
+    f.seek(0x00192 + 0x4, 0) # go to 0x00192 + 0x4, this address is fixed.
     (start_time, stop_time) \
         = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
     start_time = symbian_to_unix_time(start_time)
@@ -221,7 +221,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read SCSU encoded user comment of variable length.
-    comment = scsu_reader(f, 0x00222 + 0x4) # This address fixed.
+    comment = scsu_reader(f, 0x00222 + 0x4) # This address is fixed.
     if comment:
         print('Comment:', comment)
         gpx.tracks[0].comment = comment
