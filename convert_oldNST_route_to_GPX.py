@@ -153,8 +153,8 @@ with in_file.open(mode='rb') as f:
     
     
     # Read SCSU encoded name of the route.  Its length is variable.
-    #
-    route_name = scsu_reader(f, 0x00018) # This address is fixed.
+    #f.seek(0x00018, 0) # go to 0x00018, this address is fixed.
+    route_name = scsu_reader(f, f.tell())
     #print('Route name: ', route_name)
     gpx.name = "[" + route_name + "]"
     gpx.routes[0].name = gpx.name
