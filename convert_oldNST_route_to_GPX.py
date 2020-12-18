@@ -126,7 +126,7 @@ with in_file.open(mode='rb') as f:
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
     # Track log files of Symbian SportsTracker:       20000 <= version
-    if (version < 10000)|( 20000 <= version): # These versions are for tracks.
+    if (version < 10000)|(20000 <= version): # These versions are for tracks.
         print('Unexpected version number:', version)
         quit()
         

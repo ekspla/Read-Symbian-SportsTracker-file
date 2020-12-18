@@ -220,10 +220,7 @@ with in_file.open(mode='rb') as f:
     activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
                   'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
-    if activity >= len(activities):
-        description = str(activity)
-    else:
-        description = activities[activity]
+    description = activities[activity] if activity < len(activities) else str(activity)
     #print('Activity: ', description)
     gpx.description = "[" + description + "]"
     

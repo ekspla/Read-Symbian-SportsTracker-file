@@ -184,10 +184,7 @@ with in_file.open(mode='rb') as f:
     activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
                   'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
-    if activity >= len(activities):
-        description = str(activity)
-    else:
-        description = activities[activity]
+    description = activities[activity] if activity < len(activities) else str(activity)
     print('Activity: ', description)
     gpx.description = "[" + description + "]"
     
@@ -259,7 +256,7 @@ with in_file.open(mode='rb') as f:
             (header, header1) \
                 = struct.unpack('2B', headers)
             #print(header, header1)
-            if (header == 0x07) & (header1 == 0x83 or header1 == 0x82): # Typically, 0783 or 0782.
+            if header == 0x07 and header1 in {0x83, 0x82}: # Typically, 0783 or 0782.
                 # Read 30 bytes of data(4+4+4+4+2+4+8)
                 track_data = f.read(30)
                 if not track_data: # Check end of file.
@@ -294,10 +291,10 @@ with in_file.open(mode='rb') as f:
                     t_time = last_t_time + (unix_time - last_unix_time)
                     print('Strange totaltime.  At:', hex(f.tell() - 36))
                 if track_count != 0:
-                    if not (last_y_degree -0.001 < y_degree < last_y_degree + 0.001): # Threshold of 0.001 deg.
+                    if abs(last_y_degree - y_degree) >= 0.001: # Threshold of 0.001 deg.
                         y_degree = last_y_degree
                         print('Strange y.  At:', hex(f.tell() - 36))
-                    if not (last_x_degree -0.001 < x_degree < last_x_degree + 0.001):
+                    if abs(last_x_degree - x_degree) >= 0.001:
                         x_degree = last_x_degree
                         print('Strange x.  At:', hex(f.tell() - 36))
                 if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
