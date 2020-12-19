@@ -120,7 +120,7 @@ with in_file.open(mode='rb') as f:
         quit()
         
         
-    # Preliminary version check.  Read version number.  4 bytes.
+    # Preliminary version check.  Read version number, 4 bytes.
     #f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
     (version, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
@@ -257,7 +257,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Read number of pause data, 4 bytes.
-    #f.seek(0x003ff, 0)
+    #start_address = 0x003ff
     f.seek(start_address, 0) # go to the start address of the main part, which is usually 0x003ff.
     (num_pause, ) \
         = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
