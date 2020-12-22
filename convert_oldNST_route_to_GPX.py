@@ -38,7 +38,7 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
-def scsu_reader(file_object, address):
+def scsu_reader(file_object, address = None):
     """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
     
     Args: 
@@ -49,7 +49,8 @@ def scsu_reader(file_object, address):
     Returns:
         decoded_strings: a bytearray of decoded UTF-8.
     """
-    file_object.seek(address, 0)
+    if address:
+        file_object.seek(address, 0)
     (size, ) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
@@ -153,7 +154,7 @@ with in_file.open(mode='rb') as f:
     
     # Read SCSU encoded name of the route.  Its length is variable.
     #f.seek(0x00018, 0) # go to 0x00018, this address is fixed.
-    route_name = scsu_reader(f, f.tell())
+    route_name = scsu_reader(f)
     #print('Route name: ', route_name)
     gpx.name = "[" + route_name + "]"
     gpx.routes[0].name = gpx.name
