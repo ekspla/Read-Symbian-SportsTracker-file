@@ -359,7 +359,7 @@ with in_file.open(mode='rb') as f:
         if header in {0x00, 0x02, 0x03}:
             # Read 22 bytes of data(4+4+4+4+2+4)
             (t_time, y_ax, x_ax, z_ax, v, d_dist) \
-                = struct.unpack('<4IHI', f.read(22))
+                = struct.unpack('<I3iHI', f.read(22))
             t_time /= 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.

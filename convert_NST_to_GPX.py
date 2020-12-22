@@ -363,7 +363,7 @@ with in_file.open(mode='rb') as f:
         if header == 0x07: # Typically, 0783 or 0782.
             # Read 30 bytes of data(4+4+4+4+2+4+8)
             (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
-                = struct.unpack('<4IHIq', f.read(30))
+                = struct.unpack('<I3iHIq', f.read(30))
             t_time /= 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.

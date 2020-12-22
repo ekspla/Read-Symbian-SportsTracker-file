@@ -262,7 +262,7 @@ with in_file.open(mode='rb') as f:
                 if not track_data: # Check end of file.
                     break
                 (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
-                    = struct.unpack('<4IHIq', track_data)
+                    = struct.unpack('<I3iHIq', track_data)
                 
                 t_time /= 100 # Totaltime in seconds
                 
