@@ -357,7 +357,7 @@ with in_file.open(mode='rb') as f:
             (t_time, y_ax, x_ax, z_ax, v, d_dist) = read_unpack('<I3iHI', f)
             t_time /= 100 # Totaltime in seconds
             
-            # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
+            # The latitudes and longitudes are stored in I32s as popular DDDmm mmmmm format.
             y_degree = y_ax // 1e6
             x_degree = x_ax // 1e6
             y_mm_mmmm = y_ax % 1e6

@@ -260,7 +260,7 @@ with in_file.open(mode='rb') as f:
                 
             t_time += dt_time / 100 # Totaltime in seconds.
             
-            y_degree += dy_ax / 1e4 / 60 # Latitudes and longtitudes are given as differences.
+            y_degree += dy_ax / 1e4 / 60 # Latitudes and longitudes are given as differences.
             x_degree += dx_ax / 1e4 / 60
             
             z_ax += dz_ax / 10 # Altitudes in meters are also given as differences.
