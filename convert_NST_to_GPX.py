@@ -38,6 +38,11 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
+# Helper function to read and unpack
+def read_unpack(fmt, file_object):
+    size = struct.calcsize(fmt)
+    return struct.unpack(fmt, file_object.read(size))
+
 def scsu_reader(file_object, address = None):
     """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
     
@@ -51,7 +56,7 @@ def scsu_reader(file_object, address = None):
     """
     if address:
         file_object.seek(address, 0)
-    (size, ) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
+    (size, ) = read_unpack('B', file_object) # Read the size * 4 in bytes.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
     size = int(size / 4) # Divide by 4 to obtain the length of characters.
@@ -115,17 +120,16 @@ with in_file.open(mode='rb') as f:
     # 0x0E4935E8 ; Application ID.
     # 0x00000002 ; File type (c.f. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
     #f.seek(0x00000, 0)
-    (app_id, file_type) \
-        = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
+    # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
+    (app_id, file_type) = read_unpack('<2I', f)
     if not (app_id == 0x0e4935e8 and file_type == 0x2):
         print('Unexpected file type:', file_type)
         quit()
         
         
-    # Preliminary version check.  Read version number, 4 bytes.
+    # Preliminary version check.
     #f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
-    (version, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Version: ', version)
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
@@ -136,7 +140,7 @@ with in_file.open(mode='rb') as f:
         quit()
         
         
-    # Read start address of the main part (pause and trackpoint data)
+    # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
     #     the new track 0x0800 = 0x07ff + 0x1, 
@@ -144,26 +148,24 @@ with in_file.open(mode='rb') as f:
     #     the old route 0x0100 = 0x00ff + 0x1
     # but can be changed in a very rare case.
     # 
-    (start_address, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (start_address, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     start_address -= 1
     #print('Main part address: ', hex(start_address))
     
     
-    # Read Track ID and Totaltime, 4+4 bytes.
+    # Track ID and Totaltime.
     f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
-    (track_id, total_time) \
-        = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
+    # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
+    (track_id, total_time) = read_unpack('<2I', f)
     #print('Track ID: ', track_id)
     
     total_time /= 100 # Totaltime in seconds.
     #print('Total time: ', format_timedelta(total_time))
     
     
-    # Read Total Distance, 4 bytes.
+    # Total Distance.
     f.seek(0x00004, 1) # Skip 4 bytes.
-    (total_distance, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km
     #print('Total distance: ', round(total_distance, 3), ' km')
     
@@ -173,9 +175,9 @@ with in_file.open(mode='rb') as f:
     #print('Net speed: ', round(net_speed, 3), ' km/h')
     
     
-    # Read Starttime and Stoptime in localtime, 8+8 bytes.
-    (start_localtime, stop_localtime) \
-        = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
+    # Starttime and Stoptime in localtime.
+    # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
+    (start_localtime, stop_localtime) = read_unpack('<2q', f)
     start_localtime = symbian_to_unix_time(start_localtime)
     # Print start time in localtime.  Change the suffix according to your timezone, 
     # because there is no timezone information in Symbian.
@@ -208,17 +210,15 @@ with in_file.open(mode='rb') as f:
         + "]"
     
     
-    # Read User ID, please see config.dat.
-    (user_id, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    # User ID, please see config.dat.
+    (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('User id: ', user_id)
     gpx.author_name = str(user_id)
     
     
-    # Read type of activity.  For details, please see config.dat.
+    # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
-    (activity, ) \
-        = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
+    (activity, ) = read_unpack('<H', f) # Read 2 bytes, little endian U16, returns tuple.
     activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
                   'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
@@ -239,10 +239,10 @@ with in_file.open(mode='rb') as f:
     gpx.tracks[0].name = gpx.name
     
     
-    # Read Starttime & Stoptime in UTC, 8+8 bytes.
+    # Starttime & Stoptime in UTC.
     f.seek(0x00192, 0) # go to 0x00192, this address is fixed.
-    (start_time, stop_time) \
-        = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
+    # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
+    (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
     #print('Start Z: ', format_datetime(start_time) + "Z")
     
@@ -266,18 +266,16 @@ with in_file.open(mode='rb') as f:
         gpx.tracks[0].comment = comment
     
     
-    # Read number of pause data, 4 bytes.
+    # Number of pause data.
     #start_address = 0x007ff
     f.seek(start_address, 0) # go to the start address of the main part, which is usually 0x007ff.
-    (num_pause, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (num_pause, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Number of pause data: ', num_pause)
     pause_address = f.tell() # start_address + 4
     
-    # Read number of track points, 4 bytes.
+    # Number of track points.
     f.seek(num_pause * 14, 1) # Pause data are 14 bytes each.  Skip pause data part.
-    (num_trackpt, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Number of track pts: ', num_trackpt)
     track_address = f.tell()
     
@@ -297,8 +295,7 @@ with in_file.open(mode='rb') as f:
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the new version are in UTC,
         # while those of the old version in localtime.
         # The first unknown field seems to have no meaning because it is always 0x01.
-        (unknown, t_time, flag, symbian_time) \
-            = struct.unpack('<BIBq', f.read(14))
+        (unknown, t_time, flag, symbian_time) = read_unpack('<BIBq', f)
         
         t_time /= 100 # Totaltime in seconds
         unix_time = symbian_to_unix_time(symbian_time)
@@ -356,14 +353,12 @@ with in_file.open(mode='rb') as f:
     
     while track_count < num_trackpt:
     
-        (header, header1) \
-            = struct.unpack('2B', f.read(2)) # Read the first byte of 2-byte header.
+        (header, header1) = read_unpack('2B', f) # Read the first byte of 2-byte header.
         #print(header, header1)
         
         if header == 0x07: # Typically, 0783 or 0782.
             # Read 30 bytes of data(4+4+4+4+2+4+8)
-            (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
-                = struct.unpack('<I3iHIq', f.read(30))
+            (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) = read_unpack('<I3iHIq', f)
             t_time /= 100 # Totaltime in seconds
             
             # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
@@ -386,33 +381,23 @@ with in_file.open(mode='rb') as f:
             
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
         
-            if header == 0x87: # Typically, 8783 or 8782.
+            if header in {0x87, 0x97}: # Typically 8783, 8782, 9783, 9782.
             
-                # Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
+                fmt = '<B3hbH2B' if header == 0x87 else '<B4hH2B' # 0x97
+                # 0x87: Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
+                # 0x97: Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown1 & 2 might be related to heart rate sensor.
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
-                    = struct.unpack('<B3hbH2B', f.read(12))
+                    = read_unpack(fmt, f)
                 
-            elif header == 0x97: # Typically, 9783 or 9782.
+            elif header in {0xC7, 0xD7}: # Typically C783, C782, D783, D782  This case is quite rare.
             
-                # Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
-                # Unknown1 & 2 might be related to heart rate sensor.
-                (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
-                    = struct.unpack('<B4hH2B', f.read(13))
-                
-            elif header == 0xC7: # Typically, C783 or C782.  This case is quite rare.
-            
-                # Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.
+                fmt = '<B5hbH2B' if header == 0xC7 else '<B6hH2B' # 0xD7
+                # 0xC7: Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.
+                # 0xD7: Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
-                    = struct.unpack('<B5hbH2B', f.read(16))
-                
-            elif header == 0xD7: # Typically, D783 or D782.  This case is quite rare.
-            
-                # Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv.
-                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
-                (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2) \
-                    = struct.unpack('<B6hH2B', f.read(17))
+                    = read_unpack(fmt, f)
                 
             t_time += dt_time / 100 # Totaltime in seconds.
             

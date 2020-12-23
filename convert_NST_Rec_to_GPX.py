@@ -38,6 +38,11 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
+# Helper function to read and unpack
+def read_unpack(fmt, file_object):
+    size = struct.calcsize(fmt)
+    return struct.unpack(fmt, file_object.read(size))
+
 def scsu_reader(file_object, address = None):
     """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
     
@@ -51,7 +56,7 @@ def scsu_reader(file_object, address = None):
     """
     if address:
         file_object.seek(address, 0)
-    (size, ) = struct.unpack('B', file_object.read(1)) # Read the size * 4 in bytes.
+    (size, ) = read_unpack('B', file_object) # Read the size * 4 in bytes.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
     size = int(size / 4) # Divide by 4 to obtain the length of characters.
@@ -118,17 +123,16 @@ with in_file.open(mode='rb') as f:
     # Chunks of data in the temporal file always start with b'\x00\x00\x00\x00' blank.
     # Because of this blank, there is a 4-byte offset to the addresses shown below.
     #f.seek(0x00000, 0)
-    (app_id, file_type, blank) \
-        = struct.unpack('<3I', f.read(12)) # little endian U32+U32+U32, returns tuple
+    # Read 12 (4+4+4) bytes, little endian U32+U32+U32, returns tuple.
+    (app_id, file_type, blank) = read_unpack('<3I', f)
     if not (app_id == 0x0e4935e8 and file_type == 0x4 and blank == 0x0):
         print('Unexpected file type:', file_type)
         quit()
         
         
-    # Preliminary version check.  Read version number, 4 bytes.
+    # Preliminary version check.
     #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, this address is fixed.
-    (version, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     print('Version: ', version)
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
@@ -139,27 +143,26 @@ with in_file.open(mode='rb') as f:
         quit()
         
         
-    # Read Track ID and Totaltime, 4+4 bytes.
+    # Track ID and Totaltime.
     f.seek(0x00014 + 0x4, 0) # go to 0x00014 + 0x4, this address is fixed.
-    (track_id, total_time) \
-        = struct.unpack('<2I', f.read(8)) # little endian U32+U32, returns tuple
+    # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
+    (track_id, total_time) = read_unpack('<2I', f)
     print('Track ID: ', track_id)
     
     total_time /= 100 # Totaltime in seconds.
     print('Total time: ', format_timedelta(total_time))
     
     
-    # Read Total Distance, 4 bytes.
+    # Total Distance.
     f.seek(0x00004, 1) # Skip 4 bytes.
-    (total_distance, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km
     print('Total distance: ', round(total_distance, 3), ' km')
     
     
-    # Read Starttime and Stoptime in localtime, 8+8 bytes.
-    (start_localtime, stop_localtime) \
-        = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
+    # Starttime and Stoptime in localtime.
+    # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
+    (start_localtime, stop_localtime) = read_unpack('<2q', f)
     start_localtime = symbian_to_unix_time(start_localtime)
     # Print start time in localtime.  Change the suffix according to your timezone, 
     # because there is no timezone information in Symbian.
@@ -170,17 +173,15 @@ with in_file.open(mode='rb') as f:
     #print('Stop : ', format_datetime(stop_localtime) + "+07:00")
     
     
-    # Read User ID, please see config.dat.
-    (user_id, ) \
-        = struct.unpack('<I', f.read(4)) # little endian U32, returns tuple
+    # User ID, please see config.dat.
+    (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     print('User id: ', user_id)
     gpx.author_name = str(user_id)
     
     
-    # Read type of activity.  For details, please see config.dat.
+    # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
-    (activity, ) \
-        = struct.unpack('<H', f.read(2)) # little endian U16, returns tuple
+    (activity, ) = read_unpack('<H', f) # Read 2 bytes, little endian U16, returns tuple.
     activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
                   'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
@@ -201,10 +202,10 @@ with in_file.open(mode='rb') as f:
     gpx.tracks[0].name = gpx.name
     
     
-    # Read Starttime & Stoptime in UTC, 8+8 bytes.
+    # Starttime & Stoptime in UTC.
     f.seek(0x00192 + 0x4, 0) # go to 0x00192 + 0x4, this address is fixed.
-    (start_time, stop_time) \
-        = struct.unpack('<2q', f.read(16)) # little endian I64+I64, returns tuple
+    # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
+    (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
     #print('Start Z: ', format_datetime(start_time) + "Z")
     
@@ -247,19 +248,18 @@ with in_file.open(mode='rb') as f:
         # which means data with symbian_time. Read the trackpoint data exclusively 
         # because we don't have to use pause data to see the symbian_time.
         preceding_label = f.read(4)
-        if not preceding_label: # Check end of file.
+        if len(preceding_label) < 4: # Check end of file.
             break
         elif preceding_label == b'\x02\x00\x00\x00':
             headers = f.read(2) # Read the 2-byte header.
-            if not headers: # Check end of file.
+            if len(headers) < 2: # Check end of file.
                 break
-            (header, header1) \
-                = struct.unpack('2B', headers)
+            (header, header1) = struct.unpack('2B', headers)
             #print(header, header1)
             if header == 0x07 and header1 in {0x83, 0x82}: # Typically, 0783 or 0782.
                 # Read 30 bytes of data(4+4+4+4+2+4+8)
                 track_data = f.read(30)
-                if not track_data: # Check end of file.
+                if len(track_data) < 30: # Check end of file.
                     break
                 (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
                     = struct.unpack('<I3iHIq', track_data)
@@ -291,12 +291,14 @@ with in_file.open(mode='rb') as f:
                     t_time = last_t_time + (unix_time - last_unix_time)
                     print('Strange totaltime.  At:', hex(f.tell() - 36))
                 if track_count != 0:
-                    if abs(last_y_degree - y_degree) >= 0.001: # Threshold of 0.001 deg.
-                        y_degree = last_y_degree
+                    if abs(gpx_point.latitude - y_degree) >= 0.001: # Threshold of 0.001 deg.
+                        y_degree = gpx_point.latitude
                         print('Strange y.  At:', hex(f.tell() - 36))
-                    if abs(last_x_degree - x_degree) >= 0.001:
-                        x_degree = last_x_degree
+                    if abs(gpx_point.longitude - x_degree) >= 0.001:
+                        x_degree = gpx_point.longitude
                         print('Strange x.  At:', hex(f.tell() - 36))
+                    if abs(gpx_point.elevation - z_ax) >= 500: # Threshold of 500 m.
+                        z_ax = gpx_point.elevation
                 if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
                     dist = last_dist
                     
@@ -343,8 +345,6 @@ with in_file.open(mode='rb') as f:
             # For removing noise.
             last_t_time = t_time
             last_unix_time = unix_time
-            last_y_degree = y_degree
-            last_x_degree = x_degree
             last_dist = dist
             
             track_count += 1
