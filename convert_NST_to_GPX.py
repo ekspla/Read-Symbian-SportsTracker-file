@@ -140,7 +140,7 @@ with in_file.open(mode='rb') as f:
         quit()
         
         
-    # Start address of the main part (pause and trackpoint data)
+    # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
     #     the new track 0x0800 = 0x07ff + 0x1, 
@@ -383,7 +383,7 @@ with in_file.open(mode='rb') as f:
         
             if header in {0x87, 0x97}: # Typically 8783, 8782, 9783, 9782.
             
-                fmt = '<B3hbH2B' if header == 0x87 else '<B4hH2B'
+                fmt = '<B3hbH2B' if header == 0x87 else '<B4hH2B' # 0x97
                 # 0x87: Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
                 # 0x97: Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown1 & 2 might be related to heart rate sensor.
@@ -392,7 +392,7 @@ with in_file.open(mode='rb') as f:
                 
             elif header in {0xC7, 0xD7}: # Typically C783, C782, D783, D782  This case is quite rare.
             
-                fmt = '<B5hbH2B' if header == 0xC7 else '<B6hH2B'
+                fmt = '<B5hbH2B' if header == 0xC7 else '<B6hH2B' # 0xD7
                 # 0xC7: Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.
                 # 0xD7: Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv.
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
