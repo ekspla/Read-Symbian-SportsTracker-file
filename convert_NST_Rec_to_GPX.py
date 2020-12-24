@@ -257,7 +257,7 @@ with in_file.open(mode='rb') as f:
             (header, header1) = struct.unpack('2B', headers)
             #print(header, header1)
             if header == 0x07 and header1 in {0x83, 0x82}: # Typically, 0783 or 0782.
-                # Read 30 bytes of data(4+4+4+4+2+4+8).
+                # Read 30 bytes of data(4+4+4+4+2+4+8).  Negative y and x mean South and West, respectively.
                 track_data = f.read(30)
                 if len(track_data) < 30: # Check end of file.
                     break
@@ -266,7 +266,7 @@ with in_file.open(mode='rb') as f:
                 
                 t_time /= 100 # Totaltime in seconds.
                 
-                # The latitudes and longitudes are stored in I32s as popular DDDmm mmmmm format.
+                # The latitudes and longitudes are stored in I32s as popular DDDmm mmmm format.
                 y_degree = y_ax // 1e6
                 x_degree = x_ax // 1e6
                 y_mm_mmmm = y_ax % 1e6

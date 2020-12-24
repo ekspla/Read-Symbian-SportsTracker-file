@@ -202,11 +202,11 @@ with in_file.open(mode='rb') as f:
         #print(header)
         
         if header in {0x00, 0x02, 0x03}:
-            # Read 22 bytes of data(4+4+4+4+2+4).
+            # Read 22 bytes of data(4+4+4+4+2+4).  Negative y and x mean South and West, respectively.
             (t_time, y_ax, x_ax, z_ax, v, d_dist) = read_unpack('<I3iHI', f)
             t_time /= 100 # Totaltime in seconds.
             
-            # The latitudes and longitudes are stored in I32s as popular DDDmm mmmmm format.
+            # The latitudes and longitudes are stored in I32s as popular DDDmm mmmm format.
             y_degree = y_ax // 1e6
             x_degree = x_ax // 1e6
             y_mm_mmmm = y_ax % 1e6
