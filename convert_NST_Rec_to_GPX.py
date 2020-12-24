@@ -49,7 +49,7 @@ def scsu_reader(file_object, address = None):
     Args: 
         file_object: file object to be read.
         address: start address of the SCSU encoded part.  The data is preceded by one byte integer (U8) 
-                 which indicates the length of the character multiplied by four.
+                 which indicates the length of the characters multiplied by four.
                  
     Returns:
         decoded_strings: a bytearray of decoded UTF-8.
@@ -99,8 +99,8 @@ gpx.tracks.append(gpx_track)
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
 gpx_track.segments.append(gpx_segment)
 
-# definition of extension
-# Add TrackPointExtension namespace and schema location
+# Definition of extension.
+# Add TrackPointExtension namespace and schema location.
 gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
@@ -131,7 +131,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Preliminary version check.
-    #f.seek(0x00008 + 0x4, 0) # go to 0x00008 + 0x4, this address is fixed.
+    #f.seek(0x00008 + 0x4, 0) # Go to 0x00008 + 0x4, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     print('Version: ', version)
     # 
@@ -144,7 +144,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Track ID and Totaltime.
-    f.seek(0x00014 + 0x4, 0) # go to 0x00014 + 0x4, this address is fixed.
+    f.seek(0x00014 + 0x4, 0) # Go to 0x00014 + 0x4, this address is fixed.
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (track_id, total_time) = read_unpack('<2I', f)
     print('Track ID: ', track_id)
@@ -154,7 +154,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Total Distance.
-    f.seek(0x00004, 1) # Skip 4 bytes.
+    f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there are a 4-byte offset to those of oldNST. 
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km
     print('Total distance: ', round(total_distance, 3), ' km')
@@ -203,7 +203,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Starttime & Stoptime in UTC.
-    f.seek(0x00192 + 0x4, 0) # go to 0x00192 + 0x4, this address is fixed.
+    f.seek(0x00192 + 0x4, 0) # Go to 0x00192 + 0x4, this address is fixed.
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)

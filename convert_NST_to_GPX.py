@@ -49,7 +49,7 @@ def scsu_reader(file_object, address = None):
     Args: 
         file_object: file object to be read.
         address: start address of the SCSU encoded part.  The data is preceded by one byte integer (U8) 
-                 which indicates the length of the character multiplied by four.
+                 which indicates the length of the characters multiplied by four.
                  
     Returns:
         decoded_strings: a bytearray of decoded UTF-8.
@@ -99,8 +99,8 @@ gpx.tracks.append(gpx_track)
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
 gpx_track.segments.append(gpx_segment)
 
-# definition of extension
-# Add TrackPointExtension namespace and schema location
+# Definition of extension.
+# Add TrackPointExtension namespace and schema location.
 gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
@@ -128,7 +128,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Preliminary version check.
-    #f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
+    #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Version: ', version)
     # 
@@ -141,7 +141,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Start address of the main part (pause and trackpoint data).
-    #f.seek(0x0000C, 0) # go to 0x0000C, this address is fixed.
+    #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
     #     the new track 0x0800 = 0x07ff + 0x1, 
     #     the old track 0x0400 = 0x03ff + 0x1 and 
@@ -154,7 +154,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Track ID and Totaltime.
-    f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
+    f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (track_id, total_time) = read_unpack('<2I', f)
     #print('Track ID: ', track_id)
@@ -164,7 +164,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Total Distance.
-    f.seek(0x00004, 1) # Skip 4 bytes.
+    f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there are a 4-byte offset to those of oldNST. 
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km
     #print('Total distance: ', round(total_distance, 3), ' km')
@@ -240,7 +240,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Starttime & Stoptime in UTC.
-    f.seek(0x00192, 0) # go to 0x00192, this address is fixed.
+    f.seek(0x00192, 0) # Go to 0x00192, this address is fixed.
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
@@ -268,7 +268,7 @@ with in_file.open(mode='rb') as f:
     
     # Number of pause data.
     #start_address = 0x007ff
-    f.seek(start_address, 0) # go to the start address of the main part, which is usually 0x007ff.
+    f.seek(start_address, 0) # Go to the start address of the main part, which is usually 0x007ff.
     (num_pause, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Number of pause data: ', num_pause)
     pause_address = f.tell() # start_address + 4
@@ -401,7 +401,7 @@ with in_file.open(mode='rb') as f:
                 
             t_time += dt_time / 100 # Totaltime in seconds.
             
-            y_degree += dy_ax / 1e4 / 60 # Latitudes and longtitudes are given as differences.
+            y_degree += dy_ax / 1e4 / 60 # Latitudes and longitudes are given as differences.
             x_degree += dx_ax / 1e4 / 60
             
             z_ax += dz_ax / 10 # Altitudes in meters are also given as differences.

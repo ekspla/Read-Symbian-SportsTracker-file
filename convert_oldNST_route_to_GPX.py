@@ -49,7 +49,7 @@ def scsu_reader(file_object, address = None):
     Args: 
         file_object: file object to be read.
         address: start address of the SCSU encoded part.  The data is preceded by one byte integer (U8) 
-                 which indicates the length of the character multiplied by four.
+                 which indicates the length of the characters multiplied by four.
                  
     Returns:
         decoded_strings: a bytearray of decoded UTF-8.
@@ -94,8 +94,8 @@ gpx = gpxpy.gpx.GPX()
 gpx_route = gpxpy.gpx.GPXRoute()
 gpx.routes.append(gpx_route)
 
-# definition of extension
-# Add TrackPointExtension namespace and schema location
+# Definition of extension.
+# Add TrackPointExtension namespace and schema location.
 gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
 gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
 
@@ -123,7 +123,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Preliminary version check.
-    #f.seek(0x00008, 0) # go to 0x00008, this address is fixed.
+    #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Version: ', version)
     # 
@@ -136,7 +136,7 @@ with in_file.open(mode='rb') as f:
         
         
     # Start address of the main part (pause and trackpoint data).
-    #f.seek(0x0000C, 0) # go to 0x0000C, this address is fixed.
+    #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
     #     the new track 0x0800 = 0x07ff + 0x1, 
     #     the old track 0x0400 = 0x03ff + 0x1 and 
@@ -149,13 +149,13 @@ with in_file.open(mode='rb') as f:
     
     
     # Route ID.
-    f.seek(0x00014, 0) # go to 0x00014, this address is fixed.
+    f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     (route_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Route ID: ', route_id)
     
     
     # Read SCSU encoded name of the route.  Its length is variable.
-    #f.seek(0x00018, 0) # go to 0x00018, this address is fixed.
+    #f.seek(0x00018, 0) # Go to 0x00018, this address is fixed.
     route_name = scsu_reader(f)
     #print('Route name: ', route_name)
     gpx.name = "[" + route_name + "]"
@@ -176,7 +176,7 @@ with in_file.open(mode='rb') as f:
     
     # Number of track points.
     #start_address = 0x000ff
-    f.seek(start_address, 0) # go to the start address of the main part, which is usually 0x000ff.
+    f.seek(start_address, 0) # Go to the start address of the main part, which is usually 0x000ff.
     (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print('Number of route pts: ', num_trackpt)
     
@@ -206,7 +206,7 @@ with in_file.open(mode='rb') as f:
             (t_time, y_ax, x_ax, z_ax, v, d_dist) = read_unpack('<I3iHI', f)
             t_time /= 100 # Totaltime in seconds
             
-            # The latitudes and longtitudes are stored in I32s as popular DDDmm mmmmm format.
+            # The latitudes and longitudes are stored in I32s as popular DDDmm mmmmm format.
             y_degree = y_ax // 1e6
             x_degree = x_ax // 1e6
             y_mm_mmmm = y_ax % 1e6
