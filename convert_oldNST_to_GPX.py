@@ -288,7 +288,7 @@ with in_file.open(mode='rb') as f:
         # The first unknown field seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) = read_unpack('<BIBq', f)
         
-        t_time /= 100 # Totaltime in seconds
+        t_time /= 100 # Totaltime in seconds.
         unix_time = symbian_to_unix_time(symbian_time)
         #utc_time = format_datetime(unix_time) #+ "Z"
         #print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', utc_time, sep = '')
@@ -318,7 +318,7 @@ with in_file.open(mode='rb') as f:
             pause_time = unix_time - suspend_time
             pause_list.append((t_time, pause_time, unix_time))
             
-        # Resume flag = 8 # Not quite sure how to use the flag = 8 data.  Use it as a correction of time. 
+        # Resume flag = 8 # Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
         elif flag == 8:
             pause_time = 0
             pause_list.append((t_time, pause_time, unix_time))
@@ -353,9 +353,9 @@ with in_file.open(mode='rb') as f:
         #print(header)
         
         if header in {0x00, 0x02, 0x03}:
-            # Read 22 bytes of data(4+4+4+4+2+4)
+            # Read 22 bytes of data(4+4+4+4+2+4).
             (t_time, y_ax, x_ax, z_ax, v, d_dist) = read_unpack('<I3iHI', f)
-            t_time /= 100 # Totaltime in seconds
+            t_time /= 100 # Totaltime in seconds.
             
             # The latitudes and longitudes are stored in I32s as popular DDDmm mmmmm format.
             y_degree = y_ax // 1e6
@@ -385,27 +385,23 @@ with in_file.open(mode='rb') as f:
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
             
                 if header in {0x80, 0x82, 0x83}:
-                    fmt = '<B3hbH'
+                    fmt = '<B3hbH' # 0x80-83: Read 10 bytes of data(1+2+2+2+1+2).  1-byte dv.
                 elif header in {0x92, 0x93}:
-                    fmt = '<B4hH'
+                    fmt = '<B4hH' # 0x92-93: Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
                 else: # 0x9A, 0x9B
-                    fmt = '<B4hI'
-                # 0x80-83: Read 10 bytes of data(1+2+2+2+1+2).  1-byte dv.
-                # 0x92-93: Read 11 bytes of data(1+2+2+2+2+2).  2-byte dv.
-                # 0x9A-9B: Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
+                    fmt = '<B4hI' # 0x9A-9B: Read 13 bytes of data(1+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
+                
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist) = read_unpack(fmt, f)
                 
             elif header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: # This case is quite rare.
             
                 if header in {0xC2, 0xC3}:
-                    fmt = '<B5hbH'
+                    fmt = '<B5hbH' # 0xC2-C3: Read 14 bytes of data(1+2+2+2+2+2+1+2).  1-byte dv.
                 elif header in {0xD2, 0xD3}:
-                    fmt = '<B6hH'
+                    fmt = '<B6hH' # 0xD2-D3: Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv.
                 else: # 0xDA, 0xDB
-                    fmt = '<B6hI'
-                # 0xC2-C3: Read 14 bytes of data(1+2+2+2+2+2+1+2).  1-byte dv.
-                # 0xD2-D3: Read 15 bytes of data(1+2+2+2+2+2+2+2).  2-byte dv.
-                # 0xDA-DB: Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
+                    fmt = '<B6hI' # 0xDA-DB: Read 17 bytes of data(1+2+2+2+2+2+2+4).  2-byte dv. 4-byte d_dist.
+                
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.
                 (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist) = read_unpack(fmt, f)
                 

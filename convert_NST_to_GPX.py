@@ -297,7 +297,7 @@ with in_file.open(mode='rb') as f:
         # The first unknown field seems to have no meaning because it is always 0x01.
         (unknown, t_time, flag, symbian_time) = read_unpack('<BIBq', f)
         
-        t_time /= 100 # Totaltime in seconds
+        t_time /= 100 # Totaltime in seconds.
         unix_time = symbian_to_unix_time(symbian_time)
         #utc_time = format_datetime(unix_time) + "Z"
         #print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', utc_time, sep = '')
@@ -327,7 +327,7 @@ with in_file.open(mode='rb') as f:
             pause_time = unix_time - suspend_time
             pause_list.append((t_time, pause_time, unix_time))
             
-        # Resume flag = 8 # Not quite sure how to use the flag = 8 data.  Use it as a correction of time. 
+        # Resume flag = 8 # Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
         elif flag == 8:
             pause_time = 0
             pause_list.append((t_time, pause_time, unix_time))
@@ -357,9 +357,9 @@ with in_file.open(mode='rb') as f:
         #print(header, header1)
         
         if header == 0x07: # Typically, 0783 or 0782.
-            # Read 30 bytes of data(4+4+4+4+2+4+8)
+            # Read 30 bytes of data(4+4+4+4+2+4+8).
             (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) = read_unpack('<I3iHIq', f)
-            t_time /= 100 # Totaltime in seconds
+            t_time /= 100 # Totaltime in seconds.
             
             # The latitudes and longitudes are stored in I32s as popular DDDmm mmmmm format.
             y_degree = y_ax // 1e6
