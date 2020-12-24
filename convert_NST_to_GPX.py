@@ -38,7 +38,7 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
-# Helper function to read and unpack
+# Helper function to read and unpack.
 def read_unpack(fmt, file_object):
     size = struct.calcsize(fmt)
     return struct.unpack(fmt, file_object.read(size))
@@ -69,7 +69,7 @@ def scsu_reader(file_object, address = None):
     return decoded_strings
 
 
-# Arguments and help
+# Arguments and help.
 argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
@@ -118,7 +118,7 @@ with in_file.open(mode='rb') as f:
     
     # Check if this is a track log file.
     # 0x0E4935E8 ; Application ID.
-    # 0x00000002 ; File type (c.f. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
+    # 0x00000002 ; File type (cf. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
     #f.seek(0x00000, 0)
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (app_id, file_type) = read_unpack('<2I', f)
@@ -134,7 +134,7 @@ with in_file.open(mode='rb') as f:
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
-    # Track log files of Symbian SportsTracker:       20000 <= version
+    # Track log files of Symbian SportsTracker:       20000 <= version.
     if version < 20000:
         print('Version number less than expected:', version)
         quit()
@@ -166,7 +166,7 @@ with in_file.open(mode='rb') as f:
     # Total Distance.
     f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there are a 4-byte offset to those of oldNST. 
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    total_distance /= 1e5 # Total distance in km
+    total_distance /= 1e5 # Total distance in km.
     #print('Total distance: ', round(total_distance, 3), ' km')
     
     
@@ -312,12 +312,12 @@ with in_file.open(mode='rb') as f:
             stoptime = unix_time
             stop_t_time = t_time
             
-        # Suspend flag = 3 (manually) or 4 (automatically)
+        # Suspend flag = 3 (manually) or 4 (automatically).
         elif (flag == 3)|(flag == 4):
             suspend_time = unix_time
             t4_time = t_time
             
-        # Resume flag = 5
+        # Resume flag = 5.
         elif flag == 5:
             # A pair of flag-4 (also flag-3) and flag-5 data should have a common totaltime.
             if t4_time != t_time:
@@ -327,7 +327,7 @@ with in_file.open(mode='rb') as f:
             pause_time = unix_time - suspend_time
             pause_list.append((t_time, pause_time, unix_time))
             
-        # Resume flag = 8 # Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
+        # Resume flag = 8.  Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
         elif flag == 8:
             pause_time = 0
             pause_list.append((t_time, pause_time, unix_time))
@@ -390,7 +390,7 @@ with in_file.open(mode='rb') as f:
                 (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2) \
                     = read_unpack(fmt, f)
                 
-            elif header in {0xC7, 0xD7}: # Typically C783, C782, D783, D782  This case is quite rare.
+            elif header in {0xC7, 0xD7}: # Typically C783, C782, D783, D782.  This case is quite rare.
             
                 fmt = '<B5hbH2B' if header == 0xC7 else '<B6hH2B' # 0xD7
                 # 0xC7: Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.

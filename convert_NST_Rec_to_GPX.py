@@ -38,7 +38,7 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
 
-# Helper function to read and unpack
+# Helper function to read and unpack.
 def read_unpack(fmt, file_object):
     size = struct.calcsize(fmt)
     return struct.unpack(fmt, file_object.read(size))
@@ -69,7 +69,7 @@ def scsu_reader(file_object, address = None):
     return decoded_strings
 
 
-# Arguments and help
+# Arguments and help.
 argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
@@ -116,9 +116,9 @@ gpx.schema_locations = [
 
 with in_file.open(mode='rb') as f:
     
-    # Check if this is a temproal track log file.
+    # Check if this is a temporal track log file.
     # 0x0E4935E8 ; Application ID.
-    # 0x00000004 ; File type (c.f. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
+    # 0x00000004 ; File type (cf. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
     #
     # Chunks of data in the temporal file always start with b'\x00\x00\x00\x00' blank.
     # Because of this blank, there is a 4-byte offset to the addresses shown below.
@@ -137,7 +137,7 @@ with in_file.open(mode='rb') as f:
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
-    # Track log files of Symbian SportsTracker:       20000 <= version
+    # Track log files of Symbian SportsTracker:       20000 <= version.
     if version < 20000:
         print('Version number less than expected:', version)
         quit()
@@ -156,7 +156,7 @@ with in_file.open(mode='rb') as f:
     # Total Distance.
     f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there are a 4-byte offset to those of oldNST. 
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    total_distance /= 1e5 # Total distance in km
+    total_distance /= 1e5 # Total distance in km.
     print('Total distance: ', round(total_distance, 3), ' km')
     
     
