@@ -164,7 +164,7 @@ with in_file.open(mode='rb') as f:
     
     
     # Total Distance.
-    f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there are a 4-byte offset to those of oldNST. 
+    f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there is a 4-byte offset to oldNST. 
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km.
     #print('Total distance: ', round(total_distance, 3), ' km')
