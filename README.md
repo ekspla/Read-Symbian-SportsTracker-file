@@ -1,6 +1,7 @@
 # Read-Symbian-SportsTracker-file -- How to read binary dat files.
  This python script, `convert_NST_to_GPX.py`, describes how you can read **symbian (Nokia) Sports Tracker log files (.dat)** stored 
-in your phone as **binary format**.  You can use this code, as it is, to **convert from dat to gpx** by using [gpxpy](https://github.com/tkrajina/gpxpy).
+in your phone as **binary format**.  You can use this code, as it is, to **convert from dat to gpx** by using 
+[gpxpy](https://github.com/tkrajina/gpxpy).
 
  The code was tested with > 1000 of track log files copied from my Nokia phone equipped 
 with GPS receiver, never tested with heart-rate sensor, though...
@@ -24,16 +25,21 @@ The track log readers of oldNST and the new NST, respectively, were tested for v
 
  These codes are **not based on reverse engineering of the app** itself, but on careful analysis of the track log files.
  
- Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are decoded by using an external module, `scsu.py`.  This is a translated version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), `scsu.c`.
+ Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) 
+ are decoded by using an external module, `scsu.py`.  This is a ported version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), 
+ `scsu.c`.
 
 ## Files in the phone
-There are files as followings in the directory named **drive_name:\SportsTracker\\** (old version) or **drive_name:\SportsTracker2\\** (new version).
-`drive_name` (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
+There are files as followings in the directory named **drive_name:\SportsTracker\\** (old version) or **drive_name:\SportsTracker2\\** 
+(new version).  `drive_name` (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
 
 - `config.dat`: contains a lot of **personal data**, including `id -- name` lookup tables of user and activity, etc. 
 - `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other. 
-- `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks timestamps, is very similar to that of track log.  See `convert_oldNST_route_to_GPX.py` for details.
-- `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` (a hex dump file with comments) and `convert_NST_Rec_to_GPX.py` (the script) for details.  The converted file (Rec211109168.gpx) is also shown.
+- `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks timestamps, is very similar to that of 
+track log.  See `convert_oldNST_route_to_GPX.py` for details.
+- `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
+the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` 
+(a hex dump file with comments) and `convert_NST_Rec_to_GPX.py` (the script) for details.  The converted file (Rec211109168.gpx) is also shown.
 
 ## Limitation
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.

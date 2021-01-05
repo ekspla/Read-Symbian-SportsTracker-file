@@ -1,6 +1,6 @@
 #coding:utf-8
 
-# This is a translated version of the following code written in C.
+# This is a ported version of the following code written in C.
 #
 #/* http://czyborra.com/scsu/scsu.c
 # * 1998-08-04 written by Roman Czyborra@dds.nl
