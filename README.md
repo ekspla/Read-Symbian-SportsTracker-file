@@ -39,8 +39,9 @@ mentioned before.
 - `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks timestamps, is very similar to that of 
 track log.  See `convert_oldNST_route_to_GPX.py` for details.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
-the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see `Rec211109168_dump.txt` 
-(a hex dump file with comments) and `convert_NST_Rec_to_GPX.py` (the script) for details.  The converted file (Rec211109168.gpx) is also shown.
+the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see 
+`./references/Rec211109168_dump.txt` (a hex dump file with comments) and `convert_NST_Rec_to_GPX.py` (the script) for details.  The converted 
+file (./references/Rec211109168.gpx) is also shown.
 
 ## Limitation
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
