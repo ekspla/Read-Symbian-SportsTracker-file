@@ -19,7 +19,7 @@ The version number of the app used to create the file is stored as WORD at 0x000
 - Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
 - Track log files of Symbian SportsTracker:       20000 <= version.
 
-The track log readers of oldNST and the new NST, respectively, were tested for versions of 9991-9998 and 20001-20002.
+The track log readers of the oldNST and the new NST, respectively, were tested for versions of 9991-9998 and 20001-20002.
 
  The file formats of symbian are completely different from those of Android and iOS.
 
@@ -31,10 +31,11 @@ The track log readers of oldNST and the new NST, respectively, were tested for v
 
 ## Files in the phone
 There are files as followings in the directory named **_drive_name_:\SportsTracker\\** (old version) or **_drive_name_:\SportsTracker2\\** 
-(new version).  _drive_name_ (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
+(new version).  _Drive_name_ (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
 
 - `config.dat`: contains a lot of **personal data**, including _id--name_ lookup tables of user and activity, etc. 
-- `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other. 
+- `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other as
+mentioned before. 
 - `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks timestamps, is very similar to that of 
 track log.  See `convert_oldNST_route_to_GPX.py` for details.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
