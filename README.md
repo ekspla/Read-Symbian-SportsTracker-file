@@ -30,10 +30,10 @@ The track log readers of oldNST and the new NST, respectively, were tested for v
  `scsu.c`.
 
 ## Files in the phone
-There are files as followings in the directory named **drive_name:\SportsTracker\\** (old version) or **drive_name:\SportsTracker2\\** 
-(new version).  `drive_name` (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
+There are files as followings in the directory named **_drive_name_:\SportsTracker\\** (old version) or **_drive_name_:\SportsTracker2\\** 
+(new version).  _drive_name_ (C, D, E, etc.) depends on where you installed the app (phone memory, sd card, etc.).
 
-- `config.dat`: contains a lot of **personal data**, including `id -- name` lookup tables of user and activity, etc. 
+- `config.dat`: contains a lot of **personal data**, including _id--name_ lookup tables of user and activity, etc. 
 - `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other. 
 - `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks timestamps, is very similar to that of 
 track log.  See `convert_oldNST_route_to_GPX.py` for details.
