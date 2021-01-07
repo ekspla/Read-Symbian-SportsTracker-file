@@ -25,8 +25,8 @@ The track log readers of the oldNST and the new NST, respectively, were tested f
 
  These codes are **not based on reverse engineering of the app** itself, but on careful analysis of the track log files.
  
- Non ASCII (alpha numeric) strings contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) 
- are decoded by using an external module, `scsu.py`.  This is a ported version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), 
+ Non ASCII (alpha numeric) characters contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) 
+ are read by using an external module, `scsu.py`.  This is a ported version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), 
  `./references/scsu.c`.
 
 ## Files in the phone
@@ -40,8 +40,8 @@ mentioned before.
 track log.  See `convert_oldNST_route_to_GPX.py` for details.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
 the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see 
-`./references/Rec211109168_dump.txt` (a hex dump file with comments) and `convert_NST_Rec_to_GPX.py` (the script) for details.  The converted 
-file (`./references/Rec211109168.gpx`) is also shown.
+`./references/Rec211109168_dump.txt` (a hex dump file with comments), `convert_NST_Rec_to_GPX.py` (the script)  and 
+`./references/Rec211109168.gpx` (the converted gpx file) for details. 
 
 ## Limitation
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
