@@ -56,7 +56,11 @@ def scsu_reader(file_object, address = None):
     """
     if address:
         file_object.seek(address, 0)
-    (size, ) = read_unpack('B', file_object) # Read the size * 4 in bytes.
+    (size, ) = read_unpack('B', file_object) # U8.  Read the size * 4 in bytes.
+    if size & 0x1: # If LSB == 1, character length is longer than or equals to 64.
+        (size, ) = struct.unpack('<H', bytes([size]) + file_object.read(1)) # U16.  Read the size * 8 in bytes.
+        size = int(size / 2)
+    # Else if LSB == 0, character length is shorter than 64.
     start_of_scsu = file_object.tell()
     byte_array = file_object.read(size) # Returns bytes.
     size = int(size / 4) # Divide by 4 to obtain the length of characters.
