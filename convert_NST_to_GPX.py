@@ -77,9 +77,9 @@ def scsu_reader(file_object, address = None):
 argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
-    print("""Usage: # python %s input_filename' % argvs[0]\n
- This script reads track log files (W*.dat) of symbian SportsTracker.
-Log files with heart-rate sensor were not tested.""")
+    print(f"""Usage: # python {argvs[0]} input_filename\n
+        This script reads track log files (W*.dat) of symbian SportsTracker.
+        Log files with heart-rate sensor were not tested.""")
     quit()
 #print(argc)
 #print(argvs[1])
