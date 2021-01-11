@@ -122,20 +122,20 @@ with in_file.open(mode='rb') as f:
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (app_id, file_type) = read_unpack('<2I', f)
     if not (app_id == 0x0e4935e8 and file_type == 0x3):
-        print('Unexpected file type:', file_type)
+        print(f'Unexpected file type: {file_type}')
         quit()
         
         
     # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('Version: ', version)
+    #print(f'Version: {version}')
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
     # Track log files of Symbian SportsTracker:       20000 <= version.
     if (version < 10000)|(20000 <= version): # These versions are for tracks.
-        print('Unexpected version number:', version)
+        print(f'Unexpected version number: {version}')
         quit()
         
         
@@ -149,40 +149,41 @@ with in_file.open(mode='rb') as f:
     # 
     (start_address, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     start_address -= 1
-    #print('Main part address: ', hex(start_address))
+    #print(f'Main part address: {hex(start_address)}')
     
     
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     (route_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('Route ID: ', route_id)
+    #print(f'Route ID: {route_id}')
     
     
     # Read SCSU encoded name of the route.  Its length is variable.
     #f.seek(0x00018, 0) # Go to 0x00018, this address is fixed.
     route_name = scsu_reader(f)
-    #print('Route name: ', route_name)
-    gpx.name = "[" + route_name + "]"
+    #print(f'Route name: {route_name}')
+    gpx.name = f'[{route_name}]'
     gpx.routes[0].name = gpx.name
     
     
     # Total Distance.
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km.
-    #print('Total distance: ', round(total_distance, 3), ' km')
+    #print(f'Total distance: {round(total_distance, 3)} km')
     
     
     # Add a summary of the route.  This part may be informative.
-    gpx.routes[0].description = "[" \
-        + "Total distance: " + str(round(total_distance, 3)) + ' km'\
-        + "]"
+    gpx.routes[0].description = (
+        '['
+        f'Total distance: {round(total_distance, 3)} km'
+        ']')
     
     
     # Number of track points.
     #start_address = 0x000ff
     f.seek(start_address, 0) # Go to the start address of the main part, which is usually 0x000ff.
     (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('Number of route pts: ', num_trackpt)
+    #print(f'Number of route pts: {num_trackpt}')
     
     
     # There are no pause data in route files.   
@@ -225,7 +226,7 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
             unix_time += (t_time - last_t_time)
-            #utc_time = format_datetime(unix_time) + "Z"
+            #utc_time = f'{format_datetime(unix_time)}Z'
             #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
         elif header in {0x80, 0x82, 0x83, 
@@ -270,13 +271,13 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += dt_time / 100
-            #utc_time = format_datetime(unix_time) + "Z"
+            #utc_time = f'{format_datetime(unix_time)}Z'
             #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown3, unknown4)
             
         # Other headers which I don't know.
         else:
         
-            print('At address:', hex(f.tell() - 1))
+            print(f'At address: {hex(f.tell() - 1)}')
             break
             
             
@@ -284,7 +285,7 @@ with in_file.open(mode='rb') as f:
         
         
         # Print delimited text.
-        #utc_time = format_datetime(unix_time) + "Z"
+        #utc_time = f'{format_datetime(unix_time)}Z'
         #to_time = format_timedelta(t_time)
         #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', 
         #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', 
@@ -301,17 +302,15 @@ with in_file.open(mode='rb') as f:
         gpx_route.points.append(gpx_point)
         
         # This part may be informative.  Comment it out, if not necessary. 
-        gpx_point.description \
-            = 'Speed ' + str(round(v, 3)) + ' km/h ' + 'Distance ' + str(round(dist, 3)) + ' km'
+        gpx_point.description = f'Speed {round(v, 3)} km/h Distance {round(dist, 3)} km'
         
         # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
         speed = round(v / 3.6, 3) # velocity in m/s
         # Not quite sure if the <gpxtpx:TrackPointExtension> tags are okay in rtept.  Should it be gpxx?
         gpx_extension_speed = mod_etree.fromstring(
-            f"""<gpxtpx:TrackPointExtension \
-            xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">\
-            <gpxtpx:speed>{speed}</gpxtpx:speed>\
-            </gpxtpx:TrackPointExtension>""")
+            '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
+            f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
+            '</gpxtpx:TrackPointExtension>')
         gpx_point.extensions.append(gpx_extension_speed)
         
         
@@ -320,15 +319,16 @@ with in_file.open(mode='rb') as f:
         
     # Calculate Net speed in km/h.
     net_speed = total_distance / (t_time / 3600) # km/h
-    #print('Net speed: ', round(net_speed, 3), ' km/h')
-    gpx.routes[0].description = gpx.routes[0].description[:-1] + '; '\
-                                 + "Total time: " + format_timedelta(t_time) + '; '\
-                                 + "Net speed: " + str(round(net_speed, 3)) + ' km/h' + "]"
+    #print(f'Net speed: {round(net_speed, 3)} km/h')
+    gpx.routes[0].description = (
+        f'{gpx.routes[0].description[:-1]}' '; '
+        f'Total time: {format_timedelta(t_time)}' '; '
+        f'Net speed: {round(net_speed, 3)} km/h' ']')
     
     
     # Handling of errors.
     if track_count != num_trackpt:
-        print('Track point count error: ', track_count, num_trackpt)
+        print(f'Track point count error: {track_count}, {num_trackpt}')
         quit()
         
         

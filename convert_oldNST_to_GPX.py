@@ -126,20 +126,20 @@ with in_file.open(mode='rb') as f:
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (app_id, file_type) = read_unpack('<2I', f)
     if not (app_id == 0x0e4935e8 and file_type == 0x2):
-        print('Unexpected file type:', file_type)
+        print(f'Unexpected file type: {file_type}')
         quit()
         
         
     # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('Version: ', version)
+    #print(f'Version: {version}')
     # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
     # Track log files of Symbian SportsTracker:       20000 <= version.
     if version >= 10000:
-        print('Version number greater than expected:', version)
+        print(f'Version number greater than expected: {version}')
         quit()
         
         
@@ -153,28 +153,28 @@ with in_file.open(mode='rb') as f:
     # 
     (start_address, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     start_address -= 1
-    #print('Main part address: ', hex(start_address))
+    #print(f'Main part address: {hex(start_address)}')
     
     
     # Track ID and Totaltime.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (track_id, total_time) = read_unpack('<2I', f)
-    #print('Track ID: ', track_id)
+    #print(f'Track ID: {track_id}')
     
     total_time /= 100 # Totaltime in seconds.
-    #print('Total time: ', format_timedelta(total_time))
+    #print(f'Total time: {format_timedelta(total_time)}')
     
     
     # Total Distance.
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km.
-    #print('Total distance: ', round(total_distance, 3), ' km')
+    #print(f'Total distance: {round(total_distance, 3)} km')
     
     
     # Calculate Net speed in km/h.
     net_speed = total_distance / (total_time / 3600) # km/h
-    #print('Net speed: ', round(net_speed, 3), ' km/h')
+    #print(f'Net speed: {round(net_speed, 3)} km/h')
     
     
     # Starttime and Stoptime in localtime.
@@ -184,37 +184,37 @@ with in_file.open(mode='rb') as f:
     # Print start time in localtime.  Change the suffix according to your timezone, 
     # because there is no timezone information in Symbian.
     # Take difference of starttime in localtime and those in UTC (see below) to see the timezone+DST.
-    #print('Start: ', format_datetime(start_localtime) + "+09:00")
+    #print(f'Start: {format_datetime(start_localtime)}+09:00')
     
     stop_localtime = symbian_to_unix_time(stop_localtime)
-    #print('Stop : ', format_datetime(stop_localtime) + "+09:00")
+    #print(f'Stop : {format_datetime(stop_localtime)}+09:00')
     
     
     # Calculate Realtime, which is different from Totaltime if pause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
-    #print('Realtime: ', format_timedelta(real_time))
+    #print(f'Realtime: {format_timedelta(real_time)}')
     
     
     # Calculate Gross speed in km/h.
     gross_speed = total_distance / (real_time / 3600) # km/h
-    #print('Gross speed: ', round(gross_speed, 3), ' km/h')
+    #print(f'Gross speed: {round(gross_speed, 3)} km/h')
     
     
     # Add a summary of the track.  This part may be informative.
-    gpx.tracks[0].description = "[" \
-        + "Total time: " + format_timedelta(total_time) + '; '\
-        + "Total distance: " + str(round(total_distance, 3)) + ' km; '\
-        + "Net speed: " + str(round(net_speed, 3)) + ' km/h; '\
-        + "Start localtime: " + format_datetime(start_localtime) + '; '\
-        + "Stop localtime: " + format_datetime(stop_localtime) + '; '\
-        + "Real time: " + format_timedelta(real_time) + '; '\
-        + "Gross speed: " + str(round(gross_speed, 3)) + ' km/h'\
-        + "]"
+    gpx.tracks[0].description = (
+        '['
+        f'Total time: {format_timedelta(total_time)}' '; '
+        f'Total distance: {round(total_distance, 3)} km' '; '
+        f'Net speed: {round(net_speed, 3)} km/h' '; '
+        f'Start localtime: {format_datetime(start_localtime)}' '; '
+        f'Stop localtime: {format_datetime(stop_localtime)}' '; '
+        f'Real time: {format_timedelta(real_time)}' '; '
+        f'Gross speed: {round(gross_speed, 3)} km/h' ']')
     
     
     # User ID, please see config.dat.
     (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('User id: ', user_id)
+    #print(f'User id: {user_id}')
     gpx.author_name = str(user_id)
     
     
@@ -225,8 +225,8 @@ with in_file.open(mode='rb') as f:
                   'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
                   'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
     description = activities[activity] if activity < len(activities) else str(activity)
-    #print('Activity: ', description)
-    gpx.description = "[" + description + "]"
+    #print(f'Activity: {description}')
+    gpx.description = f'[{description}]'
     
     
     # Read SCSU encoded name of the track, which is usually the datetime.
@@ -236,8 +236,8 @@ with in_file.open(mode='rb') as f:
     # can be non-ASCII characters encoded with SCSU (simple compression scheme for unicode).
     #
     track_name = scsu_reader(f, 0x00046) # This address is fixed.
-    #print('Track name: ', track_name)
-    gpx.name = "[" + track_name + "]"
+    #print(f'Track name: {track_name}')
+    gpx.name = f'[{track_name}]'
     gpx.tracks[0].name = gpx.name
     
     
@@ -246,7 +246,7 @@ with in_file.open(mode='rb') as f:
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
-    #print('Start Z: ', format_datetime(start_time) + "Z")
+    #print(f'Start Z: {format_datetime(start_time)}Z')
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
@@ -254,24 +254,24 @@ with in_file.open(mode='rb') as f:
         start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours), ))
     
     stop_time = symbian_to_unix_time(stop_time)
-    #print('Stop Z : ', format_datetime(stop_time) + "Z")
+    #print(f'Stop Z : {format_datetime(stop_time)}Z')
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
-    #print('Realtime Z: ', format_timedelta(real_time))
+    #print(f'Realtime Z: {format_timedelta(real_time)}')
     
     
     # Number of pause data.
     #start_address = 0x003ff
     f.seek(start_address, 0) # Go to the start address of the main part, which is usually 0x003ff.
     (num_pause, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('Number of pause data: ', num_pause)
+    #print(f'Number of pause data: {num_pause}')
     pause_address = f.tell() # start_address + 4
     
     # Number of track points.
     f.seek(num_pause * 14, 1) # Pause data are 14 bytes each.  Skip pause data part.
     (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print('Number of track pts: ', num_trackpt)
+    #print(f'Number of track pts: {num_trackpt}')
     track_address = f.tell()
     
     
@@ -294,7 +294,7 @@ with in_file.open(mode='rb') as f:
         
         t_time /= 100 # Totaltime in seconds.
         unix_time = symbian_to_unix_time(symbian_time)
-        #utc_time = format_datetime(unix_time) #+ "Z"
+        #utc_time = f'{format_datetime(unix_time)}' # This is not UTC, but localtime.
         #print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', utc_time, sep = '')
         
         # Start flag = 1, we don't use these data.  Just store them for the future purposes.
@@ -334,7 +334,7 @@ with in_file.open(mode='rb') as f:
     #    t_time, pause_time, unix_time = pause
     #    print(format_timedelta(t_time), '\t', 
     #          format_timedelta(pause_time), '\t', 
-    #          format_datetime(unix_time) + "I", sep = '')
+    #          f'{format_datetime(unix_time)}I', sep = '')
     #quit()
     
     
@@ -376,7 +376,7 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
             unix_time += (t_time - last_t_time)
-            #utc_time = format_datetime(unix_time) + "Z"
+            #utc_time = f'{format_datetime(unix_time)}Z'
             #print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
             
         elif header in {0x80, 0x82, 0x83, 
@@ -421,13 +421,13 @@ with in_file.open(mode='rb') as f:
             dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += dt_time / 100
-            #utc_time = format_datetime(unix_time) + "Z"
+            #utc_time = f'{format_datetime(unix_time)}Z'
             #print(t_time, dy_ax, dx_ax, z_ax, v, dist, unknown3, unknown4)
             
         # Other headers which I don't know.
         else:
         
-            print('At address:', hex(f.tell() - 1))
+            print(f'At address: {hex(f.tell() - 1)}')
             break
             
             
@@ -452,7 +452,7 @@ with in_file.open(mode='rb') as f:
         
         
         # Print delimited text.
-        #utc_time = format_datetime(unix_time) + "Z"
+        #utc_time = f'{format_datetime(unix_time)}Z'
         #to_time = format_timedelta(t_time)
         #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', 
         #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', 
@@ -469,16 +469,14 @@ with in_file.open(mode='rb') as f:
         gpx_segment.points.append(gpx_point)
         
         # This part may be informative.  Comment it out, if not necessary. 
-        gpx_point.description \
-            = 'Speed ' + str(round(v, 3)) + ' km/h ' + 'Distance ' + str(round(dist, 3)) + ' km'
+        gpx_point.description = f'Speed {round(v, 3)} km/h Distance {round(dist, 3)} km'
         
         # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
         speed = round(v / 3.6, 3) # velocity in m/s
         gpx_extension_speed = mod_etree.fromstring(
-            f"""<gpxtpx:TrackPointExtension \
-            xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">\
-            <gpxtpx:speed>{speed}</gpxtpx:speed>\
-            </gpxtpx:TrackPointExtension>""")
+            '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
+            f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
+            '</gpxtpx:TrackPointExtension>')
         gpx_point.extensions.append(gpx_extension_speed)
         
         
@@ -487,7 +485,7 @@ with in_file.open(mode='rb') as f:
         
     # Handling of errors.
     if track_count != num_trackpt:
-        print('Track point count error: ', track_count, num_trackpt)
+        print(f'Track point count error: {track_count}, {num_trackpt}')
         quit()
         
         
