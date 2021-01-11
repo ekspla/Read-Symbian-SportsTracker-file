@@ -375,7 +375,7 @@ gpx.tracks[0].description = (
     f'Stop time: {format_datetime(stop_localtime)}' '; '
     f'Real time: {format_timedelta(real_time)}' '; '
     f'Gross speed: {round(gross_speed, 3)} km/h' ']')
-    
+
 # Finally, print or write the gpx. 
 #print(gpx.to_xml('1.1'))
 

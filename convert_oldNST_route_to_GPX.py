@@ -172,13 +172,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Total distance: {round(total_distance, 3)} km')
     
     
-    # Add a summary of the route.  This part may be informative.
-    gpx.routes[0].description = (
-        '['
-        f'Total distance: {round(total_distance, 3)} km'
-        ']')
-    
-    
     # Number of track points.
     #start_address = 0x000ff
     f.seek(start_address, 0) # Go to the start address of the main part, which is usually 0x000ff.
@@ -317,26 +310,27 @@ with in_file.open(mode='rb') as f:
         track_count += 1
         
         
-    # Calculate Net speed in km/h.
-    net_speed = total_distance / (t_time / 3600) # km/h
-    #print(f'Net speed: {round(net_speed, 3)} km/h')
-    gpx.routes[0].description = (
-        f'{gpx.routes[0].description[:-1]}' '; '
-        f'Total time: {format_timedelta(t_time)}' '; '
-        f'Net speed: {round(net_speed, 3)} km/h' ']')
-    
-    
-    # Handling of errors.
-    if track_count != num_trackpt:
-        print(f'Track point count error: {track_count}, {num_trackpt}')
-        quit()
-        
-        
-    # Finally, print or write the gpx. 
-    print(gpx.to_xml('1.1'))
-    
-    #result = gpx.to_xml('1.1')
-    #result_file = open(gpx_file, 'w')
-    #result_file.write(result)
-    #result_file.close()
-    
+# Handling of errors.
+if track_count != num_trackpt:
+    print(f'Track point count error: {track_count}, {num_trackpt}')
+    quit()
+
+
+# Calculate Net speed in km/h.
+net_speed = total_distance / (t_time / 3600) # km/h
+#print(f'Net speed: {round(net_speed, 3)} km/h')
+
+# Add a summary of the route.  This part may be informative.
+gpx.routes[0].description = (
+    '['
+    f'Total time: {format_timedelta(t_time)}' '; '
+    f'Total distance: {round(total_distance, 3)} km' '; '
+    f'Net speed: {round(net_speed, 3)} km/h' ']')
+
+# Finally, print or write the gpx. 
+print(gpx.to_xml('1.1'))
+
+#result = gpx.to_xml('1.1')
+#result_file = open(gpx_file, 'w')
+#result_file.write(result)
+#result_file.close()

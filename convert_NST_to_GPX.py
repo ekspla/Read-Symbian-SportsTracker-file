@@ -202,18 +202,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Gross speed: {round(gross_speed, 3)} km/h')
     
     
-    # Add a summary of the track.  This part may be informative.
-    gpx.tracks[0].description = (
-        '['
-        f'Total time: {format_timedelta(total_time)}' '; '
-        f'Total distance: {round(total_distance, 3)} km' '; '
-        f'Net speed: {round(net_speed, 3)} km/h' '; '
-        f'Start localtime: {format_datetime(start_localtime)}' '; '
-        f'Stop localtime: {format_datetime(stop_localtime)}' '; '
-        f'Real time: {format_timedelta(real_time)}' '; '
-        f'Gross speed: {round(gross_speed, 3)} km/h' ']')
-    
-    
     # User ID, please see config.dat.
     (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'User id: {user_id}')
@@ -473,17 +461,28 @@ with in_file.open(mode='rb') as f:
         track_count += 1
         
         
-    # Handling of errors.
-    if track_count != num_trackpt:
-        print(f'Track point count error: {track_count}, {num_trackpt}')
-        quit()
-        
-        
-    # Finally, print or write the gpx. 
-    print(gpx.to_xml('1.1'))
-    
-    #result = gpx.to_xml('1.1')
-    #result_file = open(gpx_file, 'w')
-    #result_file.write(result)
-    #result_file.close()
+# Handling of errors.
+if track_count != num_trackpt:
+    print(f'Track point count error: {track_count}, {num_trackpt}')
+    quit()
+
+
+# Add a summary of the track.  This part may be informative.
+gpx.tracks[0].description = (
+    '['
+    f'Total time: {format_timedelta(total_time)}' '; '
+    f'Total distance: {round(total_distance, 3)} km' '; '
+    f'Net speed: {round(net_speed, 3)} km/h' '; '
+    f'Start localtime: {format_datetime(start_localtime)}' '; '
+    f'Stop localtime: {format_datetime(stop_localtime)}' '; '
+    f'Real time: {format_timedelta(real_time)}' '; '
+    f'Gross speed: {round(gross_speed, 3)} km/h' ']')
+
+# Finally, print or write the gpx. 
+print(gpx.to_xml('1.1'))
+
+#result = gpx.to_xml('1.1')
+#result_file = open(gpx_file, 'w')
+#result_file.write(result)
+#result_file.close()
     
