@@ -43,7 +43,7 @@ def read_unpack(fmt, file_object):
     size = struct.calcsize(fmt)
     return struct.unpack(fmt, file_object.read(size))
 
-def scsu_reader(file_object, address = None):
+def scsu_reader(file_object, address=None):
     """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
     
     Args: 
