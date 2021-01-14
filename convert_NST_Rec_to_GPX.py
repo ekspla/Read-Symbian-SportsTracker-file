@@ -8,9 +8,12 @@
 import sys
 from pathlib import Path
 import struct
-import datetime
+import datetime as dt
+from collections import namedtuple
+
 import gpxpy
 import gpxpy.gpx
+
 try:
     # Load LXML or fallback to cET or ET 
     import lxml.etree as mod_etree  # type: ignore
@@ -31,12 +34,12 @@ def symbian_to_unix_time(symbian_time):
     return unix_time
 
 def format_datetime(timestamp):
-    fmt = "%Y-%m-%dT%H:%M:%S.%f" # ISO-8601 format.
-    return datetime.datetime.fromtimestamp(round(timestamp, 3), 
-                                           datetime.timezone.utc).strftime(fmt)[:-3]
+    fmt = '%Y-%m-%dT%H:%M:%S.%f' # ISO-8601 format.
+    return dt.datetime.fromtimestamp(
+        round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
 
 def format_timedelta(t_delta):
-    return str(datetime.timedelta(seconds = round(t_delta, 3)))[:-3]
+    return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
 
 # Helper function to read and unpack.
 def read_unpack(fmt, file_object):
@@ -44,13 +47,14 @@ def read_unpack(fmt, file_object):
     return struct.unpack(fmt, file_object.read(size))
 
 def scsu_reader(file_object, address=None):
-    """Reads SCSU encoded bytes of variable length from file_object and returns utf-8 using external decoder.
+    """Reads variable-length SCSU bytes and returns utf-8 using scsu.py.
     
     Args: 
         file_object: file object to be read.
-        address: start address of the SCSU encoded part.  The data is preceded by one byte integer (U8) 
-                 which indicates the length of the characters multiplied by four.
-                 
+        address: start address of the SCSU encoded part.  The data is preceded 
+            by one/two byte integer which indicates the character length multi-
+            plied by four/eight.
+            
     Returns:
         decoded_strings: a bytearray of decoded UTF-8.
     """
@@ -62,12 +66,12 @@ def scsu_reader(file_object, address=None):
         size >>= 1 # Divide by 2.
     # Else if LSB == 0, character_length < 64.
     start_of_scsu = file_object.tell()
-    byte_array = file_object.read(size) # Returns bytes.
+    in_bytes = file_object.read(size)
     size >>= 2 # Divide by 4 to obtain the character_length.
-    (output_array, byte_length, character_length) = scsu.decode(byte_array, size)
-    decoded_strings = output_array.decode("utf-8", "ignore") # Sanitize and check the length.
+    (out_array, byte_length, character_length) = scsu.decode(in_bytes, size)
+    decoded_strings = out_array.decode('utf-8', 'ignore') # Sanitize and check the length.
     if len(decoded_strings) != size:
-        print('SCSU decode failed.', output_array)
+        print('SCSU decode failed.', out_array)
         quit()
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
@@ -78,8 +82,8 @@ argvs = sys.argv
 argc = len(argvs)
 if argc < 2:
     print(f"""Usage: # python {argvs[0]} input_filename\n
-        This script reads temporal track log files (Rec*.tmp) of symbian SportsTracker.
-        Log files with heart-rate sensor were not tested.""")
+        This script reads temporal track log files (Rec*.tmp) of symbian 
+        SportsTracker.  Log files with heart-rate sensor were not tested.""")
     quit()
 #print(argc)
 #print(argvs[1])
@@ -105,8 +109,8 @@ gpx_track.segments.append(gpx_segment)
 
 # Definition of extension.
 # Add TrackPointExtension namespace and schema location.
-gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
-gpx.nsmap["gpxx"] = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
+gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
+gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
 
 gpx.schema_locations = [
     'http://www.topografix.com/GPX/1/1',
@@ -122,7 +126,7 @@ with in_file.open(mode='rb') as f:
     
     # Check if this is a temporal track log file.
     # 0x0E4935E8 ; Application ID.
-    # 0x00000004 ; File type (cf. 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp)
+    # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
     #
     # Chunks of data in the temporal file always start with b'\x00\x00\x00\x00' blank.
     # Because of this blank, there is a 4-byte offset to the addresses shown below.
@@ -186,10 +190,13 @@ with in_file.open(mode='rb') as f:
     # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity, ) = read_unpack('<H', f) # Read 2 bytes, little endian U16, returns tuple.
-    activities = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 'Other 3', 
-                  'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 'Hiking', 'Roller skating', 
-                  'Downhill skiing', 'Paddling', 'Rowing', 'Golf', 'Indoor']
-    description = activities[activity] if activity < len(activities) else str(activity)
+    activities = [
+        'Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
+        'Other 3', 'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 
+        'Hiking', 'Roller skating', 'Downhill skiing', 'Paddling', 'Rowing', 
+        'Golf', 'Indoor']
+    description = (activities[activity] if activity < len(activities) 
+                   else str(activity))
     print(f'Activity: {description}')
     gpx.description = f'[{description}]'
     
@@ -215,8 +222,8 @@ with in_file.open(mode='rb') as f:
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
-    gpx.time = datetime.datetime.fromtimestamp(
-        start_time, datetime.timezone(datetime.timedelta(hours = TZ_hours), ))
+    gpx.time = dt.datetime.fromtimestamp(
+        start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
     
     stop_time = symbian_to_unix_time(stop_time)
     #print(f'Stop Z : {format_datetime(stop_time)}Z')
@@ -234,8 +241,18 @@ with in_file.open(mode='rb') as f:
     unix_time = start_time # unixtime.
     utc_time = ''
     dist = 0 #  Total distance in km.
-    v = 0 # Velocity in km/h.
+    #v = 0 # Velocity in km/h.
     track_count = 0
+    
+    # Factory functions for creating named tuples.
+    type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time'
+    type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2'
+    typeC0 = ('dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, '
+              'unknown1, unknown2')
+
+    Trackpt_type00 = namedtuple('Trackpt_type00', type00)
+    Trackpt_type80 = namedtuple('Trackpt_type80', type80)
+    Trackpt_typeC0 = namedtuple('Trackpt_typeC0', typeC0)
     
     # For removing noise.
     last_t_time = 0
@@ -261,33 +278,31 @@ with in_file.open(mode='rb') as f:
             (header, header1) = struct.unpack('2B', headers)
             #print(header, header1)
             if header == 0x07 and header1 in {0x83, 0x82}: # Typically, 0783 or 0782.
+                (Trackpt, fmt) = (Trackpt_type00, '<I3iHIq')
+                # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
                 # Read 30 bytes of data(4+4+4+4+2+4+8).  Negative y and x mean South and West, respectively.
                 track_data = f.read(30)
                 if len(track_data) < 30: # Check end of file.
                     break
-                (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time) \
-                    = struct.unpack('<I3iHIq', track_data)
-                
-                t_time /= 100 # Totaltime in seconds.
+                trackpt = Trackpt._make(struct.unpack(fmt, track_data)) # Wrap it with named tuple.
+                t_time = trackpt.t_time / 100 # Totaltime in seconds.
                 
                 # The latitudes and longitudes are stored in I32s as popular DDDmm mmmm format.
-                y_degree = y_ax // 1e6
-                x_degree = x_ax // 1e6
-                y_mm_mmmm = y_ax % 1e6
-                x_mm_mmmm = x_ax % 1e6
+                (y_degree, y_mm_mmmm) = divmod(trackpt.y_ax, 1e6)
+                (x_degree, x_mm_mmmm) = divmod(trackpt.x_ax, 1e6)
                 y_degree += y_mm_mmmm / 1e4 / 60 # Convert minutes to degrees.
                 x_degree += x_mm_mmmm / 1e4 / 60
                 
-                z_ax /= 10 # Altitude in meter.
+                z_ax = trackpt.z_ax / 10 # Altitude in meter.
                 
-                v = v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
+                v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
                 
-                dist += d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
+                dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
                 
-                unix_time = symbian_to_unix_time(symbian_time)
+                unix_time = symbian_to_unix_time(trackpt.symbian_time)
                 
                 # For removing noise.
-                if not (last_unix_time <= unix_time < last_unix_time + 1 * 3600): # Up to 1 hr.  Don't take a big lunch.
+                if not (last_unix_time <= unix_time < last_unix_time + 3600): # Up to 1 hr.  Don't take a big lunch.
                     unix_time = last_unix_time + (t_time - last_t_time)
                     print('Strange timestamp.  At:', hex(f.tell() - 36))
                 if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
@@ -306,21 +321,27 @@ with in_file.open(mode='rb') as f:
                     dist = last_dist
                     
                 utc_time = f'{format_datetime(unix_time)}Z'
-                print(t_time, y_ax, x_ax, z_ax, v, dist, utc_time)
+                print(hex(f.tell()), t_time, trackpt.y_ax, trackpt.x_ax, z_ax, v, 
+                      dist, utc_time)
                 
                 
             # Other headers which I don't know.
             else:
                 if not (header == 0x00 and header1 == 0x00):
+                    print(f'{header} Error in the track point header: '
+                        f'{track_count}')
                     print(f'At address: {hex(f.tell() - 6)}')
+                    print(*trackpt)
+                    print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
                 continue
                 #break
                 
             # Print delimited text.
             #utc_time = f'{format_datetime(unix_time)}Z'
             #to_time = format_timedelta(t_time)
-            #print(to_time, '\t', utc_time, '\t', round(d_dist / 100 / 1e3, 3), '\t', 
-            #      round(dist, 3), '\t', round(y_degree, 10), '\t', round(x_degree, 10) , '\t', 
+            #print(to_time, '\t', utc_time, '\t', 
+            #      round(trackpt.d_dist / 100 / 1e3, 3), '\t', round(dist, 3), 
+            #      '\t', round(y_degree, 10), '\t', round(x_degree, 10), '\t', 
             #      round(z_ax, 1), '\t', round(v, 2), sep='')
             
             # Print gpx xml.
@@ -328,12 +349,13 @@ with in_file.open(mode='rb') as f:
                 latitude = round(y_degree, 10), 
                 longitude = round(x_degree, 10), 
                 elevation = round(z_ax, 1), 
-                time = datetime.datetime.fromtimestamp(unix_time, datetime.timezone.utc), 
+                time = dt.datetime.fromtimestamp(unix_time, dt.timezone.utc), 
                 name = str(track_count + 1))
             gpx_segment.points.append(gpx_point)
             
             # This part may be informative.  Comment it out, if not necessary. 
-            gpx_point.description = f'Speed {round(v, 3)} km/h Distance {round(dist, 3)} km'
+            gpx_point.description = (
+                f'Speed {round(v, 3)} km/h Distance {round(dist, 3)} km')
             
             # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
             speed = round(v / 3.6, 3) # velocity in m/s
@@ -356,7 +378,7 @@ with in_file.open(mode='rb') as f:
         
         
         
-# Add a summary of the track.  This part may be informative.
+# Add a summary.  This part may be informative.
 if total_time == 0:
     total_time = t_time
 if total_distance == 0:
@@ -383,4 +405,3 @@ result = gpx.to_xml('1.1')
 result_file = open(gpx_file, 'w')
 result_file.write(result)
 result_file.close()
-    
