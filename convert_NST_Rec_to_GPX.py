@@ -26,10 +26,9 @@ except:
 import scsu
 
 
-#  The native Symbian time format is a 64-bit value that represents microseconds 
-#  since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
+#  The native Symbian time format is a 64-bit value that represents 
+#  microseconds since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
 #  BC dates are represented by negative values.
-#
 def symbian_to_unix_time(symbian_time):
     unix_time = symbian_time / 1e6 - 62168256000
     return unix_time
@@ -51,7 +50,7 @@ def read_unpack(fmt, file_object):
     return struct.unpack(fmt, file_object.read(size))
 
 def scsu_reader(file_object, address=None):
-    """Reads variable-length SCSU bytes and returns utf-8 using scsu.py.
+    """Reads variable-length SCSU bytes and returns UTF-8 using scsu.py.
     
     Args: 
         file_object: file object to be read.
@@ -60,7 +59,7 @@ def scsu_reader(file_object, address=None):
             plied by four/eight.
             
     Returns:
-        decoded_strings: a bytearray of decoded UTF-8.
+        decoded_strings: strings of UTF-8.
     """
     if address:
         file_object.seek(address, 0)
@@ -91,8 +90,6 @@ if argc < 2:
     quit()
 #print(argc)
 #print(argvs[1])
-#print(argvs[2])
-#print(argvs[3])
 
 #path = Path('.')
 in_file = Path(argvs[1])
@@ -111,8 +108,7 @@ gpx.tracks.append(gpx_track)
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
 gpx_track.segments.append(gpx_segment)
 
-# Definition of extension.
-# Add TrackPointExtension namespace and schema location.
+# Add TrackPointExtension namespaces and schema locations.
 gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
 gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
 
@@ -175,12 +171,12 @@ with in_file.open(mode='rb') as f:
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_localtime, stop_localtime) = read_unpack('<2q', f)
     start_localtime = symbian_to_unix_time(start_localtime)
-    # Print start time in localtime.  Change the suffix according to your timezone, 
-    # because there is no timezone information in Symbian.
-    # Take difference of starttime in localtime and those in UTC (see below) to see the timezone+DST.
-    print(f'Start: {format_datetime(start_localtime)}+07:00')
-    
     stop_localtime = symbian_to_unix_time(stop_localtime)
+
+    # Change the suffix according to your timezone, because there is no 
+    # timezone information in Symbian.  Take difference of starttime in 
+    # localtime and those in UTC (see below) to see the timezone+DST.
+    print(f'Start: {format_datetime(start_localtime)}+07:00')
     #print(f'Stop : {format_datetime(stop_localtime)}+07:00')
     
     # User ID, please see config.dat.
@@ -217,15 +213,14 @@ with in_file.open(mode='rb') as f:
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
+    stop_time = symbian_to_unix_time(stop_time)
     #print(f'Start Z: {format_datetime(start_time)}Z')
+    #print(f'Stop Z : {format_datetime(stop_time)}Z')
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
     gpx.time = dt.datetime.fromtimestamp(
         start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
-    
-    stop_time = symbian_to_unix_time(stop_time)
-    #print(f'Stop Z : {format_datetime(stop_time)}Z')
     
     # Read SCSU encoded user comment of variable length.
     comment = scsu_reader(f, 0x00222 + 0x4) # This address is fixed.
@@ -341,10 +336,9 @@ with in_file.open(mode='rb') as f:
             # Print delimited text.
             #utc_time = f'{format_datetime(unix_time)}Z'
             #to_time = format_timedelta(t_time)
-            #print(to_time, '\t', utc_time, '\t', 
-            #      round(trackpt.d_dist / 100 / 1e3, 3), '\t', round(dist, 3), 
-            #      '\t', round(y_degree, 10), '\t', round(x_degree, 10), '\t', 
-            #      round(z_ax, 1), '\t', round(v, 2), sep='')
+            #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 100 / 1e3, 3)}'
+            #      f'\t{round(dist, 3)}\t{round(y_degree, 10)}\t'
+            #      f'{round(x_degree, 10)}\t{round(z_ax, 1)}\t{round(v, 2)}')
             
             # Print gpx xml.
             gpx_point = gpxpy.gpx.GPXTrackPoint(

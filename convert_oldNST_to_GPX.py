@@ -26,10 +26,9 @@ except:
 import scsu
 
 
-#  The native Symbian time format is a 64-bit value that represents microseconds 
-#  since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
+#  The native Symbian time format is a 64-bit value that represents 
+#  microseconds since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
 #  BC dates are represented by negative values.
-#
 def symbian_to_unix_time(symbian_time):
     unix_time = symbian_time / 1e6 - 62168256000
     return unix_time
@@ -51,7 +50,7 @@ def read_unpack(fmt, file_object):
     return struct.unpack(fmt, file_object.read(size))
 
 def scsu_reader(file_object, address=None):
-    """Reads variable-length SCSU bytes and returns utf-8 using scsu.py.
+    """Reads variable-length SCSU bytes and returns UTF-8 using scsu.py.
     
     Args: 
         file_object: file object to be read.
@@ -60,7 +59,7 @@ def scsu_reader(file_object, address=None):
             plied by four/eight.
             
     Returns:
-        decoded_strings: a bytearray of decoded UTF-8.
+        decoded_strings: strings of UTF-8.
     """
     if address:
         file_object.seek(address, 0)
@@ -91,8 +90,6 @@ if argc < 2:
     quit()
 #print(argc)
 #print(argvs[1])
-#print(argvs[2])
-#print(argvs[3])
 
 #path = Path('.')
 in_file = Path(argvs[1])
@@ -111,8 +108,7 @@ gpx.tracks.append(gpx_track)
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
 gpx_track.segments.append(gpx_segment)
 
-# Definition of extension.
-# Add TrackPointExtension namespace and schema location.
+# Add TrackPointExtension namespaces and schema locations.
 gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
 gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
 
@@ -183,12 +179,12 @@ with in_file.open(mode='rb') as f:
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_localtime, stop_localtime) = read_unpack('<2q', f)
     start_localtime = symbian_to_unix_time(start_localtime)
-    # Print start time in localtime.  Change the suffix according to your timezone, 
-    # because there is no timezone information in Symbian.
-    # Take difference of starttime in localtime and those in UTC (see below) to see the timezone+DST.
-    #print(f'Start: {format_datetime(start_localtime)}+09:00')
-    
     stop_localtime = symbian_to_unix_time(stop_localtime)
+
+    # Change the suffix according to your timezone, because there is no 
+    # timezone information in Symbian.  Take difference of starttime in 
+    # localtime and those in UTC (see below) to see the timezone+DST.
+    #print(f'Start: {format_datetime(start_localtime)}+09:00')
     #print(f'Stop : {format_datetime(stop_localtime)}+09:00')
     
     # Calculate Realtime, which is different from Totaltime if pause is used.
@@ -233,15 +229,14 @@ with in_file.open(mode='rb') as f:
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
+    stop_time = symbian_to_unix_time(stop_time)
     #print(f'Start Z: {format_datetime(start_time)}Z')
+    #print(f'Stop Z : {format_datetime(stop_time)}Z')
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
     gpx.time = dt.datetime.fromtimestamp(
         start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
-    
-    stop_time = symbian_to_unix_time(stop_time)
-    #print(f'Stop Z : {format_datetime(stop_time)}Z')
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
@@ -282,8 +277,7 @@ with in_file.open(mode='rb') as f:
         t_time /= 100 # Totaltime in seconds.
         unix_time = symbian_to_unix_time(symbian_time)
         #utc_time = f'{format_datetime(unix_time)}' # This is not UTC, but localtime.
-        #print(unknown, '\t', format_timedelta(t_time), '\t', flag, '\t', 
-        #    utc_time, sep = '')
+        #print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utc_time}')
         
         # Start flag = 1, we don't use these data.  Just store them for the future purposes.
         if flag == 1:
@@ -435,8 +429,7 @@ with in_file.open(mode='rb') as f:
             t4_time, pause_time, resume_time = pause_list[0]
             #print(format_timedelta(t4_time), format_timedelta(pause_time))
             
-            # Just after the pause, use the pause data.
-            # Still not quite sure if this works.
+            # Just after the pause, use the pause data.  Still not quite sure if this works.
             if (t_time + 0.5 >= t4_time):
             
                 resume_time -= TZ_hours * 3600 # Conversion from localtime to UTC.
@@ -452,10 +445,9 @@ with in_file.open(mode='rb') as f:
         # Print delimited text.
         #utc_time = f'{format_datetime(unix_time)}Z'
         #to_time = format_timedelta(t_time)
-        #print(to_time, '\t', utc_time, '\t', 
-        #      round(trackpt.d_dist / 100 / 1e3, 3), '\t', round(dist, 3), 
-        #      '\t', round(y_degree, 10), '\t', round(x_degree, 10), '\t', 
-        #      round(z_ax, 1), '\t', round(v, 2), sep='')
+        #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 100 / 1e3, 3)}'
+        #      f'\t{round(dist, 3)}\t{round(y_degree, 10)}\t'
+        #      f'{round(x_degree, 10)}\t{round(z_ax, 1)}\t{round(v, 2)}')
         
         # Print gpx xml.
         gpx_point = gpxpy.gpx.GPXTrackPoint(
