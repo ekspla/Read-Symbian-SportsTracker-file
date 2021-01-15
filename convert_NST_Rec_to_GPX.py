@@ -35,8 +35,11 @@ def symbian_to_unix_time(symbian_time):
 
 def format_datetime(timestamp):
     fmt = '%Y-%m-%dT%H:%M:%S.%f' # ISO-8601 format.
-    return dt.datetime.fromtimestamp(
-        round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
+    if timestamp < -2**32 or timestamp > 2**32:
+        return 'INVALID'
+    else:
+        return dt.datetime.fromtimestamp(
+            round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
 
 def format_timedelta(t_delta):
     return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
@@ -151,6 +154,11 @@ with in_file.open(mode='rb') as f:
         quit()
         
         
+    # Start address of the main part (pause and trackpoint data).
+    # We don't read the address from the file because it is useless.
+    start_address = 0x250 # Not quite sure if this is a good starting point to read.
+    
+    
     # Track ID and Totaltime.
     f.seek(0x00014 + 0x4, 0) # Go to 0x00014 + 0x4, this address is fixed.
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
@@ -235,11 +243,17 @@ with in_file.open(mode='rb') as f:
         print(f'Comment: {comment}')
         gpx.tracks[0].comment = comment
     
-
-
+    
+    
+    # Number of track points.
+    num_trackpt = None # The number in the file is useless.
+    
+    
+    # Go to the first data.
+    f.seek(start_address, 0)
+    
     t_time = 0 # Totaltime in seconds.
     unix_time = start_time # unixtime.
-    utc_time = ''
     dist = 0 #  Total distance in km.
     #v = 0 # Velocity in km/h.
     track_count = 0
@@ -249,19 +263,16 @@ with in_file.open(mode='rb') as f:
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2'
     typeC0 = ('dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, '
               'unknown1, unknown2')
-
     Trackpt_type00 = namedtuple('Trackpt_type00', type00)
     Trackpt_type80 = namedtuple('Trackpt_type80', type80)
     Trackpt_typeC0 = namedtuple('Trackpt_typeC0', typeC0)
     
-    # For removing noise.
+    # For removing spikes.
     last_t_time = 0
     last_unix_time = start_time
     last_dist = 0
     
-    start_address = 0x250 # Not quite sure if this is a good starting point to read.
-    f.seek(start_address, 0)
-    
+    # The main loop to read the trackpoints.
     while True: # We don't know how many trackpoints exist in the temporal file.
     
         # Trackpoints and pause data, respectively, are labeled by b'\x02\x00\x00\x00' 
@@ -272,17 +283,20 @@ with in_file.open(mode='rb') as f:
         if len(preceding_label) < 4: # Check end of file.
             break
         elif preceding_label == b'\x02\x00\x00\x00':
-            headers = f.read(2) # Read the 2-byte header.
-            if len(headers) < 2: # Check end of file.
+            header_fmt = '2B' # Read the 2-byte header.
+            size = struct.calcsize(header_fmt)
+            headers = f.read(size)
+            if len(headers) < size: # Check end of file.
                 break
-            (header, header1) = struct.unpack('2B', headers)
+            (header, header1) = struct.unpack(header_fmt, headers)
             #print(header, header1)
             if header == 0x07 and header1 in {0x83, 0x82}: # Typically, 0783 or 0782.
                 (Trackpt, fmt) = (Trackpt_type00, '<I3iHIq')
                 # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
                 # Read 30 bytes of data(4+4+4+4+2+4+8).  Negative y and x mean South and West, respectively.
-                track_data = f.read(30)
-                if len(track_data) < 30: # Check end of file.
+                size = struct.calcsize(fmt)
+                track_data = f.read(size)
+                if len(track_data) < size: # Check end of file.
                     break
                 trackpt = Trackpt._make(struct.unpack(fmt, track_data)) # Wrap it with named tuple.
                 t_time = trackpt.t_time / 100 # Totaltime in seconds.
@@ -301,36 +315,38 @@ with in_file.open(mode='rb') as f:
                 
                 unix_time = symbian_to_unix_time(trackpt.symbian_time)
                 
-                # For removing noise.
+                utc_time = f'{format_datetime(unix_time)}Z'
+                print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:-1])
+                
+                # For removing spikes.
                 if not (last_unix_time <= unix_time < last_unix_time + 3600): # Up to 1 hr.  Don't take a big lunch.
                     unix_time = last_unix_time + (t_time - last_t_time)
-                    print('Strange timestamp.  At:', hex(f.tell() - 36))
+                    print('Strange timestamp.  At:', 
+                        hex(f.tell() - size - struct.calcsize(header_fmt)))
                 if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
                     t_time = last_t_time + (unix_time - last_unix_time)
-                    print('Strange totaltime.  At:', hex(f.tell() - 36))
+                    print('Strange totaltime.  At:', 
+                        hex(f.tell() - size - struct.calcsize(header_fmt)))
                 if track_count != 0:
                     if abs(gpx_point.latitude - y_degree) >= 0.001: # Threshold of 0.001 deg.
                         y_degree = gpx_point.latitude
-                        print('Strange y.  At:', hex(f.tell() - 36))
+                        print('Strange y.  At:', 
+                            hex(f.tell() - size - struct.calcsize(header_fmt)))
                     if abs(gpx_point.longitude - x_degree) >= 0.001:
                         x_degree = gpx_point.longitude
-                        print('Strange x.  At:', hex(f.tell() - 36))
+                        print('Strange x.  At:', 
+                            hex(f.tell() - size - struct.calcsize(header_fmt)))
                     if abs(gpx_point.elevation - z_ax) >= 500: # Threshold of 500 m.
                         z_ax = gpx_point.elevation
                 if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
                     dist = last_dist
-                    
-                utc_time = f'{format_datetime(unix_time)}Z'
-                print(hex(f.tell()), t_time, trackpt.y_ax, trackpt.x_ax, z_ax, v, 
-                      dist, utc_time)
-                
                 
             # Other headers which I don't know.
             else:
                 if not (header == 0x00 and header1 == 0x00):
-                    print(f'{header} Error in the track point header: '
-                        f'{track_count}')
-                    print(f'At address: {hex(f.tell() - 6)}')
+                    print(f'{hex(header)} Error in the track point header: '
+                          f'{track_count}, {num_trackpt}')
+                    print(f'At address: {hex(f.tell() - struct.calcsize(header_fmt))}')
                     print(*trackpt)
                     print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
                 continue
@@ -365,19 +381,19 @@ with in_file.open(mode='rb') as f:
                 '</gpxtpx:TrackPointExtension>')
             gpx_point.extensions.append(gpx_extension_speed)
             
-            # For removing noise.
+            # For removing spikes.
             last_t_time = t_time
             last_unix_time = unix_time
             last_dist = dist
+            
             
             track_count += 1
             
             
         else:
             f.seek(-3, 1) # Seek forward (4 - 3 = +1 byte).
-        
-        
-        
+
+
 # Add a summary.  This part may be informative.
 if total_time == 0:
     total_time = t_time

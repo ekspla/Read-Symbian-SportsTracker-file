@@ -35,8 +35,11 @@ def symbian_to_unix_time(symbian_time):
 
 def format_datetime(timestamp):
     fmt = '%Y-%m-%dT%H:%M:%S.%f' # ISO-8601 format.
-    return dt.datetime.fromtimestamp(
-        round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
+    if timestamp < -2**32 or timestamp > 2**32:
+        return 'INVALID'
+    else:
+        return dt.datetime.fromtimestamp(
+            round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
 
 def format_timedelta(t_delta):
     return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
@@ -357,14 +360,15 @@ with in_file.open(mode='rb') as f:
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2'
     typeC0 = ('dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, '
               'unknown1, unknown2')
-
     Trackpt_type00 = namedtuple('Trackpt_type00', type00)
     Trackpt_type80 = namedtuple('Trackpt_type80', type80)
     Trackpt_typeC0 = namedtuple('Trackpt_typeC0', typeC0)
     
+    # The main loop to read the trackpoints.
     while track_count < num_trackpt:
     
-        (header, header1) = read_unpack('2B', f) # Read the first byte of 2-byte header.
+        header_fmt = '2B' # Read the first byte of 2-byte header.
+        (header, header1) = read_unpack(header_fmt, f)
         #print(header, header1)
         
         if header == 0x07: # Typically, 0783 or 0782.
@@ -389,9 +393,9 @@ with in_file.open(mode='rb') as f:
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
             unix_time = symbian_to_unix_time(trackpt.symbian_time)
+            
             #utc_time = f'{format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), t_time, trackpt.y_ax, trackpt.x_ax, z_ax, v, 
-            #      dist, utc_time)
+            #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:-1])
             
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
         
@@ -399,19 +403,19 @@ with in_file.open(mode='rb') as f:
                 
                 Trackpt = Trackpt_type80
                 # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2)
+                # Unknown1 & 2 might be related to heart rate sensor.
                 fmt = '<B3hbH2B' if header == 0x87 else '<B4hH2B' # 0x97
                 # 0x87: Read 12 bytes of data(1+2+2+2+1+2+1+1).  1-byte dv.
                 # 0x97: Read 13 bytes of data(1+2+2+2+2+2+1+1).  2-byte dv.
-                # Unknown1 & 2 might be related to heart rate sensor.
                 
             elif header in {0xC7, 0xD7}: # Typically C783, C782, D783, D782.  This case is quite rare.
             
                 Trackpt = Trackpt_typeC0
                 # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, unknown1, unknown2)
+                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.
                 fmt = '<B5hbH2B' if header == 0xC7 else '<B6hH2B' # 0xD7
                 # 0xC7: Read 16 bytes of data(1+2+2+2+2+2+1+2+1+1).  1-byte dv.
                 # 0xD7: Read 17 bytes of data(1+2+2+2+2+2+2+2+1+1).  2-byte dv.
-                # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.  
                 
             trackpt = Trackpt._make(read_unpack(fmt, f)) # Wrap it with named tuple.
             
@@ -427,20 +431,19 @@ with in_file.open(mode='rb') as f:
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += trackpt.dt_time / 100
+            
             #utc_time = f'{format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), t_time, trackpt.dy_ax, trackpt.dx_ax, z_ax, 
-            #      v, dist, utc_time, trackpt.unknown1, trackpt.unknown2)
+            #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
         # Other headers which I don't know.
         else:
         
-            print(f'{header} Error in the track point header: '
+            print(f'{hex(header)} Error in the track point header: '
                   f'{track_count}, {num_trackpt}')
-            print(f'At address: {hex(f.tell() - 2)}')
+            print(f'At address: {hex(f.tell() - struct.calcsize(header_fmt))}')
             print(*trackpt)
             print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
             break
-            
             
         if pause_list:
         
@@ -457,7 +460,6 @@ with in_file.open(mode='rb') as f:
                     
                 del pause_list[0]
                 
-                
         # Print delimited text.
         #utc_time = f'{format_datetime(unix_time)}Z'
         #to_time = format_timedelta(t_time)
@@ -465,7 +467,6 @@ with in_file.open(mode='rb') as f:
         #      round(trackpt.d_dist / 100 / 1e3, 3), '\t', round(dist, 3), 
         #      '\t', round(y_degree, 10), '\t', round(x_degree, 10), '\t', 
         #      round(z_ax, 1), '\t', round(v, 2), sep='')
-        
         
         # Print gpx xml.
         gpx_point = gpxpy.gpx.GPXTrackPoint(

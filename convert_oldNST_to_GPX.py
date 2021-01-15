@@ -35,8 +35,11 @@ def symbian_to_unix_time(symbian_time):
 
 def format_datetime(timestamp):
     fmt = '%Y-%m-%dT%H:%M:%S.%f' # ISO-8601 format.
-    return dt.datetime.fromtimestamp(
-        round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
+    if timestamp < -2**32 or timestamp > 2**32:
+        return 'INVALID'
+    else:
+        return dt.datetime.fromtimestamp(
+            round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
 
 def format_timedelta(t_delta):
     return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
@@ -353,14 +356,15 @@ with in_file.open(mode='rb') as f:
     oldtype00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     oldtype80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
     oldtypeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
-
     Trackpt_oldtype00 = namedtuple('Trackpt_oldtype00', oldtype00)
     Trackpt_oldtype80 = namedtuple('Trackpt_oldtype80', oldtype80)
     Trackpt_oldtypeC0 = namedtuple('Trackpt_oldtypeC0', oldtypeC0)
     
+    # The main loop to read the trackpoints.
     while track_count < num_trackpt:
     
-        (header, ) = read_unpack('B', f) # Read the 1-byte header.
+        header_fmt = 'B' # Read the 1-byte header.
+        (header, ) = read_unpack(header_fmt, f)
         #print(header)
         
         if header in {0x00, 0x02, 0x03}:
@@ -385,9 +389,9 @@ with in_file.open(mode='rb') as f:
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             
             unix_time += (t_time - last_t_time)
+            
             #utc_time = f'{format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), t_time, trackpt.y_ax, trackpt.x_ax, z_ax, v, 
-            #      dist, utc_time)
+            #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
         elif header in {0x80, 0x82, 0x83, 
                         0x92, 0x93, 
@@ -435,20 +439,19 @@ with in_file.open(mode='rb') as f:
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             
             unix_time += trackpt.dt_time / 100
+            
             #utc_time = f'{format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), t_time, trackpt.dy_ax, trackpt.dx_ax , z_ax, 
-            #      v, dist, utc_time)
+            #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
         # Other headers which I don't know.
         else:
         
-            print(f'{header} Error in the track point header: '
+            print(f'{hex(header)} Error in the track point header: '
                   f'{track_count}, {num_trackpt}')
-            print(f'At address: {hex(f.tell() - 1)}')
+            print(f'At address: {hex(f.tell() - struct.calcsize(header_fmt))}')
             print(*trackpt)
             print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
             break
-            
             
         if pause_list:
         
@@ -469,7 +472,6 @@ with in_file.open(mode='rb') as f:
                 
         last_t_time = t_time # Store it for the next turn.
         
-        
         # Print delimited text.
         #utc_time = f'{format_datetime(unix_time)}Z'
         #to_time = format_timedelta(t_time)
@@ -477,7 +479,6 @@ with in_file.open(mode='rb') as f:
         #      round(trackpt.d_dist / 100 / 1e3, 3), '\t', round(dist, 3), 
         #      '\t', round(y_degree, 10), '\t', round(x_degree, 10), '\t', 
         #      round(z_ax, 1), '\t', round(v, 2), sep='')
-        
         
         # Print gpx xml.
         gpx_point = gpxpy.gpx.GPXTrackPoint(
