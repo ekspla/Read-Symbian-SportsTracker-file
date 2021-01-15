@@ -22,6 +22,7 @@ except:
         import xml.etree.cElementTree as mod_etree # type: ignore
     except:
         import xml.etree.ElementTree as mod_etree # type: ignore
+
 import scsu
 
 
@@ -124,7 +125,6 @@ gpx.schema_locations = [
     'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
 
-
 with in_file.open(mode='rb') as f:
     
     # Check if this is a track log file.
@@ -136,7 +136,6 @@ with in_file.open(mode='rb') as f:
     if not (app_id == 0x0e4935e8 and file_type == 0x2):
         print(f'Unexpected file type: {file_type}')
         quit()
-        
         
     # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
@@ -150,7 +149,6 @@ with in_file.open(mode='rb') as f:
         print(f'Version number greater than expected: {version}')
         quit()
         
-        
     # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
@@ -163,7 +161,6 @@ with in_file.open(mode='rb') as f:
     start_address -= 1
     #print(f'Main part address: {hex(start_address)}')
     
-    
     # Track ID and Totaltime.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
@@ -173,17 +170,14 @@ with in_file.open(mode='rb') as f:
     total_time /= 100 # Totaltime in seconds.
     #print(f'Total time: {format_timedelta(total_time)}')
     
-    
     # Total Distance.
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km.
     #print(f'Total distance: {round(total_distance, 3)} km')
     
-    
     # Calculate Net speed in km/h.
     net_speed = total_distance / (total_time / 3600) # km/h
     #print(f'Net speed: {round(net_speed, 3)} km/h')
-    
     
     # Starttime and Stoptime in localtime.
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
@@ -197,22 +191,18 @@ with in_file.open(mode='rb') as f:
     stop_localtime = symbian_to_unix_time(stop_localtime)
     #print(f'Stop : {format_datetime(stop_localtime)}+09:00')
     
-    
     # Calculate Realtime, which is different from Totaltime if pause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
     #print(f'Realtime: {format_timedelta(real_time)}')
-    
     
     # Calculate Gross speed in km/h.
     gross_speed = total_distance / (real_time / 3600) # km/h
     #print(f'Gross speed: {round(gross_speed, 3)} km/h')
     
-    
     # User ID, please see config.dat.
     (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'User id: {user_id}')
     gpx.author_name = str(user_id)
-    
     
     # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
@@ -227,7 +217,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Activity: {description}')
     gpx.description = f'[{description}]'
     
-    
     # Read SCSU encoded name of the track, which is usually the datetime.
     # 
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
@@ -238,7 +227,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Track name: {track_name}')
     gpx.name = f'[{track_name}]'
     gpx.tracks[0].name = gpx.name
-    
     
     # Starttime & Stoptime in UTC.
     f.seek(0x0018e, 0) # Go to 0x0018e, this address is fixed.
@@ -322,7 +310,7 @@ with in_file.open(mode='rb') as f:
             pause_time = unix_time - suspend_time
             pause_list.append((t_time, pause_time, unix_time))
             
-        # Resume flag = 8.  Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
+        # Flag = 8.  Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
         elif flag == 8:
             pause_time = 0
             pause_list.append((t_time, pause_time, unix_time))
@@ -365,7 +353,6 @@ with in_file.open(mode='rb') as f:
     
         header_fmt = 'B' # Read the 1-byte header.
         (header, ) = read_unpack(header_fmt, f)
-        #print(header)
         
         if header in {0x00, 0x02, 0x03}:
         
@@ -383,22 +370,15 @@ with in_file.open(mode='rb') as f:
             x_degree += x_mm_mmmm / 1e4 / 60
             
             z_ax = trackpt.z_ax / 10 # Altitude in meter.
-            
             v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
-            
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
-            
             unix_time += (t_time - last_t_time)
             
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
-        elif header in {0x80, 0x82, 0x83, 
-                        0x92, 0x93, 
-                        0x9A, 0x9B, 
-                        0xC2, 0xC3, 
-                        0xD2, 0xD3, 
-                        0xDA, 0xDB}:
+        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
+                        0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
         
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
             
@@ -433,11 +413,8 @@ with in_file.open(mode='rb') as f:
             x_degree += trackpt.dx_ax / 1e4 / 60
             
             z_ax += trackpt.dz_ax / 10 # Altitudes in meters are also given as differences.
-            
             v += trackpt.dv / 100 * 3.6 # Velocity, as well.  Multiply (m/s) by 3.6 to get velocity in km/h.
-            
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
-            
             unix_time += trackpt.dt_time / 100
             
             #utc_time = f'{format_datetime(unix_time)}Z'
@@ -500,7 +477,6 @@ with in_file.open(mode='rb') as f:
             f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
             '</gpxtpx:TrackPointExtension>')
         gpx_point.extensions.append(gpx_extension_speed)
-        
         
         track_count += 1
         

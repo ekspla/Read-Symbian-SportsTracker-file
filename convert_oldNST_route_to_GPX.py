@@ -22,6 +22,7 @@ except:
         import xml.etree.cElementTree as mod_etree # type: ignore
     except:
         import xml.etree.ElementTree as mod_etree # type: ignore
+
 import scsu
 
 
@@ -120,7 +121,6 @@ gpx.schema_locations = [
     'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
 
-
 with in_file.open(mode='rb') as f:
     
     # Check if this is a route file.
@@ -132,7 +132,6 @@ with in_file.open(mode='rb') as f:
     if not (app_id == 0x0e4935e8 and file_type == 0x3):
         print(f'Unexpected file type: {file_type}')
         quit()
-        
         
     # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
@@ -146,7 +145,6 @@ with in_file.open(mode='rb') as f:
         print(f'Unexpected version number: {version}')
         quit()
         
-        
     # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
@@ -159,12 +157,10 @@ with in_file.open(mode='rb') as f:
     start_address -= 1
     #print(f'Main part address: {hex(start_address)}')
     
-    
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     (route_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'Route ID: {route_id}')
-    
     
     # Read SCSU encoded name of the route.  Its length is variable.
     #f.seek(0x00018, 0) # Go to 0x00018, this address is fixed.
@@ -172,7 +168,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Route name: {route_name}')
     gpx.name = f'[{route_name}]'
     gpx.routes[0].name = gpx.name
-    
     
     # Total Distance.
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
@@ -215,7 +210,6 @@ with in_file.open(mode='rb') as f:
     
         header_fmt = 'B' # Read the 1-byte header.
         (header, ) = read_unpack(header_fmt, f)
-        #print(header)
         
         if header in {0x00, 0x02, 0x03}:
         
@@ -233,22 +227,15 @@ with in_file.open(mode='rb') as f:
             x_degree += x_mm_mmmm / 1e4 / 60
             
             z_ax = trackpt.z_ax / 10 # Altitude in meter.
-            
             v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
-            
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
-            
             unix_time += (t_time - last_t_time)
             
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
-        elif header in {0x80, 0x82, 0x83, 
-                        0x92, 0x93, 
-                        0x9A, 0x9B, 
-                        0xC2, 0xC3, 
-                        0xD2, 0xD3, 
-                        0xDA, 0xDB}:
+        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
+                        0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
         
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
             
@@ -283,11 +270,8 @@ with in_file.open(mode='rb') as f:
             x_degree += trackpt.dx_ax / 1e4 / 60
             
             z_ax += trackpt.dz_ax / 10 # Altitudes in meters are also given as differences.
-            
             v += trackpt.dv / 100 * 3.6 # Velocity, as well.  Multiply (m/s) by 3.6 to get velocity in km/h.
-            
             dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
-            
             unix_time += trackpt.dt_time / 100
             
             #utc_time = f'{format_datetime(unix_time)}Z'
@@ -334,7 +318,6 @@ with in_file.open(mode='rb') as f:
             f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
             '</gpxtpx:TrackPointExtension>')
         gpx_point.extensions.append(gpx_extension_speed)
-        
         
         track_count += 1
         

@@ -22,6 +22,7 @@ except:
         import xml.etree.cElementTree as mod_etree # type: ignore
     except:
         import xml.etree.ElementTree as mod_etree # type: ignore
+
 import scsu
 
 
@@ -124,7 +125,6 @@ gpx.schema_locations = [
     'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
 
-
 with in_file.open(mode='rb') as f:
     
     # Check if this is a temporal track log file.
@@ -140,7 +140,6 @@ with in_file.open(mode='rb') as f:
         print(f'Unexpected file type: {file_type}')
         quit()
         
-        
     # Preliminary version check.
     #f.seek(0x00008 + 0x4, 0) # Go to 0x00008 + 0x4, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
@@ -153,11 +152,9 @@ with in_file.open(mode='rb') as f:
         print(f'Version number less than expected: {version}')
         quit()
         
-        
     # Start address of the main part (pause and trackpoint data).
     # We don't read the address from the file because it is useless.
     start_address = 0x250 # Not quite sure if this is a good starting point to read.
-    
     
     # Track ID and Totaltime.
     f.seek(0x00014 + 0x4, 0) # Go to 0x00014 + 0x4, this address is fixed.
@@ -168,13 +165,11 @@ with in_file.open(mode='rb') as f:
     total_time /= 100 # Totaltime in seconds.
     print(f'Total time: {format_timedelta(total_time)}')
     
-    
     # Total Distance.
     f.seek(0x00004, 1) # Skip 4 bytes.  Because of this, there is a 4-byte offset to oldNST.
     (total_distance, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     total_distance /= 1e5 # Total distance in km.
     print(f'Total distance: {round(total_distance, 3)} km')
-    
     
     # Starttime and Stoptime in localtime.
     # Read 16 (8+8) bytes, little endian I64+I64, returns tuple.
@@ -188,12 +183,10 @@ with in_file.open(mode='rb') as f:
     stop_localtime = symbian_to_unix_time(stop_localtime)
     #print(f'Stop : {format_datetime(stop_localtime)}+07:00')
     
-    
     # User ID, please see config.dat.
     (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     print(f'User id: {user_id}')
     gpx.author_name = str(user_id)
-    
     
     # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
@@ -208,7 +201,6 @@ with in_file.open(mode='rb') as f:
     print(f'Activity: {description}')
     gpx.description = f'[{description}]'
     
-    
     # Read SCSU encoded name of the track, which is usually the datetime.
     # 
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
@@ -219,7 +211,6 @@ with in_file.open(mode='rb') as f:
     print(f'Track name: {track_name}')
     gpx.name = f'[{track_name}]'
     gpx.tracks[0].name = gpx.name
-    
     
     # Starttime & Stoptime in UTC.
     f.seek(0x00192 + 0x4, 0) # Go to 0x00192 + 0x4, this address is fixed.
@@ -236,13 +227,11 @@ with in_file.open(mode='rb') as f:
     stop_time = symbian_to_unix_time(stop_time)
     #print(f'Stop Z : {format_datetime(stop_time)}Z')
     
-    
     # Read SCSU encoded user comment of variable length.
     comment = scsu_reader(f, 0x00222 + 0x4) # This address is fixed.
     if comment:
         print(f'Comment: {comment}')
         gpx.tracks[0].comment = comment
-    
     
     
     # Number of track points.
@@ -289,7 +278,7 @@ with in_file.open(mode='rb') as f:
             if len(headers) < size: # Check end of file.
                 break
             (header, header1) = struct.unpack(header_fmt, headers)
-            #print(header, header1)
+            
             if header == 0x07 and header1 in {0x83, 0x82}: # Typically, 0783 or 0782.
                 (Trackpt, fmt) = (Trackpt_type00, '<I3iHIq')
                 # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
@@ -308,11 +297,8 @@ with in_file.open(mode='rb') as f:
                 x_degree += x_mm_mmmm / 1e4 / 60
                 
                 z_ax = trackpt.z_ax / 10 # Altitude in meter.
-                
                 v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
-                
                 dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
-                
                 unix_time = symbian_to_unix_time(trackpt.symbian_time)
                 
                 utc_time = f'{format_datetime(unix_time)}Z'
@@ -385,7 +371,6 @@ with in_file.open(mode='rb') as f:
             last_t_time = t_time
             last_unix_time = unix_time
             last_dist = dist
-            
             
             track_count += 1
             
