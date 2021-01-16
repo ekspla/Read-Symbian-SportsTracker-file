@@ -256,17 +256,19 @@ with in_file.open(mode='rb') as f:
     last_unix_time = start_time
     last_dist = 0
     
+    # Trackpoint and pause data are labeled differently.  Each trackpoint 
+    # following this label is always starting with 0x07 header, which means 
+    # data with symbian_time. Read the trackpoint data exclusively because we 
+    # don't have to use pause data to see the symbian_time.
+    (pause_label, track_label) = (b'\x01\x00\x00\x00', b'\x02\x00\x00\x00')
+    
     # The main loop to read the trackpoints.
     while True: # We don't know how many trackpoints exist in the temporal file.
     
-        # Trackpoints and pause data, respectively, are labeled by b'\x02\x00\x00\x00' 
-        # and b'\x01\x00\x00\x00'. The trackpoint data is always starting with 0x07 header, 
-        # which means data with symbian_time. Read the trackpoint data exclusively 
-        # because we don't have to use pause data to see the symbian_time.
-        preceding_label = f.read(4)
-        if len(preceding_label) < 4: # Check end of file.
+        preceding_label = f.read(len(track_label))
+        if len(preceding_label) < len(track_label): # Check end of file.
             break
-        elif preceding_label == b'\x02\x00\x00\x00':
+        elif preceding_label == track_label:
             header_fmt = '2B' # Read the 2-byte header.
             size = struct.calcsize(header_fmt)
             headers = f.read(size)
