@@ -35,7 +35,10 @@ def symbian_to_unix_time(symbian_time):
 
 def format_datetime(timestamp):
     fmt = '%Y-%m-%dT%H:%M:%S.%f' # ISO-8601 format.
-    if timestamp < -2147483648 or timestamp > 2147483647: # Limits of I32.
+    # Platform dependent limits in timestamps.
+    #if timestamp < -2147483648 or timestamp > 2147483647: # Limits of I32. (2038 problem).
+    #if timestamp < 86400 or timestamp > 32536799999: # Python 3.6 on Windows. 
+    if timestamp < 86400 or timestamp > 2147483647: # Combined. 
         return 'INVALID'
     else:
         return dt.datetime.fromtimestamp(
