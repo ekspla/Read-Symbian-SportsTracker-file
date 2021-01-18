@@ -33,16 +33,25 @@ def symbian_to_unix_time(symbian_time):
     unix_time = symbian_time / 1e6 - 62168256000
     return unix_time
 
-def format_datetime(timestamp):
-    fmt = '%Y-%m-%dT%H:%M:%S.%f' # ISO-8601 format.
-    # Platform dependent limits in timestamps.
-    #if timestamp < -2147483648 or timestamp > 2147483647: # Limits of I32. (2038 problem).
-    #if timestamp < 86400 or timestamp > 32536799999: # Python 3.6 on Windows. 
-    if timestamp < 86400 or timestamp > 2147483647: # Combined. 
-        return 'INVALID'
+# A workaround of dt.datetime.fromtimestamp() for handling the full range of datetimes in a few platforms after the year 2038.
+def dt_from_timestamp(timestamp, tz_info=None):
+    switch_wa = False # True: use the workaround.  False: use dt.datetime.fromtimestamp().
+    if switch_wa and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
+        d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+        d_t += dt.timedelta(seconds=1) * timestamp
+        return (d_t.replace(tzinfo=None) if tz_info is None 
+                else d_t.astimezone(tz_info))
+    elif (not switch_wa) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
+        d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
+        return (d_t.replace(tzinfo=None) if tz_info is None 
+                else d_t.astimezone(tz_info))
     else:
-        return dt.datetime.fromtimestamp(
-            round(timestamp, 3), dt.timezone.utc).strftime(fmt)[:-3]
+        return None
+
+def format_datetime(timestamp):
+    d_t = dt_from_timestamp(round(timestamp, 3))
+    return (d_t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] if d_t != None # ISO-8601 format.
+            else f'INVALID({timestamp})')
 
 def format_timedelta(t_delta):
     return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
@@ -300,7 +309,7 @@ with in_file.open(mode='rb') as f:
             latitude = round(y_degree, 10), 
             longitude = round(x_degree, 10), 
             elevation = round(z_ax, 1), 
-            time = dt.datetime.fromtimestamp(unix_time, dt.timezone.utc), 
+            time = dt_from_timestamp(unix_time, dt.timezone.utc), 
             name = str(track_count + 1))
         gpx_route.points.append(gpx_point)
         
