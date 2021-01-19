@@ -35,13 +35,13 @@ def symbian_to_unix_time(symbian_time):
 
 # A workaround of dt.datetime.fromtimestamp() for handling the full range of datetimes in a few platforms after the year 2038.
 def dt_from_timestamp(timestamp, tz_info=None):
-    switch_wa = False # True: use the workaround.  False: use dt.datetime.fromtimestamp().
-    if switch_wa and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
+    workaround = False # True: use the workaround.  False: use dt.datetime.fromtimestamp().
+    if workaround and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
         d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         d_t += dt.timedelta(seconds=1) * timestamp
         return (d_t.replace(tzinfo=None) if tz_info is None 
                 else d_t.astimezone(tz_info))
-    elif (not switch_wa) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
+    elif (not workaround) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
         d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
         return (d_t.replace(tzinfo=None) if tz_info is None 
                 else d_t.astimezone(tz_info))
@@ -281,6 +281,7 @@ with in_file.open(mode='rb') as f:
         if len(preceding_label) < len(track_label): # Check end of file.
             break
         elif preceding_label == track_label:
+            pointer = f.tell()
             header_fmt = '2B' # Read the 2-byte header.
             size = struct.calcsize(header_fmt)
             headers = f.read(size)
@@ -316,21 +317,17 @@ with in_file.open(mode='rb') as f:
                 # For removing spikes.
                 if not (last_unix_time <= unix_time < last_unix_time + 3600): # Up to 1 hr.  Don't take a big lunch.
                     unix_time = last_unix_time + (t_time - last_t_time)
-                    print('Strange timestamp.  At:', 
-                        hex(f.tell() - size - struct.calcsize(header_fmt)))
+                    print(f'Bad timestamp at: {hex(pointer)}')
                 if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
                     t_time = last_t_time + (unix_time - last_unix_time)
-                    print('Strange totaltime.  At:', 
-                        hex(f.tell() - size - struct.calcsize(header_fmt)))
+                    print(f'Bad totaltime at: {hex(pointer)}')
                 if track_count != 0:
                     if abs(gpx_point.latitude - y_degree) >= 0.001: # Threshold of 0.001 deg.
                         y_degree = gpx_point.latitude
-                        print('Strange y.  At:', 
-                            hex(f.tell() - size - struct.calcsize(header_fmt)))
+                        print(f'Bad y at: {hex(pointer)}')
                     if abs(gpx_point.longitude - x_degree) >= 0.001:
                         x_degree = gpx_point.longitude
-                        print('Strange x.  At:', 
-                            hex(f.tell() - size - struct.calcsize(header_fmt)))
+                        print(f'Bad x at: {hex(pointer)}')
                     if abs(gpx_point.elevation - z_ax) >= 500: # Threshold of 500 m.
                         z_ax = gpx_point.elevation
                 if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
@@ -341,7 +338,7 @@ with in_file.open(mode='rb') as f:
                 if not (header == 0x00 and header1 == 0x00):
                     print(f'{hex(header)} Error in the track point header: '
                           f'{track_count}, {num_trackpt}')
-                    print(f'At address: {hex(f.tell() - struct.calcsize(header_fmt))}')
+                    print(f'At address: {hex(pointer)}')
                     print(*trackpt)
                     print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
                 continue
@@ -350,7 +347,7 @@ with in_file.open(mode='rb') as f:
             # Print delimited text.
             #utc_time = f'{format_datetime(unix_time)}Z'
             #to_time = format_timedelta(t_time)
-            #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 100 / 1e3, 3)}'
+            #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 1e5, 3)}'
             #      f'\t{round(dist, 3)}\t{round(y_degree, 10)}\t'
             #      f'{round(x_degree, 10)}\t{round(z_ax, 1)}\t{round(v, 2)}')
             

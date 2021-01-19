@@ -35,13 +35,13 @@ def symbian_to_unix_time(symbian_time):
 
 # A workaround of dt.datetime.fromtimestamp() for handling the full range of datetimes in a few platforms after the year 2038.
 def dt_from_timestamp(timestamp, tz_info=None):
-    switch_wa = False # True: use the workaround.  False: use dt.datetime.fromtimestamp().
-    if switch_wa and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
+    workaround = False # True: use the workaround.  False: use dt.datetime.fromtimestamp().
+    if workaround and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
         d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         d_t += dt.timedelta(seconds=1) * timestamp
         return (d_t.replace(tzinfo=None) if tz_info is None 
                 else d_t.astimezone(tz_info))
-    elif (not switch_wa) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
+    elif (not workaround) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
         d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
         return (d_t.replace(tzinfo=None) if tz_info is None 
                 else d_t.astimezone(tz_info))
@@ -357,6 +357,7 @@ with in_file.open(mode='rb') as f:
     # The main loop to read the trackpoints.
     while track_count < num_trackpt:
     
+        pointer = f.tell()
         header_fmt = 'B' # Read the 1-byte header.
         (header, ) = read_unpack(header_fmt, f)
         
@@ -431,7 +432,7 @@ with in_file.open(mode='rb') as f:
         
             print(f'{hex(header)} Error in the track point header: '
                   f'{track_count}, {num_trackpt}')
-            print(f'At address: {hex(f.tell() - struct.calcsize(header_fmt))}')
+            print(f'At address: {hex(pointer)}')
             print(*trackpt)
             print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
             break
@@ -457,7 +458,7 @@ with in_file.open(mode='rb') as f:
         # Print delimited text.
         #utc_time = f'{format_datetime(unix_time)}Z'
         #to_time = format_timedelta(t_time)
-        #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 100 / 1e3, 3)}'
+        #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 1e5, 3)}'
         #      f'\t{round(dist, 3)}\t{round(y_degree, 10)}\t'
         #      f'{round(x_degree, 10)}\t{round(z_ax, 1)}\t{round(v, 2)}')
         
