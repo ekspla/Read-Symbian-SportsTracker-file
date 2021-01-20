@@ -266,8 +266,8 @@ with in_file.open(mode='rb') as f:
     # For removing spikes.
     last_t_time = 0
     last_unix_time = start_time
+    suspect_pause = None # A flag to handle the trackpoints after a pause.
     last_dist = 0
-    flag = False # To handle the trackpoints after a pause.
     
     # Trackpoint and pause data are labeled differently.  Each trackpoint 
     # following this label is always starting with 0x07 header, which means 
@@ -317,22 +317,22 @@ with in_file.open(mode='rb') as f:
                 
                 # Remove spikes, because there is a lot of error in the temporal file.  This is an adhoc method, though.
                 # TODO: It is better to read and use both the trackpt and pause data to correct bad timestamps in the temporal file.
-                delta_unix_time = unix_time - last_unix_time # In most cases, the two increments (delta_s, ~1 s) are equal each other.
+                delta_unix_time = unix_time - last_unix_time # In most cases, the two delta_s (~1 s) are equal each other.
                 delta_t_time = t_time - last_t_time
-                good_unix_time = 0 < delta_unix_time < 6 * 60 # Up to 6 min.
+                good_unix_time = 0 < delta_unix_time < 1 * 3600 # Up to 1 hr.
                 good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
                 
-                if track_count == 0 or flag == True:
-                    flag = False # Do nothing in time correction, but reset the flag.
+                if track_count == 0 or suspect_pause == True:
+                    suspect_pause = False # Do nothing in time correction, but reset the flag.
                 
-                # There are four cases due to the two boolean conditions defined above.
+                # There are four cases due to the two boolean conditions.
                 elif good_unix_time and good_t_time:
                     # Out of this range is most likely caused by a very long pause (e.g. lunch), but might be by an error. 
                     if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause (suppose traffic signal).
                         delta_t = min(delta_unix_time, delta_t_time)
                         unix_time = last_unix_time + delta_t
                         t_time = last_t_time + delta_t
-                        flag = True # Set the flag to see if this is because of a pause.
+                        suspect_pause = True # Set the flag to see if this is because of a pause.
                         print(f'Bad.  Two distinct increments at: {hex(pointer)}')
                 elif (not good_unix_time) and good_t_time:
                     unix_time = last_unix_time + delta_t_time # Correct unixtime by using totaltime.
