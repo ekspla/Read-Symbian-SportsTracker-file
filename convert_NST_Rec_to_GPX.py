@@ -267,6 +267,7 @@ with in_file.open(mode='rb') as f:
     last_t_time = 0
     last_unix_time = start_time
     last_dist = 0
+    flag = False # To handle the trackpoints after a pause.
     
     # Trackpoint and pause data are labeled differently.  Each trackpoint 
     # following this label is always starting with 0x07 header, which means 
@@ -314,14 +315,35 @@ with in_file.open(mode='rb') as f:
                 utc_time = f'{format_datetime(unix_time)}Z'
                 print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:-1])
                 
-                # For removing spikes.
-                if not (last_unix_time <= unix_time < last_unix_time + 3600): # Up to 1 hr.  Don't take a big lunch.
-                    unix_time = last_unix_time + (t_time - last_t_time)
-                    print(f'Bad timestamp at: {hex(pointer)}')
-                if not (last_t_time <= t_time < last_t_time + 5 * 60): # Up to 5 min.
-                    t_time = last_t_time + (unix_time - last_unix_time)
+                # For removing spikes.  This is an adhoc and unsophisticated method, though.
+                good_unix_time = last_unix_time < unix_time < last_unix_time + 6 * 60 # Up to 6 min.
+                good_t_time = last_t_time <= t_time < last_t_time + 5 * 60 # Up to 5 min.
+                if track_count == 0 or flag == True:
+                    flag = False # Do nothing in time correction, but reset the flag.
+                elif good_unix_time and good_t_time:
+                    delta_unix_time = unix_time - last_unix_time # In most cases, these increments (~1 s) are equal each other.
+                    delta_t_time = t_time - last_t_time
+                    if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause to 2.5 min (suppose traffic signal).
+                        delta_t = min(delta_unix_time, delta_t_time) # Out of this range is most likely caused by a long pause, but might be by an error. 
+                        unix_time = last_unix_time + delta_t
+                        t_time = last_t_time + delta_t
+                        flag = True # Set the flag to see if this is because of a pause.
+                        print(f'Bad.  Not equal increments at: {hex(pointer)}')
+                elif (not good_unix_time) and good_t_time: # Correct unix_time by using t_time.
+                    delta_t = t_time - last_t_time
+                    unix_time = last_unix_time + delta_t
+                    print(f'Bad unixtime at: {hex(pointer)}')
+                elif (not good_unix_time) and (not good_t_time):
+                    delta_t = 0.2 # Add 0.2 s to both, as a compromise.
+                    unix_time = last_unix_time + delta_t
+                    t_time = last_t_time + delta_t
+                    print(f'Bad unixtime and totaltime at: {hex(pointer)}')
+                else: # Correct t_time by using unix_time.
+                    delta_t = unix_time - last_unix_time
+                    t_time = last_t_time + delta_t
                     print(f'Bad totaltime at: {hex(pointer)}')
-                if track_count != 0:
+                
+                if track_count > 0:
                     if abs(gpx_point.latitude - y_degree) >= 0.001: # Threshold of 0.001 deg.
                         y_degree = gpx_point.latitude
                         print(f'Bad y at: {hex(pointer)}')
