@@ -316,31 +316,28 @@ with in_file.open(mode='rb') as f:
                 print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:-1])
                 
                 # For removing spikes.  This is an adhoc and unsophisticated method, though.
-                good_unix_time = last_unix_time < unix_time < last_unix_time + 6 * 60 # Up to 6 min.
-                good_t_time = last_t_time <= t_time < last_t_time + 5 * 60 # Up to 5 min.
+                delta_unix_time = unix_time - last_unix_time # In most cases, these increments (~1 s) are equal each other.
+                delta_t_time = t_time - last_t_time
+                good_unix_time = 0 < delta_unix_time < 6 * 60 # Up to 6 min.
+                good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
                 if track_count == 0 or flag == True:
                     flag = False # Do nothing in time correction, but reset the flag.
                 elif good_unix_time and good_t_time:
-                    delta_unix_time = unix_time - last_unix_time # In most cases, these increments (~1 s) are equal each other.
-                    delta_t_time = t_time - last_t_time
-                    if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause to 2.5 min (suppose traffic signal).
+                    if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause to 2.5 min (suppose traffic signal stop).
                         delta_t = min(delta_unix_time, delta_t_time) # Out of this range is most likely caused by a long pause, but might be by an error. 
                         unix_time = last_unix_time + delta_t
                         t_time = last_t_time + delta_t
                         flag = True # Set the flag to see if this is because of a pause.
-                        print(f'Bad.  Not equal increments at: {hex(pointer)}')
+                        print(f'Bad.  Two distinct increments at: {hex(pointer)}')
                 elif (not good_unix_time) and good_t_time: # Correct unix_time by using t_time.
-                    delta_t = t_time - last_t_time
-                    unix_time = last_unix_time + delta_t
+                    unix_time = last_unix_time + delta_t_time
                     print(f'Bad unixtime at: {hex(pointer)}')
                 elif (not good_unix_time) and (not good_t_time):
-                    delta_t = 0.2 # Add 0.2 s to both, as a compromise.
-                    unix_time = last_unix_time + delta_t
-                    t_time = last_t_time + delta_t
+                    unix_time = last_unix_time + 0.2 # Add 0.2 s to both, as a compromise.
+                    t_time = last_t_time + 0.2
                     print(f'Bad unixtime and totaltime at: {hex(pointer)}')
                 else: # Correct t_time by using unix_time.
-                    delta_t = unix_time - last_unix_time
-                    t_time = last_t_time + delta_t
+                    t_time = last_t_time + delta_unix_time
                     print(f'Bad totaltime at: {hex(pointer)}')
                 
                 if track_count > 0:
