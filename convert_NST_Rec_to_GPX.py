@@ -315,32 +315,37 @@ with in_file.open(mode='rb') as f:
                 utc_time = f'{format_datetime(unix_time)}Z'
                 print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:-1])
                 
-                # For removing spikes.  This is an adhoc and unsophisticated method, though.
-                delta_unix_time = unix_time - last_unix_time # In most cases, these increments (~1 s) are equal each other.
+                # Remove spikes, because there is a lot of error in the temporal file.  This is an adhoc method, though.
+                # TODO: It is better to read and use both the trackpt and pause data to correct bad timestamps in the temporal file.
+                delta_unix_time = unix_time - last_unix_time # In most cases, the two increments (delta_s, ~1 s) are equal each other.
                 delta_t_time = t_time - last_t_time
                 good_unix_time = 0 < delta_unix_time < 6 * 60 # Up to 6 min.
                 good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
+                
                 if track_count == 0 or flag == True:
                     flag = False # Do nothing in time correction, but reset the flag.
+                
+                # There are four cases due to the two boolean conditions defined above.
                 elif good_unix_time and good_t_time:
-                    if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause to 2.5 min (suppose traffic signal stop).
-                        delta_t = min(delta_unix_time, delta_t_time) # Out of this range is most likely caused by a long pause, but might be by an error. 
+                    # Out of this range is most likely caused by a very long pause (e.g. lunch), but might be by an error. 
+                    if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause (suppose traffic signal).
+                        delta_t = min(delta_unix_time, delta_t_time)
                         unix_time = last_unix_time + delta_t
                         t_time = last_t_time + delta_t
                         flag = True # Set the flag to see if this is because of a pause.
                         print(f'Bad.  Two distinct increments at: {hex(pointer)}')
-                elif (not good_unix_time) and good_t_time: # Correct unix_time by using t_time.
-                    unix_time = last_unix_time + delta_t_time
+                elif (not good_unix_time) and good_t_time:
+                    unix_time = last_unix_time + delta_t_time # Correct unixtime by using totaltime.
                     print(f'Bad unixtime at: {hex(pointer)}')
                 elif (not good_unix_time) and (not good_t_time):
-                    unix_time = last_unix_time + 0.2 # Add 0.2 s to both, as a compromise.
+                    unix_time = last_unix_time + 0.2 # Add 0.2 s (should be < 1.0 s) to both, as a compromise.
                     t_time = last_t_time + 0.2
                     print(f'Bad unixtime and totaltime at: {hex(pointer)}')
-                else: # Correct t_time by using unix_time.
-                    t_time = last_t_time + delta_unix_time
+                else: # good_unix_time and (not good_t_time)
+                    t_time = last_t_time + delta_unix_time # Correct totaltime by using unixtime.
                     print(f'Bad totaltime at: {hex(pointer)}')
                 
-                if track_count > 0:
+                if track_count > 0: # Spikes in y, x, z and total_distance.  Replace it with its previous value.
                     if abs(gpx_point.latitude - y_degree) >= 0.001: # Threshold of 0.001 deg.
                         y_degree = gpx_point.latitude
                         print(f'Bad y at: {hex(pointer)}')
