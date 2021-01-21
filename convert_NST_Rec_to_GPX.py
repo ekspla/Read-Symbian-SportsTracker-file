@@ -329,9 +329,9 @@ with in_file.open(mode='rb') as f:
                 elif good_unix_time and good_t_time:
                     # Out of this range is most likely caused by a very long pause (e.g. lunch), but might be by an error. 
                     if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause (suppose traffic signal).
-                        delta_t = min(delta_unix_time, delta_t_time)
-                        unix_time = last_unix_time + delta_t
-                        t_time = last_t_time + delta_t
+                        (unix_time, t_time) = (
+                            t + min(delta_unix_time, delta_t_time) for t in 
+                            (last_unix_time, last_t_time))
                         suspect_pause = True # Set the flag to see if this is because of a pause.
                         print(f'Bad.  Two distinct increments at: {hex(pointer)}')
                 elif (not good_unix_time) and good_t_time:
