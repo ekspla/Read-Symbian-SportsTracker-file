@@ -91,6 +91,43 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
+def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx or store it in a database, etc. 
+    # tp: 'unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist, track_count, file_type'
+    
+    # Print delimited text.
+    #utc_time = f'{format_datetime(tp.unix_time)}Z'
+    #to_time = format_timedelta(tp.t_time)
+    #print(f'{to_time}\t{utc_time}\t{round(tp.d_dist, 3)}'
+    #      f'\t{round(tp.dist, 3)}\t{round(tp.y_degree, 10)}\t'
+    #      f'{round(tp.x_degree, 10)}\t{round(tp.z_ax, 1)}\t'
+    #      f'{round(tp.v, 2)}')
+
+    # Print gpx xml.
+    gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == 0x3 
+                     else gpxpy.gpx.GPXTrackPoint)
+    gpx_point = gpx_point_def(
+        latitude = round(tp.y_degree, 10), 
+        longitude = round(tp.x_degree, 10), 
+        elevation = round(tp.z_ax, 1), 
+        time = dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
+        name = str(tp.track_count + 1))
+    gpx_append = (gpx_route.points.append if tp.file_type == 0x3 
+                  else gpx_segment.points.append)
+    gpx_append(gpx_point)
+
+    # This part may be informative.  Comment it out, if not necessary. 
+    gpx_point.description = (
+        f'Speed {round(tp.v, 3)} km/h Distance {round(tp.dist, 3)} km')
+
+    # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
+    # Not quite sure if the <gpxtpx:TrackPointExtension> tag is valid in rtept.  Should it be gpxx?
+    speed = round(tp.v / 3.6, 3) # velocity in m/s
+    gpx_extension_speed = mod_etree.fromstring(
+        '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
+        f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
+        '</gpxtpx:TrackPointExtension>')
+    gpx_point.extensions.append(gpx_extension_speed)
+
 
 # Arguments and help.
 argvs = sys.argv
@@ -152,7 +189,6 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00008 + 0x4, 0) # Go to 0x00008 + 0x4, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     print(f'Version: {version}')
-    # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
     # Track log files of Symbian SportsTracker:       20000 <= version.
@@ -162,7 +198,7 @@ with in_file.open(mode='rb') as f:
         
     # Start address of the main part (pause and trackpoint data).
     # We don't read the address from the file because it is useless.
-    start_address = 0x250 # Not quite sure if this is a good starting point to read.
+    start_address = 0x250 # Not quite sure if this is the best starting point to read.
     
     # Track ID and Totaltime.
     f.seek(0x00014 + 0x4, 0) # Go to 0x00014 + 0x4, this address is fixed.
@@ -184,7 +220,7 @@ with in_file.open(mode='rb') as f:
     (start_localtime, stop_localtime) = read_unpack('<2q', f)
     start_localtime = symbian_to_unix_time(start_localtime)
     stop_localtime = symbian_to_unix_time(stop_localtime)
-
+    
     # Change the suffix according to your timezone, because there is no 
     # timezone information in Symbian.  Take difference of starttime in 
     # localtime and those in UTC (see below) to see the timezone+DST.
@@ -247,11 +283,6 @@ with in_file.open(mode='rb') as f:
     
     # Go to the first data.
     f.seek(start_address, 0)
-    
-    t_time = 0 # Totaltime in seconds.
-    unix_time = start_time # unixtime.
-    dist = 0 #  Total distance in km.
-    #v = 0 # Velocity in km/h.
     track_count = 0
     
     # Factory functions for creating named tuples.
@@ -259,15 +290,20 @@ with in_file.open(mode='rb') as f:
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2'
     typeC0 = ('dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, '
               'unknown1, unknown2')
+    type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
+                  'dist, track_count, file_type')
     Trackpt_type00 = namedtuple('Trackpt_type00', type00)
     Trackpt_type80 = namedtuple('Trackpt_type80', type80)
     Trackpt_typeC0 = namedtuple('Trackpt_typeC0', typeC0)
+    Trackpt_store = namedtuple('Trackpt_store', type_store)
+    Trackpt_store.__new__.__defaults__ = (None,) * len(Trackpt_store._fields)
+
+    trackpt_store = Trackpt_store() # A temporal storage to pass the trackpt.
+    trackpt_store = trackpt_store._replace(
+        unix_time=start_time, t_time=0, dist=0)
     
     # For removing spikes.
-    last_t_time = 0
-    last_unix_time = start_time
     suspect_pause = None # A flag to handle the trackpoints after a pause.
-    last_dist = 0
     
     # Trackpoint and pause data are labeled differently.  Each trackpoint 
     # following this label is always starting with 0x07 header, which means 
@@ -309,7 +345,7 @@ with in_file.open(mode='rb') as f:
                 
                 z_ax = trackpt.z_ax / 10 # Altitude in meter.
                 v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
-                dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
+                dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
                 unix_time = symbian_to_unix_time(trackpt.symbian_time)
                 
                 utc_time = f'{format_datetime(unix_time)}Z'
@@ -317,8 +353,8 @@ with in_file.open(mode='rb') as f:
                 
                 # Remove spikes, because there is a lot of error in the temporal file.  This is an adhoc method, though.
                 # TODO: It is better to read and use both the trackpt and pause data to correct bad timestamps in the temporal file.
-                delta_unix_time = unix_time - last_unix_time # In most cases, the two delta_s (~1 s) are equal each other.
-                delta_t_time = t_time - last_t_time
+                delta_unix_time = unix_time - trackpt_store.unix_time # In most cases, the two delta_s (~1 s) are equal each other.
+                delta_t_time = t_time - trackpt_store.t_time
                 good_unix_time = 0 < delta_unix_time < 1 * 3600 # Up to 1 hr.
                 good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
                 
@@ -328,34 +364,35 @@ with in_file.open(mode='rb') as f:
                 # There are four cases due to the two boolean conditions.
                 elif good_unix_time and good_t_time:
                     # Out of this range is most likely caused by a very long pause (e.g. lunch), but might be by an error. 
-                    if not 130 >= delta_unix_time - delta_t_time > -0.5: # Set the max of usual pause (suppose traffic signal).
+                    if not -0.5 < delta_unix_time - delta_t_time <= 130: # Set the max of usual pause (suppose traffic signal).
                         (unix_time, t_time) = (
                             t + min(delta_unix_time, delta_t_time) for t in 
-                            (last_unix_time, last_t_time))
+                            (trackpt_store.unix_time, trackpt_store.t_time))
                         suspect_pause = True # Set the flag to see if this is because of a pause.
                         print(f'Bad.  Two distinct increments at: {hex(pointer)}')
                 elif (not good_unix_time) and good_t_time:
-                    unix_time = last_unix_time + delta_t_time # Correct unixtime by using totaltime.
+                    unix_time = trackpt_store.unix_time + delta_t_time # Correct unixtime by using totaltime.
                     print(f'Bad unixtime at: {hex(pointer)}')
                 elif (not good_unix_time) and (not good_t_time):
-                    unix_time = last_unix_time + 0.2 # Add 0.2 s (should be < 1.0 s) to both, as a compromise.
-                    t_time = last_t_time + 0.2
+                    (unix_time, t_time) = (
+                        t + 0.2 for t in  # Add 0.2 s (should be < 1.0 s) to both, as a compromise.
+                        (trackpt_store.unix_time, trackpt_store.t_time))
                     print(f'Bad unixtime and totaltime at: {hex(pointer)}')
                 else: # good_unix_time and (not good_t_time)
-                    t_time = last_t_time + delta_unix_time # Correct totaltime by using unixtime.
+                    t_time = trackpt_store.t_time + delta_unix_time # Correct totaltime by using unixtime.
                     print(f'Bad totaltime at: {hex(pointer)}')
                 
                 if track_count > 0: # Spikes in y, x, z and total_distance.  Replace it with its previous value.
-                    if abs(gpx_point.latitude - y_degree) >= 0.001: # Threshold of 0.001 deg.
-                        y_degree = gpx_point.latitude
+                    if abs(trackpt_store.y_degree - y_degree) >= 0.001: # Threshold of 0.001 deg.
+                        y_degree = trackpt_store.y_degree
                         print(f'Bad y at: {hex(pointer)}')
-                    if abs(gpx_point.longitude - x_degree) >= 0.001:
-                        x_degree = gpx_point.longitude
+                    if abs(trackpt_store.x_degree - x_degree) >= 0.001:
+                        x_degree = trackpt_store.x_degree
                         print(f'Bad x at: {hex(pointer)}')
-                    if abs(gpx_point.elevation - z_ax) >= 500: # Threshold of 500 m.
-                        z_ax = gpx_point.elevation
-                if not (last_dist <= dist < last_dist + 1): # Up to 1 km.
-                    dist = last_dist
+                    if abs(trackpt_store.z_ax - z_ax) >= 500: # Threshold of 500 m.
+                        z_ax = trackpt_store.z_ax
+                if not 0 <= dist - trackpt_store.dist < 1: # Up to 1 km.
+                    dist = trackpt_store.dist
                 
             # Other headers which I don't know.
             else:
@@ -368,38 +405,15 @@ with in_file.open(mode='rb') as f:
                 continue
                 #break
                 
-            # Print delimited text.
-            #utc_time = f'{format_datetime(unix_time)}Z'
-            #to_time = format_timedelta(t_time)
-            #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 1e5, 3)}'
-            #      f'\t{round(dist, 3)}\t{round(y_degree, 10)}\t'
-            #      f'{round(x_degree, 10)}\t{round(z_ax, 1)}\t{round(v, 2)}')
-            
-            # Print gpx xml.
-            gpx_point = gpxpy.gpx.GPXTrackPoint(
-                latitude = round(y_degree, 10), 
-                longitude = round(x_degree, 10), 
-                elevation = round(z_ax, 1), 
-                time = dt_from_timestamp(unix_time, dt.timezone.utc), 
-                name = str(track_count + 1))
-            gpx_segment.points.append(gpx_point)
-            
-            # This part may be informative.  Comment it out, if not necessary. 
-            gpx_point.description = (
-                f'Speed {round(v, 3)} km/h Distance {round(dist, 3)} km')
-            
-            # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
-            speed = round(v / 3.6, 3) # velocity in m/s
-            gpx_extension_speed = mod_etree.fromstring(
-                '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
-                f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
-                '</gpxtpx:TrackPointExtension>')
-            gpx_point.extensions.append(gpx_extension_speed)
-            
-            # For removing spikes.
-            last_t_time = t_time
-            last_unix_time = unix_time
-            last_dist = dist
+            trackpt_store = Trackpt_store(
+                unix_time=unix_time, t_time=t_time, # s
+                y_degree=y_degree, x_degree=x_degree, # degree
+                z_ax=z_ax, # m
+                v=v, # km/h
+                d_dist=trackpt.d_dist / 1e5, dist=dist, # km
+                track_count=track_count, # int
+                file_type=file_type) # int: 0x2 = Track, 0x3 = Route, 0x4 = tmp.
+            store_trackpt(trackpt_store)
             
             track_count += 1
             

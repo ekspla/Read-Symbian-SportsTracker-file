@@ -91,6 +91,43 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
+def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx or store it in a database, etc. 
+    # tp: 'unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist, track_count, file_type'
+    
+    # Print delimited text.
+    #utc_time = f'{format_datetime(tp.unix_time)}Z'
+    #to_time = format_timedelta(tp.t_time)
+    #print(f'{to_time}\t{utc_time}\t{round(tp.d_dist, 3)}'
+    #      f'\t{round(tp.dist, 3)}\t{round(tp.y_degree, 10)}\t'
+    #      f'{round(tp.x_degree, 10)}\t{round(tp.z_ax, 1)}\t'
+    #      f'{round(tp.v, 2)}')
+
+    # Print gpx xml.
+    gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == 0x3 
+                     else gpxpy.gpx.GPXTrackPoint)
+    gpx_point = gpx_point_def(
+        latitude = round(tp.y_degree, 10), 
+        longitude = round(tp.x_degree, 10), 
+        elevation = round(tp.z_ax, 1), 
+        time = dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
+        name = str(tp.track_count + 1))
+    gpx_append = (gpx_route.points.append if tp.file_type == 0x3 
+                  else gpx_segment.points.append)
+    gpx_append(gpx_point)
+
+    # This part may be informative.  Comment it out, if not necessary. 
+    gpx_point.description = (
+        f'Speed {round(tp.v, 3)} km/h Distance {round(tp.dist, 3)} km')
+
+    # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
+    # Not quite sure if the <gpxtpx:TrackPointExtension> tag is valid in rtept.  Should it be gpxx?
+    speed = round(tp.v / 3.6, 3) # velocity in m/s
+    gpx_extension_speed = mod_etree.fromstring(
+        '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
+        f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
+        '</gpxtpx:TrackPointExtension>')
+    gpx_point.extensions.append(gpx_extension_speed)
+
 
 # Arguments and help.
 argvs = sys.argv
@@ -145,7 +182,6 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'Version: {version}')
-    # 
     # Track log files of the old Nokia SportsTracker:          version < 10000.
     # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
     # Track log files of Symbian SportsTracker:       20000 <= version.
@@ -160,7 +196,6 @@ with in_file.open(mode='rb') as f:
     #     the old track 0x0400 = 0x03ff + 0x1 and 
     #     the old route 0x0100 = 0x00ff + 0x1
     # but can be changed in a very rare case.
-    # 
     (start_address, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     start_address -= 1
     #print(f'Main part address: {hex(start_address)}')
@@ -192,26 +227,28 @@ with in_file.open(mode='rb') as f:
     
     # There are no pause data in route files.   
     # Go to the first trackpoint.
-    
-    #t_time = 0 # Reset totaltime in seconds.
-    dist = 0 #  Total distance in km.
-    #v = 0 # Velocity in km/h.
     track_count = 0
 
     # We have to calculate the timestamps in all of the trackpoints because of no Symbiantimes 
     # given in the trackpoint part of the old version.  This is very different from the new version.
-    # We will use mtime as starttime, because the start/stop times stored in the route files are 
-    # always 0, which means January 1st 0 AD 00:00:00.
-    unix_time = in_file.stat().st_mtime
-    last_t_time = 0
     
     # Factory functions for creating named tuples.
     oldtype00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     oldtype80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
     oldtypeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
+    type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
+                  'dist, track_count, file_type')
     Trackpt_oldtype00 = namedtuple('Trackpt_oldtype00', oldtype00)
     Trackpt_oldtype80 = namedtuple('Trackpt_oldtype80', oldtype80)
     Trackpt_oldtypeC0 = namedtuple('Trackpt_oldtypeC0', oldtypeC0)
+    Trackpt_store = namedtuple('Trackpt_store', type_store)
+    Trackpt_store.__new__.__defaults__ = (None,) * len(Trackpt_store._fields)
+
+    # We will use mtime as start_time, because the start/stop times stored in 
+    # the route files are always 0, which means January 1st 0 AD 00:00:00.
+    trackpt_store = Trackpt_store() # A temporal storage to pass the trackpt.
+    trackpt_store = trackpt_store._replace(
+        unix_time=in_file.stat().st_mtime, t_time=0, dist=0)
     
     # The main loop to read the trackpoints.
     while track_count < num_trackpt:
@@ -237,8 +274,8 @@ with in_file.open(mode='rb') as f:
             
             z_ax = trackpt.z_ax / 10 # Altitude in meter.
             v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
-            dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
-            unix_time += (t_time - last_t_time)
+            dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
+            unix_time = trackpt_store.unix_time + (t_time - trackpt_store.t_time)
             
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
@@ -273,15 +310,15 @@ with in_file.open(mode='rb') as f:
                 
             trackpt = Trackpt._make(read_unpack(fmt, f)) # Wrap it with named tuple.
             
-            t_time += trackpt.dt_time / 100 # Totaltime in seconds.
+            t_time = trackpt_store.t_time + trackpt.dt_time / 100 # Totaltime in seconds.
             
-            y_degree += trackpt.dy_ax / 1e4 / 60 # Latitudes and longitudes are given as differences.
-            x_degree += trackpt.dx_ax / 1e4 / 60
+            y_degree = trackpt_store.y_degree + trackpt.dy_ax / 1e4 / 60 # Latitudes and longitudes are given as differences.
+            x_degree = trackpt_store.x_degree + trackpt.dx_ax / 1e4 / 60
             
-            z_ax += trackpt.dz_ax / 10 # Altitudes in meters are also given as differences.
-            v += trackpt.dv / 100 * 3.6 # Velocity, as well.  Multiply (m/s) by 3.6 to get velocity in km/h.
-            dist += trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
-            unix_time += trackpt.dt_time / 100
+            z_ax = trackpt_store.z_ax + trackpt.dz_ax / 10 # Altitudes in meters are also given as differences.
+            v = trackpt_store.v + trackpt.dv / 100 * 3.6 # Velocity, as well.  Multiply (m/s) by 3.6 to get velocity in km/h.
+            dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
+            unix_time = trackpt_store.unix_time + trackpt.dt_time / 100
             
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
@@ -296,36 +333,15 @@ with in_file.open(mode='rb') as f:
             print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
             break
             
-        last_t_time = t_time # Store it for the next turn.
-        
-        # Print delimited text.
-        #utc_time = f'{format_datetime(unix_time)}Z'
-        #to_time = format_timedelta(t_time)
-        #print(f'{to_time}\t{utc_time}\t{round(trackpt.d_dist / 1e5, 3)}'
-        #      f'\t{round(dist, 3)}\t{round(y_degree, 10)}\t'
-        #      f'{round(x_degree, 10)}\t{round(z_ax, 1)}\t{round(v, 2)}')
-        
-        # Print gpx xml.
-        gpx_point = gpxpy.gpx.GPXRoutePoint(
-            latitude = round(y_degree, 10), 
-            longitude = round(x_degree, 10), 
-            elevation = round(z_ax, 1), 
-            time = dt_from_timestamp(unix_time, dt.timezone.utc), 
-            name = str(track_count + 1))
-        gpx_route.points.append(gpx_point)
-        
-        # This part may be informative.  Comment it out, if not necessary. 
-        gpx_point.description = (
-            f'Speed {round(v, 3)} km/h Distance {round(dist, 3)} km')
-        
-        # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
-        speed = round(v / 3.6, 3) # velocity in m/s
-        # Not quite sure if the <gpxtpx:TrackPointExtension> tags are valid in rtept.  Should it be gpxx?
-        gpx_extension_speed = mod_etree.fromstring(
-            '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
-            f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
-            '</gpxtpx:TrackPointExtension>')
-        gpx_point.extensions.append(gpx_extension_speed)
+        trackpt_store = Trackpt_store(
+            unix_time=unix_time, t_time=t_time, # s
+            y_degree=y_degree, x_degree=x_degree, # degree
+            z_ax=z_ax, # m
+            v=v, # km/h
+            d_dist=trackpt.d_dist / 1e5, dist=dist, # km
+            track_count=track_count, # int
+            file_type=file_type) # int: 0x2 = Track, 0x3 = Route, 0x4 = tmp.
+        store_trackpt(trackpt_store)
         
         track_count += 1
         
