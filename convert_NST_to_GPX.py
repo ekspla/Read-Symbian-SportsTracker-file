@@ -219,10 +219,10 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'Version: {version}')
-    # Track log files of the old Nokia SportsTracker:          version < 10000.
-    # Route files of the old Nokia SportsTracker:     10000 <= version < 20000.
-    # Track log files of Symbian SportsTracker:       20000 <= version.
-    if version < 20000:
+    oldNST = (version < 10000) # Track log files of the old Nokia SportsTracker.
+    oldNST_route = (10000 <= version < 20000) # Route files of the old Nokia SportsTracker.
+    NST = (20000 <= version) # Track log files of Symbian SportsTracker.
+    if not NST:
         print(f'Version number less than expected: {version}')
         quit()
         
