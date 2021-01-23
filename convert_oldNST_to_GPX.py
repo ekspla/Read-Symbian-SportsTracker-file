@@ -14,8 +14,7 @@ from collections import namedtuple
 import gpxpy
 import gpxpy.gpx
 
-try:
-    # Load LXML or fallback to cET or ET 
+try: # Load LXML or fallback to cET or ET 
     import lxml.etree as mod_etree  # type: ignore
 except:
     try:
@@ -107,7 +106,7 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
         elevation = round(tp.z_ax, 1), 
         time = dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name = str(tp.track_count + 1))
-    gpx_target.points.append(gpx_point)
+    gpx_target.points.append(gpx_point) # gpx_target is either gpx_route or gpx_segment shown in initialize_gpx().
 
     # This part may be informative.  Comment it out, if not necessary. 
     gpx_point.description = (
@@ -441,8 +440,8 @@ with in_file.open(mode='rb') as f:
             z_ax = trackpt.z_ax / 10 # Altitude in meter.
             v = trackpt.v / 100 * 3.6 # Multiply (m/s) by 3.6 to get velocity in km/h.
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
-            unix_time = trackpt_store.unix_time + (t_time - trackpt_store.t_time)
-            
+            unix_time = (
+                trackpt_store.unix_time + (t_time - trackpt_store.t_time))
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
@@ -489,8 +488,7 @@ with in_file.open(mode='rb') as f:
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
-        # Other headers which I don't know.
-        else:
+        else: # Other headers which I don't know.
         
             print(f'{hex(header)} Error in the track point header: '
                   f'{track_count}, {num_trackpt}')

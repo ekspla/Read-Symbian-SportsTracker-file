@@ -14,8 +14,7 @@ from collections import namedtuple
 import gpxpy
 import gpxpy.gpx
 
-try:
-    # Load LXML or fallback to cET or ET 
+try: # Load LXML or fallback to cET or ET 
     import lxml.etree as mod_etree  # type: ignore
 except:
     try:
@@ -107,7 +106,7 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
         elevation = round(tp.z_ax, 1), 
         time = dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name = str(tp.track_count + 1))
-    gpx_target.points.append(gpx_point)
+    gpx_target.points.append(gpx_point) # gpx_target is either gpx_route or gpx_segment shown in initialize_gpx().
 
     # This part may be informative.  Comment it out, if not necessary. 
     gpx_point.description = (
@@ -484,8 +483,7 @@ with in_file.open(mode='rb') as f:
             #utc_time = f'{format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
             
-        # Other headers which I don't know.
-        else:
+        else: # Other headers which I don't know.
         
             print(f'{hex(header)} Error in the track point header: '
                   f'{track_count}, {num_trackpt}')
