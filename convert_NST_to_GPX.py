@@ -223,7 +223,7 @@ with in_file.open(mode='rb') as f:
     oldNST_route = (10000 <= version < 20000) # Route files of the old Nokia SportsTracker.
     NST = (20000 <= version) # Track log files of Symbian SportsTracker.
     if not NST:
-        print(f'Version number less than expected: {version}')
+        print(f'Unexpected version number: {version}')
         quit()
         
     # Initialize gpx.
@@ -333,7 +333,7 @@ with in_file.open(mode='rb') as f:
     # Number of track points.
     f.seek(num_pause * 14, 1) # Pause data are 14 bytes each.  Skip pause data part.
     (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print(f'Number of track pts: {num_trackpt}')
+    #print(f'Number of track/route pts: {num_trackpt}')
     track_address = f.tell()
     
     

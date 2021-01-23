@@ -225,7 +225,7 @@ with in_file.open(mode='rb') as f:
     oldNST_route = (10000 <= version < 20000) # Route files of the old Nokia SportsTracker.
     NST = (20000 <= version) # Track log files of Symbian SportsTracker.
     if not NST:
-        print(f'Version number less than expected: {version}')
+        print(f'Unexpected version number: {version}')
         quit()
         
     # Initialize gpx.

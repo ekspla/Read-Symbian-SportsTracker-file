@@ -262,7 +262,7 @@ with in_file.open(mode='rb') as f:
     #start_address = 0x000ff # Usually 0x000ff.
     f.seek(start_address, 0) # Go to the start address of the main part.
     (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print(f'Number of route pts: {num_trackpt}')
+    #print(f'Number of track/route pts: {num_trackpt}')
     
     
     # There are no pause data in route files.   
