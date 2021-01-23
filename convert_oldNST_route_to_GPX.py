@@ -125,6 +125,35 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
         '</gpxtpx:TrackPointExtension>')
     gpx_point.extensions.append(gpx_extension_speed)
 
+def initialize_gpx():
+    # Creating a new GPX:
+    gpx = gpxpy.gpx.GPX()
+    
+    # Add TrackPointExtension namespaces and schema locations.
+    gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
+    gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
+    gpx.schema_locations = [
+        'http://www.topografix.com/GPX/1/1',
+        'http://www.topografix.com/GPX/1/1/gpx.xsd',
+        'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
+        'http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
+        'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
+        'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
+
+    if file_type == 0x3:
+        # Create the first route in the GPX:
+        gpx_route = gpxpy.gpx.GPXRoute()
+        gpx.routes.append(gpx_route)
+        return gpx, gpx_route
+    else:
+        # Create the first track in the GPX:
+        gpx_track = gpxpy.gpx.GPXTrack()
+        gpx.tracks.append(gpx_track)
+        # Create the first segment in the GPX track:
+        gpx_segment = gpxpy.gpx.GPXTrackSegment()
+        gpx_track.segments.append(gpx_segment)
+        return gpx, gpx_segment
+
 def finalize_gpx(gpx, write_file=None):
     # Add a summary.  This part may be informative.
     to_time = t_time if total_time == 0 else total_time
@@ -174,32 +203,11 @@ if argc < 2:
         This script reads route files (R*.dat) of the old-version Nokia 
         SportsTracker.""")
     quit()
-#print(argc)
 #print(argvs[1])
 
 #path = Path('.')
 in_file = Path(argvs[1])
 #print(in_file)
-
-
-# Creating a new GPX:
-gpx = gpxpy.gpx.GPX()
-
-# Create the first route in the GPX:
-gpx_route = gpxpy.gpx.GPXRoute()
-gpx.routes.append(gpx_route)
-
-# Add TrackPointExtension namespaces and schema locations.
-gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
-gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
-
-gpx.schema_locations = [
-    'http://www.topografix.com/GPX/1/1',
-    'http://www.topografix.com/GPX/1/1/gpx.xsd',
-    'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
-    'http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
-    'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
-    'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
 
 with in_file.open(mode='rb') as f:
@@ -223,6 +231,12 @@ with in_file.open(mode='rb') as f:
         print(f'Unexpected version number: {version}')
         quit()
         
+    # Initialize gpx.
+    if file_type == 0x3:
+        gpx, gpx_route = initialize_gpx()
+    else:
+        gpx, gpx_segment = initialize_gpx()
+    
     # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
