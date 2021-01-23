@@ -48,7 +48,7 @@ def dt_from_timestamp(timestamp, tz_info=None):
 
 def format_datetime(timestamp):
     d_t = dt_from_timestamp(round(timestamp, 3))
-    return (d_t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] if d_t != None # ISO-8601 format.
+    return (d_t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] if d_t is not None # ISO-8601 format.
             else f'INVALID({timestamp})')
 
 def format_timedelta(t_delta):
@@ -70,8 +70,7 @@ def scsu_reader(file_object, address=None):
     Returns:
         decoded_strings: strings of UTF-8.
     """
-    if address:
-        file_object.seek(address, 0)
+    if address is not None: file_object.seek(address, 0)
     (size, ) = read_unpack('B', file_object) # U8.  Read the size * 4 in bytes.
     if size & 0x1: # If LSB == 1, character_length >= 64.
         (size, ) = struct.unpack('<H', bytes([size]) + file_object.read(1)) # U16.  Read the size * 8 in bytes.
@@ -108,9 +107,7 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
         elevation = round(tp.z_ax, 1), 
         time = dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name = str(tp.track_count + 1))
-    gpx_append = (gpx_route.points.append if tp.file_type == 0x3 
-                  else gpx_segment.points.append)
-    gpx_append(gpx_point)
+    gpx_target.points.append(gpx_point)
 
     # This part may be informative.  Comment it out, if not necessary. 
     gpx_point.description = (
@@ -204,7 +201,6 @@ if argc < 2:
         SportsTracker.""")
     quit()
 #print(argvs[1])
-
 #path = Path('.')
 in_file = Path(argvs[1])
 #print(in_file)
@@ -232,10 +228,7 @@ with in_file.open(mode='rb') as f:
         quit()
         
     # Initialize gpx.
-    if file_type == 0x3:
-        gpx, gpx_route = initialize_gpx()
-    else:
-        gpx, gpx_segment = initialize_gpx()
+    gpx, gpx_target = initialize_gpx()
     
     # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
