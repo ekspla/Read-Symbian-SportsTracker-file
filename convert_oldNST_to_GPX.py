@@ -442,7 +442,7 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             unix_time = (
                 trackpt_store.unix_time + (t_time - trackpt_store.t_time))
-            #times = f'{t_time}, {format_datetime(unix_time)}Z'
+            #times = f'{t_time} {format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), times, *trackpt[1:])
             
         elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
@@ -485,7 +485,7 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             unix_time = trackpt_store.unix_time + trackpt.dt_time / 100
             
-            #times = f'{t_time}, {format_datetime(unix_time)}Z'
+            #times = f'{t_time} {format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), times, *trackpt[1:])
             
         else: # Other headers which I don't know.

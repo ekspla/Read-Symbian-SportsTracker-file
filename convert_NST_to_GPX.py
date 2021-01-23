@@ -445,7 +445,7 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             unix_time = symbian_to_unix_time(trackpt.symbian_time)
             
-            #times = f'{t_time}, {format_datetime(unix_time)}Z'
+            #times = f'{t_time} {format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), times, *trackpt[1:-1])
             
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
@@ -480,7 +480,7 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             unix_time = trackpt_store.unix_time + trackpt.dt_time / 100
             
-            #times = f'{t_time}, {format_datetime(unix_time)}Z'
+            #times = f'{t_time} {format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), times, *trackpt[1:])
             
         else: # Other headers which I don't know.

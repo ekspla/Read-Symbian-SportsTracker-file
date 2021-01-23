@@ -373,7 +373,7 @@ with in_file.open(mode='rb') as f:
                 dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
                 unix_time = symbian_to_unix_time(trackpt.symbian_time)
                 
-                times = f'{t_time}, {format_datetime(unix_time)}Z'
+                times = f'{t_time} {format_datetime(unix_time)}Z'
                 print(hex(f.tell()), hex(header), times, *trackpt[1:-1])
                 
                 # Remove spikes, because there is a lot of error in the temporal file.  This is an adhoc method, though.
