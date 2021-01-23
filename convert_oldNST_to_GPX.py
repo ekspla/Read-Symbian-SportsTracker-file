@@ -93,14 +93,14 @@ def scsu_reader(file_object, address=None):
 
 def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx or store it in a database, etc. 
     # tp: 'unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist, track_count, file_type'
+    # in:        sec,    sec,    deg.,     deg.,   m, km/h,  km,   km,   int. number, (track=2, route=3, tmp=4)
     
     # Print delimited text.
     #utc_time = f'{format_datetime(tp.unix_time)}Z'
     #to_time = format_timedelta(tp.t_time)
-    #print(f'{to_time}\t{utc_time}\t{round(tp.d_dist, 3)}'
-    #      f'\t{round(tp.dist, 3)}\t{round(tp.y_degree, 10)}\t'
-    #      f'{round(tp.x_degree, 10)}\t{round(tp.z_ax, 1)}\t'
-    #      f'{round(tp.v, 2)}')
+    #print(f'{to_time}\t{utc_time}\t{round(tp.d_dist, 3)}\t{round(tp.dist, 3)}'
+    #      f'\t{round(tp.y_degree, 10)}\t{round(tp.x_degree, 10)}\t'
+    #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
 
     # Print gpx xml.
     gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == 0x3 
@@ -128,6 +128,40 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
         '</gpxtpx:TrackPointExtension>')
     gpx_point.extensions.append(gpx_extension_speed)
 
+def finalize_gpx(gpx, write_file=None):
+    write_file = False if write_file == None else write_file
+
+    # Add a summary.  This part may be informative.
+    to_time = t_time if total_time == 0 else total_time
+    to_dist = dist if total_distance == 0 else total_distance
+    n_speed = to_dist / (to_time / 3600) # Calculate net speed in km/h.
+    descr = ('[' f'Total time: {format_timedelta(to_time)}' '; ' 
+             f'Total distance: {round(to_dist, 3)} km' '; '
+             f'Net speed: {round(n_speed, 3)} km/h')
+    if file_type == 0x3:
+        gpx.routes[0].description = (f'{descr}' ']')
+    else:
+        stop_t = (stop_localtime if stop_localtime != symbian_to_unix_time(0) 
+                  else unix_time + TZ_hours * 3600)
+        real_t = stop_t - start_localtime
+        g_speed = to_dist / (real_t / 3600) # Calculate gross speed in km/h.
+        gpx.tracks[0].description = (
+            f'{descr}' '; ' 
+            f'Start localtime: {format_datetime(start_localtime)}' '; '
+            f'Stop localtime: {format_datetime(stop_t)}' '; '
+            f'Real time: {format_timedelta(real_t)}' '; '
+            f'Gross speed: {round(g_speed, 3)} km/h' ']')
+
+    # Finally, print or write the gpx. 
+    if not write_file:
+        print(gpx.to_xml('1.1'))
+    else:
+        gpx_file = Path(argvs[1][:-3] + 'gpx')
+        result = gpx.to_xml('1.1')
+        result_file = open(gpx_file, 'w')
+        result_file.write(result)
+        result_file.close()
+
 
 # Arguments and help.
 argvs = sys.argv
@@ -143,7 +177,6 @@ if argc < 2:
 #path = Path('.')
 in_file = Path(argvs[1])
 #print(in_file)
-#gpx_file = Path(argvs[1][:-3] + 'gpx')
 
 
 # Creating a new GPX:
@@ -491,13 +524,9 @@ with in_file.open(mode='rb') as f:
                 del pause_list[0]
                 
         trackpt_store = Trackpt_store(
-            unix_time=unix_time, t_time=t_time, # s
-            y_degree=y_degree, x_degree=x_degree, # degree
-            z_ax=z_ax, # m
-            v=v, # km/h
-            d_dist=trackpt.d_dist / 1e5, dist=dist, # km
-            track_count=track_count, # int
-            file_type=file_type) # int: 0x2 = Track, 0x3 = Route, 0x4 = tmp.
+            unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
+            x_degree=x_degree, z_ax=z_ax, v=v, d_dist=trackpt.d_dist / 1e5, 
+            dist=dist, track_count=track_count, file_type=file_type)
         store_trackpt(trackpt_store)
         
         track_count += 1
@@ -508,22 +537,4 @@ if track_count != num_trackpt:
     print(f'Track point count error: {track_count}, {num_trackpt}')
     quit()
 
-
-# Add a summary.  This part may be informative.
-gpx.tracks[0].description = (
-    '['
-    f'Total time: {format_timedelta(total_time)}' '; '
-    f'Total distance: {round(total_distance, 3)} km' '; '
-    f'Net speed: {round(net_speed, 3)} km/h' '; '
-    f'Start localtime: {format_datetime(start_localtime)}' '; '
-    f'Stop localtime: {format_datetime(stop_localtime)}' '; '
-    f'Real time: {format_timedelta(real_time)}' '; '
-    f'Gross speed: {round(gross_speed, 3)} km/h' ']')
-
-# Finally, print or write the gpx. 
-print(gpx.to_xml('1.1'))
-
-#result = gpx.to_xml('1.1')
-#result_file = open(gpx_file, 'w')
-#result_file.write(result)
-#result_file.close()
+finalize_gpx(gpx, write_file=False) # True=write file, False=print.
