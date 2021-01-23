@@ -129,7 +129,7 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
     gpx_point.extensions.append(gpx_extension_speed)
 
 def finalize_gpx(gpx, write_file=None):
-    write_file = False if write_file == None else write_file
+    write_file = False if write_file is None else write_file
 
     # Add a summary.  This part may be informative.
     to_time = t_time if total_time == 0 else total_time
