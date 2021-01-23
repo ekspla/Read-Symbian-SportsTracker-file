@@ -211,7 +211,7 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00000, 0)
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
     (application_id, file_type) = read_unpack('<2I', f)
-    if not (application_id == 0x0e4935e8 and file_type == 0x3): # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
+    if application_id != 0x0e4935e8 or file_type != 0x3: # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
         print(f'Unexpected file type: {file_type}')
         quit()
         
@@ -317,8 +317,8 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             unix_time = (
                 trackpt_store.unix_time + (t_time - trackpt_store.t_time))
-            #utc_time = f'{format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
+            #times = f'{t_time}, {format_datetime(unix_time)}Z'
+            #print(hex(f.tell()), hex(header), times, *trackpt[1:])
             
         elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
                         0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
@@ -360,8 +360,8 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get total distance in km.
             unix_time = trackpt_store.unix_time + trackpt.dt_time / 100
             
-            #utc_time = f'{format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:])
+            #times = f'{t_time}, {format_datetime(unix_time)}Z'
+            #print(hex(f.tell()), hex(header), times, *trackpt[1:])
             
         else: # Other headers which I don't know.
         

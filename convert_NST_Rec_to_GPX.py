@@ -213,7 +213,7 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00000, 0)
     # Read 12 (4+4+4) bytes, little endian U32+U32+U32, returns tuple.
     (application_id, file_type, blank) = read_unpack('<3I', f)
-    if not (application_id == 0x0e4935e8 and file_type == 0x4 and blank == 0x0): # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
+    if application_id != 0x0e4935e8 or file_type != 0x4 or blank != 0x0: # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
         print(f'Unexpected file type: {file_type}')
         quit()
         
@@ -373,8 +373,8 @@ with in_file.open(mode='rb') as f:
                 dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
                 unix_time = symbian_to_unix_time(trackpt.symbian_time)
                 
-                utc_time = f'{format_datetime(unix_time)}Z'
-                print(hex(f.tell()), hex(header), t_time, utc_time, *trackpt[1:-1])
+                times = f'{t_time}, {format_datetime(unix_time)}Z'
+                print(hex(f.tell()), hex(header), times, *trackpt[1:-1])
                 
                 # Remove spikes, because there is a lot of error in the temporal file.  This is an adhoc method, though.
                 # TODO: It is better to read and use both the trackpt and pause data to correct bad timestamps in the temporal file.
@@ -394,7 +394,7 @@ with in_file.open(mode='rb') as f:
                             t + min(delta_unix_time, delta_t_time) for t in 
                             (trackpt_store.unix_time, trackpt_store.t_time))
                         suspect_pause = True # Set the flag to see if this is because of a pause.
-                        print(f'Bad.  Two distinct increments at: {hex(pointer)}')
+                        print(f'Bad.  Two distinct delta_s at: {hex(pointer)}')
                 elif (not good_unix_time) and good_t_time:
                     unix_time = trackpt_store.unix_time + delta_t_time # Correct unixtime by using totaltime.
                     print(f'Bad unixtime at: {hex(pointer)}')
