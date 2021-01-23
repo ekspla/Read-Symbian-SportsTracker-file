@@ -311,10 +311,12 @@ with in_file.open(mode='rb') as f:
     track_count = 0
     
     # Factory functions for creating named tuples.
-    type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time'
-    type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2'
-    typeC0 = ('dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist, '
-              'unknown1, unknown2')
+    type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
+    type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
+    typeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
+    if NST:
+        type00 = type00 + ', symbian_time'
+        type80, typeC0 = (t + ', unknown1, unknown2' for t in (type80, typeC0))
     type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
                   'dist, track_count, file_type')
     Trackpt_type00 = namedtuple('Trackpt_type00', type00)

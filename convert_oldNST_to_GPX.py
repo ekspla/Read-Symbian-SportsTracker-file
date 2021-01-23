@@ -400,14 +400,17 @@ with in_file.open(mode='rb') as f:
     # given in the trackpoint part of the old version.  This is very different from the new version.
     
     # Factory functions for creating named tuples.
-    oldtype00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
-    oldtype80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
-    oldtypeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
+    type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
+    type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
+    typeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
+    if NST:
+        type00 = type00 + ', symbian_time'
+        type80, typeC0 = (t + ', unknown1, unknown2' for t in (type80, typeC0))
     type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
                   'dist, track_count, file_type')
-    Trackpt_oldtype00 = namedtuple('Trackpt_oldtype00', oldtype00)
-    Trackpt_oldtype80 = namedtuple('Trackpt_oldtype80', oldtype80)
-    Trackpt_oldtypeC0 = namedtuple('Trackpt_oldtypeC0', oldtypeC0)
+    Trackpt_type00 = namedtuple('Trackpt_type00', type00)
+    Trackpt_type80 = namedtuple('Trackpt_type80', type80)
+    Trackpt_typeC0 = namedtuple('Trackpt_typeC0', typeC0)
     Trackpt_store = namedtuple('Trackpt_store', type_store)
     Trackpt_store.__new__.__defaults__ = (None,) * len(Trackpt_store._fields)
 
@@ -424,7 +427,7 @@ with in_file.open(mode='rb') as f:
         
         if header in {0x00, 0x02, 0x03}:
         
-            (Trackpt, fmt) = (Trackpt_oldtype00, '<I3iHI')
+            (Trackpt, fmt) = (Trackpt_type00, '<I3iHI')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist)
             # Read 22 bytes of data(4+4+4+4+2+4).  Negative y and x mean South and West, respectively.
             trackpt = Trackpt._make(read_unpack(fmt, f)) # Wrap it with named tuple.
@@ -450,7 +453,7 @@ with in_file.open(mode='rb') as f:
         
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
             
-                Trackpt = Trackpt_oldtype80
+                Trackpt = Trackpt_type80
                 # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist)
                 
                 if header in {0x80, 0x82, 0x83}:
@@ -462,7 +465,7 @@ with in_file.open(mode='rb') as f:
                 
             elif header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: # This case is quite rare.
             
-                Trackpt = Trackpt_oldtypeC0
+                Trackpt = Trackpt_typeC0
                 # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist)
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.
                 
