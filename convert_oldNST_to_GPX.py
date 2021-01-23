@@ -39,14 +39,12 @@ def dt_from_timestamp(timestamp, tz_info=None):
     if workaround and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
         d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         d_t += dt.timedelta(seconds=1) * timestamp
-        return (d_t.replace(tzinfo=None) if tz_info is None 
-                else d_t.astimezone(tz_info))
     elif (not workaround) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
         d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
-        return (d_t.replace(tzinfo=None) if tz_info is None 
-                else d_t.astimezone(tz_info))
     else:
         return None
+    return (d_t.replace(tzinfo=None) if tz_info is None 
+            else d_t.astimezone(tz_info))
 
 def format_datetime(timestamp):
     d_t = dt_from_timestamp(round(timestamp, 3))
@@ -56,8 +54,7 @@ def format_datetime(timestamp):
 def format_timedelta(t_delta):
     return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
 
-# Helper function to read and unpack.
-def read_unpack(fmt, file_object):
+def read_unpack(fmt, file_object): # Helper function to read and unpack.
     size = struct.calcsize(fmt)
     return struct.unpack(fmt, file_object.read(size))
 
@@ -129,8 +126,6 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx 
     gpx_point.extensions.append(gpx_extension_speed)
 
 def finalize_gpx(gpx, write_file=None):
-    write_file = False if write_file is None else write_file
-
     # Add a summary.  This part may be informative.
     to_time = t_time if total_time == 0 else total_time
     to_dist = dist if total_distance == 0 else total_distance
@@ -138,9 +133,12 @@ def finalize_gpx(gpx, write_file=None):
     descr = ('[' f'Total time: {format_timedelta(to_time)}' '; ' 
              f'Total distance: {round(to_dist, 3)} km' '; '
              f'Net speed: {round(n_speed, 3)} km/h')
-    if file_type == 0x3:
+    gpx.name = f'[{route_name}]' if file_type == 0x3 else f'[{track_name}]'
+    if file_type == 0x3: # Route files.
+        gpx.routes[0].name = gpx.name
         gpx.routes[0].description = (f'{descr}' ']')
-    else:
+    else: # Track files.
+        gpx.tracks[0].name = gpx.name
         stop_t = (stop_localtime if stop_localtime != symbian_to_unix_time(0) 
                   else unix_time + TZ_hours * 3600)
         real_t = stop_t - start_localtime
@@ -151,16 +149,21 @@ def finalize_gpx(gpx, write_file=None):
             f'Stop localtime: {format_datetime(stop_t)}' '; '
             f'Real time: {format_timedelta(real_t)}' '; '
             f'Gross speed: {round(g_speed, 3)} km/h' ']')
-
+        gpx.description = f'[{description}]' # This field shows type of actvity (walking, running, cycling, etc.).
+        gpx.author_name = str(user_id)
+        gpx.time = dt_from_timestamp(
+            start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
+        if 'comment' in globals():
+            if comment: gpx.tracks[0].comment = comment
     # Finally, print or write the gpx. 
-    if not write_file:
-        print(gpx.to_xml('1.1'))
-    else:
+    write_file = False if write_file is None else write_file
+    if write_file:
         gpx_file = Path(argvs[1][:-3] + 'gpx')
         result = gpx.to_xml('1.1')
         result_file = open(gpx_file, 'w')
         result_file.write(result)
         result_file.close()
+    else: print(gpx.to_xml('1.1'))
 
 
 # Arguments and help.
@@ -206,12 +209,10 @@ gpx.schema_locations = [
 with in_file.open(mode='rb') as f:
     
     # Check if this is a track log file.
-    # 0x0E4935E8 ; Application ID.
-    # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
     #f.seek(0x00000, 0)
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
-    (app_id, file_type) = read_unpack('<2I', f)
-    if not (app_id == 0x0e4935e8 and file_type == 0x2):
+    (application_id, file_type) = read_unpack('<2I', f)
+    if not (application_id == 0x0e4935e8 and file_type == 0x2): # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
         print(f'Unexpected file type: {file_type}')
         quit()
         
@@ -278,7 +279,6 @@ with in_file.open(mode='rb') as f:
     # User ID, please see config.dat.
     (user_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'User id: {user_id}')
-    gpx.author_name = str(user_id)
     
     # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
@@ -291,18 +291,13 @@ with in_file.open(mode='rb') as f:
     description = (activities[activity] if activity < len(activities) 
                    else str(activity))
     #print(f'Activity: {description}')
-    gpx.description = f'[{description}]'
     
     # Read SCSU encoded name of the track, which is usually the datetime.
-    # 
     # In most cases, the name consists of ASCII characters, strings of 16 bytes, such as 
     # '24/12/2019 12:34'.  The strings are, in principle, not fully compatible with utf-8 but 
     # can be non-ASCII characters encoded with SCSU (simple compression scheme for unicode).
-    #
     track_name = scsu_reader(f, 0x00046) # This address is fixed.
     #print(f'Track name: {track_name}')
-    gpx.name = f'[{track_name}]'
-    gpx.tracks[0].name = gpx.name
     
     # Starttime & Stoptime in UTC.
     f.seek(0x0018e, 0) # Go to 0x0018e, this address is fixed.
@@ -315,8 +310,6 @@ with in_file.open(mode='rb') as f:
     
     # We can calculate the timezone by using the starttimes in Z and in localtime.
     TZ_hours = int(start_localtime - start_time) / 3600
-    gpx.time = dt_from_timestamp(
-        start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
     
     # This will overwrite the realtime shown above.
     real_time = stop_time - start_time # Realtime in seconds.
@@ -340,10 +333,6 @@ with in_file.open(mode='rb') as f:
     # Go to the first pause data.
     f.seek(pause_address, 0)
     
-    t_time = 0 # Totaltime in seconds.
-    unix_time = 0 # unix time.
-    utc_time = ''
-    pause_time = 0 # Time between suspend and resume.
     pause_count = 0
     pause_list = []
     
@@ -381,7 +370,7 @@ with in_file.open(mode='rb') as f:
                 print('Error in pause.')
                 quit()
                 
-            pause_time = unix_time - suspend_time
+            pause_time = unix_time - suspend_time # Time between suspend and resume.
             pause_list.append((t_time, pause_time, unix_time))
             
         # Flag = 8.  Not quite sure how to use the flag-8 data.  Use it as a correction of time. 
