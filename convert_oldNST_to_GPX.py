@@ -88,7 +88,7 @@ def scsu_reader(file_object, address=None):
 
 def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx or store it in a database, etc. 
     # tp: 'unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist, track_count, file_type'
-    # in:        sec,    sec,    deg.,     deg.,   m, km/h,  km,   km,   int. number, (track=2, route=3, tmp=4)
+    # in unit:  sec.,   sec.,    deg.,     deg.,   m, km/h,  km,   km,   int. number, (track=2, route=3, tmp=4)
     
     # Print delimited text.
     #utc_time = f'{format_datetime(tp.unix_time)}Z'
@@ -174,7 +174,7 @@ def finalize_gpx(gpx, write_file=None):
             f'Stop localtime: {format_datetime(stop_t)}' '; '
             f'Real time: {format_timedelta(real_t)}' '; '
             f'Gross speed: {round(g_speed, 3)} km/h' ']')
-        gpx.description = f'[{description}]' # This field shows type of actvity (walking, running, cycling, etc.).
+        gpx.description = f'[{description}]' # This field shows the type of activity (walking, running, cycling, etc.).
         gpx.author_name = str(user_id)
         gpx.time = dt_from_timestamp(
             start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
