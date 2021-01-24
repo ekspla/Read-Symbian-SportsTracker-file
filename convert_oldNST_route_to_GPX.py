@@ -86,7 +86,7 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
-def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx or store it in a database, etc. 
+def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx, store it in a database, etc. 
     # tp: 'unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist, track_count, file_type'
     # in unit:  sec.,   sec.,    deg.,     deg.,   m, km/h,  km,   km,   int. number, (track=2, route=3, tmp=4)
     
@@ -226,7 +226,6 @@ with in_file.open(mode='rb') as f:
         print(f'Unexpected version number: {version}')
         quit()
         
-    # Initialize gpx.
     gpx, gpx_target = initialize_gpx()
     
     # Start address of the main part (pause and trackpoint data).
@@ -276,8 +275,8 @@ with in_file.open(mode='rb') as f:
     type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
     typeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
-    if NST:
-        type00 = type00 + ', symbian_time'
+    if NST: # The fields shown below are added in the new version.
+        type00 += ', symbian_time'
         type80, typeC0 = (t + ', unknown1, unknown2' for t in (type80, typeC0))
     type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
                   'dist, track_count, file_type')
@@ -320,6 +319,7 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 100 / 1e3 # Divide (m) by 1e3 to get distance in km.
             unix_time = (
                 trackpt_store.unix_time + (t_time - trackpt_store.t_time))
+            
             #times = f'{t_time} {format_datetime(unix_time)}Z'
             #print(hex(f.tell()), hex(header), times, *trackpt[1:])
             
