@@ -227,9 +227,9 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     #print(f'Version: {version}')
-    (oldNST, oldNST_route, NST) = ( # OldNST track, oldNST route and the new NST track.
+    (OLDNST, OLDNST_ROUTE, NST) = ( # OldNST track, oldNST route and the new NST track.
         version < 10000, 10000 <= version < 20000, 20000 <= version)
-    if not oldNST_route:
+    if not OLDNST_ROUTE:
         print(f'Unexpected version number: {version}')
         quit()
         
