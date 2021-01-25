@@ -32,13 +32,16 @@ def symbian_to_unix_time(symbian_time):
     unix_time = symbian_time / 1e6 - 62168256000
     return unix_time
 
-# A workaround of dt.datetime.fromtimestamp() for handling the full range of datetimes in a few platforms after the year 2038.
 def dt_from_timestamp(timestamp, tz_info=None):
-    workaround = False # True: use the workaround.  False: use dt.datetime.fromtimestamp().
-    if workaround and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
+    """A workaround of datetime.fromtimestamp() for a few platforms after 2038.
+    
+    Set WORKAROUND = True, if necessary.
+    """
+    WORKAROUND = False
+    if WORKAROUND and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
         d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         d_t += dt.timedelta(seconds=1) * timestamp
-    elif (not workaround) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
+    elif (not WORKAROUND) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
         d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
     else:
         return None
@@ -51,7 +54,7 @@ def format_datetime(timestamp):
             else f'INVALID({timestamp})')
 
 def format_timedelta(t_delta):
-    return str(dt.timedelta(seconds = round(t_delta, 3)))[:-3]
+    return str(dt.timedelta(seconds=round(t_delta, 3)))[:-3]
 
 def read_unpack(fmt, file_object): # Helper function to read and unpack.
     size = struct.calcsize(fmt)
@@ -86,10 +89,13 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
-def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx, store it in a database, etc. 
-    # tp: 'unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist, track_count, file_type'
-    # in unit:  sec.,   sec.,    deg.,     deg.,   m, km/h,  km,   km,   int. number, (track=2, route=3, tmp=4)
+def store_trackpt(tp):
+    """Do whatever with the trackpt data: print, gpx, store in a database, etc.
     
+    Args:
+        tp: (unix_time(s), t_time(s), y_degree, x_degree, z_ax(m), v(km/h), 
+             d_dist(km), dist(km), track_count(int), file_type(int: 2, 3 or 4))
+    """
     # Print delimited text.
     #utc_time = f'{format_datetime(tp.unix_time)}Z'
     #to_time = format_timedelta(tp.t_time)
@@ -101,11 +107,11 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx,
     gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == 0x3 
                      else gpxpy.gpx.GPXTrackPoint)
     gpx_point = gpx_point_def(
-        latitude = round(tp.y_degree, 10), 
-        longitude = round(tp.x_degree, 10), 
-        elevation = round(tp.z_ax, 1), 
-        time = dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
-        name = str(tp.track_count + 1))
+        latitude=round(tp.y_degree, 10), 
+        longitude=round(tp.x_degree, 10), 
+        elevation=round(tp.z_ax, 1), 
+        time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
+        name=str(tp.track_count + 1))
     gpx_target.points.append(gpx_point) # gpx_target is either gpx_route or gpx_segment shown in initialize_gpx().
 
     # This part may be informative.  Comment it out, if not necessary. 
@@ -121,7 +127,7 @@ def store_trackpt(tp): # Do whatever with the trackpoint data: print, write gpx,
         '</gpxtpx:TrackPointExtension>')
     gpx_point.extensions.append(gpx_extension_speed)
 
-def initialize_gpx():
+def initialize_gpx(file_type):
     # Creating a new GPX:
     gpx = gpxpy.gpx.GPX()
     
@@ -177,9 +183,10 @@ def finalize_gpx(gpx, write_file=None):
         gpx.description = f'[{description}]' # This field shows the type of activity (walking, running, cycling, etc.).
         gpx.author_name = str(user_id)
         gpx.time = dt_from_timestamp(
-            start_time, dt.timezone(dt.timedelta(hours = TZ_hours), ))
+            start_time, dt.timezone(dt.timedelta(hours=TZ_hours), ))
         if 'comment' in globals():
             if comment: gpx.tracks[0].comment = comment
+
     # Finally, print or write the gpx. 
     write_file = False if write_file is None else write_file
     if write_file:
@@ -188,7 +195,8 @@ def finalize_gpx(gpx, write_file=None):
         result_file = open(gpx_file, 'w')
         result_file.write(result)
         result_file.close()
-    else: print(gpx.to_xml('1.1'))
+    else:
+        print(gpx.to_xml('1.1'))
 
 
 # Arguments and help.
@@ -221,14 +229,13 @@ with in_file.open(mode='rb') as f:
     #f.seek(0x00008 + 0x4, 0) # Go to 0x00008 + 0x4, this address is fixed.
     (version, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
     print(f'Version: {version}')
-    oldNST = (version < 10000) # Track log files of the old Nokia SportsTracker.
-    oldNST_route = (10000 <= version < 20000) # Route files of the old Nokia SportsTracker.
-    NST = (20000 <= version) # Track log files of Symbian SportsTracker.
+    (oldNST, oldNST_route, NST) = ( # OldNST track, oldNST route and the new NST track.
+        version < 10000, 10000 <= version < 20000, 20000 <= version)
     if not NST:
         print(f'Unexpected version number: {version}')
         quit()
         
-    gpx, gpx_target = initialize_gpx()
+    gpx, gpx_target = initialize_gpx(file_type)
     
     # Start address of the main part (pause and trackpoint data).
     # We don't read the address from the file because it is useless.
