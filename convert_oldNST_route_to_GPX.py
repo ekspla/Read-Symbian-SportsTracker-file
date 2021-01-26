@@ -14,7 +14,7 @@ from collections import namedtuple
 import gpxpy
 import gpxpy.gpx
 
-try: # Load LXML or fallback to cET or ET 
+try: # Load LXML or fallback to cET or ET.
     import lxml.etree as mod_etree  # type: ignore
 except:
     try:
@@ -29,19 +29,19 @@ import scsu
 #  microseconds since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
 #  BC dates are represented by negative values.
 def symbian_to_unix_time(symbian_time):
-    unix_time = symbian_time / 1e6 - 62168256000
-    return unix_time
+    _unix_time = symbian_time / 1e6 - 62168256000
+    return _unix_time
 
 def dt_from_timestamp(timestamp, tz_info=None):
     """A workaround of datetime.fromtimestamp() for a few platforms after 2038.
     
-    Set WORKAROUND = True, if necessary.
+    Set _WORKAROUND = True, if necessary.
     """
-    WORKAROUND = False
-    if WORKAROUND and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
+    _WORKAROUND = False
+    if _WORKAROUND and -62135596800 <= timestamp < 253402300800: # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
         d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         d_t += dt.timedelta(seconds=1) * timestamp
-    elif (not WORKAROUND) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
+    elif (not _WORKAROUND) and 0 <= timestamp < 32536799999: # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59.  The range depends on your platform.
         d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
     else:
         return None
@@ -85,7 +85,7 @@ def scsu_reader(file_object, address=None):
     decoded_strings = out_array.decode('utf-8', 'ignore') # Sanitize and check the length.
     if len(decoded_strings) != size:
         print('SCSU decode failed.', out_array)
-        quit()
+        sys.exit(1)
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
@@ -114,7 +114,7 @@ def store_trackpt(tp):
         name=str(tp.track_count + 1))
     gpx_target.points.append(gpx_point) # gpx_target is either gpx_route or gpx_segment shown in initialize_gpx().
 
-    # This part may be informative.  Comment it out, if not necessary. 
+    # This part may be informative.  Comment it out, if not necessary.
     gpx_point.description = (
         f'Speed {round(tp.v, 3)} km/h Distance {round(tp.dist, 3)} km')
 
@@ -156,41 +156,42 @@ def initialize_gpx(file_type):
         gpx_track.segments.append(gpx_segment)
         return gpx, gpx_segment
 
-def finalize_gpx(gpx, write_file=None):
+def finalize_gpx(gpx, file_type, write_file=None):
     # Add a summary.  This part may be informative.
-    to_time = t_time if total_time == 0 else total_time
-    to_dist = dist if total_distance == 0 else total_distance
-    n_speed = to_dist / (to_time / 3600) # Calculate net speed in km/h.
-    descr = ('[' f'Total time: {format_timedelta(to_time)}' '; ' 
-             f'Total distance: {round(to_dist, 3)} km' '; '
-             f'Net speed: {round(n_speed, 3)} km/h')
+    _total_time = t_time if total_time == 0 else total_time
+    _total_distance = dist if total_distance == 0 else total_distance
+    _net_speed = _total_distance / (_total_time / 3600) # Net speed in km/h.
+    descr = ('[' f'Total time: {format_timedelta(_total_time)}' '; '
+             f'Total distance: {round(_total_distance, 3)} km' '; '
+             f'Net speed: {round(_net_speed, 3)} km/h')
     gpx.name = f'[{route_name}]' if file_type == 0x3 else f'[{track_name}]'
     if file_type == 0x3: # Route files.
         gpx.routes[0].name = gpx.name
         gpx.routes[0].description = (f'{descr}' ']')
     else: # Track files.
         gpx.tracks[0].name = gpx.name
-        stop_t = (stop_localtime if stop_localtime != symbian_to_unix_time(0) 
-                  else unix_time + TZ_hours * 3600)
-        real_t = stop_t - start_localtime
-        g_speed = to_dist / (real_t / 3600) # Calculate gross speed in km/h.
+        _stop_localtime = (
+            stop_localtime if stop_localtime != symbian_to_unix_time(0) 
+            else unix_time + TZ_HOURS * 3600)
+        _real_time = _stop_localtime - start_localtime
+        _gross_speed = _total_distance / (_real_time / 3600) # Gross speed in km/h.
         gpx.tracks[0].description = (
-            f'{descr}' '; ' 
+            f'{descr}' '; '
             f'Start localtime: {format_datetime(start_localtime)}' '; '
-            f'Stop localtime: {format_datetime(stop_t)}' '; '
-            f'Real time: {format_timedelta(real_t)}' '; '
-            f'Gross speed: {round(g_speed, 3)} km/h' ']')
-        gpx.description = f'[{description}]' # This field shows the type of activity (walking, running, cycling, etc.).
-        gpx.author_name = str(user_id)
+            f'Stop localtime: {format_datetime(_stop_localtime)}' '; '
+            f'Real time: {format_timedelta(_real_time)}' '; '
+            f'Gross speed: {round(_gross_speed, 3)} km/h' ']')
+        gpx.description = f'[{description}]' # The type of activity (walking, running, cycling, etc.).
+        gpx.author_name = str(USER_ID)
         gpx.time = dt_from_timestamp(
-            start_time, dt.timezone(dt.timedelta(hours=TZ_hours), ))
+            start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
         if 'comment' in globals():
             if comment: gpx.tracks[0].comment = comment
 
-    # Finally, print or write the gpx. 
+    # Finally, print or write the gpx.
     write_file = False if write_file is None else write_file
     if write_file:
-        gpx_file = Path(argvs[1][:-3] + 'gpx')
+        gpx_file = Path(str(in_file)[:-3] + 'gpx')
         result = gpx.to_xml('1.1')
         result_file = open(gpx_file, 'w')
         result_file.write(result)
@@ -206,7 +207,7 @@ if argc < 2:
     print(f"""Usage: # python {argvs[0]} input_filename\n
         This script reads route files (R*.dat) of the old-version Nokia 
         SportsTracker.""")
-    quit()
+    sys.exit(0)
 #print(argvs[1])
 #path = Path('.')
 in_file = Path(argvs[1])
@@ -218,10 +219,10 @@ with in_file.open(mode='rb') as f:
     # Check if this is a route file.
     #f.seek(0x00000, 0)
     # Read 8 (4+4) bytes, little endian U32+U32, returns tuple.
-    (application_id, file_type) = read_unpack('<2I', f)
-    if application_id != 0x0e4935e8 or file_type != 0x3: # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
-        print(f'Unexpected file type: {file_type}')
-        quit()
+    (APPLICATION_ID, FILE_TYPE) = read_unpack('<2I', f)
+    if APPLICATION_ID != 0x0e4935e8 or FILE_TYPE != 0x3: # File type: 0x1 = config, 0x2 = Track, 0x3 = Route, 0x4 = tmp.
+        print(f'Unexpected file type: {FILE_TYPE}')
+        sys.exit(1)
         
     # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
@@ -231,9 +232,9 @@ with in_file.open(mode='rb') as f:
         version < 10000, 10000 <= version < 20000, 20000 <= version)
     if not OLDNST_ROUTE:
         print(f'Unexpected version number: {version}')
-        quit()
+        sys.exit(1)
         
-    gpx, gpx_target = initialize_gpx(file_type)
+    gpx, gpx_target = initialize_gpx(FILE_TYPE)
     
     # Start address of the main part (pause and trackpoint data).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
@@ -248,8 +249,8 @@ with in_file.open(mode='rb') as f:
     
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
-    (route_id, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print(f'Route ID: {route_id}')
+    (ROUTE_ID, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
+    #print(f'Route ID: {ROUTE_ID}')
     
     # Read SCSU encoded name of the route.  Its length is variable.
     #f.seek(0x00018, 0) # Go to 0x00018, this address is fixed.
@@ -267,8 +268,8 @@ with in_file.open(mode='rb') as f:
     # Number of track points.
     #start_address = 0x000ff # Usually 0x000ff.
     f.seek(start_address, 0) # Go to the start address of the main part.
-    (num_trackpt, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
-    #print(f'Number of track/route pts: {num_trackpt}')
+    (NUM_TRACKPT, ) = read_unpack('<I', f) # Read 4 bytes, little endian U32, returns tuple.
+    #print(f'Number of track/route pts: {NUM_TRACKPT}')
     
     
     # There are no pause data in route files.   
@@ -279,28 +280,28 @@ with in_file.open(mode='rb') as f:
     # given in the trackpoint part of the old version.  This is very different from the new version.
     
     # Factory functions for creating named tuples.
-    type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
-    type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
-    typeC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
+    TYPE00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
+    TYPE80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
+    TYPEC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
     if NST: # The fields shown below are added in the new version.
-        type00 += ', symbian_time'
-        type80, typeC0 = (t + ', unknown1, unknown2' for t in (type80, typeC0))
-    type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
+        TYPE00 += ', symbian_time'
+        TYPE80, TYPEC0 = (t + ', unknown1, unknown2' for t in (TYPE80, TYPEC0))
+    TYPE_STORE = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
                   'dist, track_count, file_type')
-    Trackpt_type00 = namedtuple('Trackpt_type00', type00)
-    Trackpt_type80 = namedtuple('Trackpt_type80', type80)
-    Trackpt_typeC0 = namedtuple('Trackpt_typeC0', typeC0)
-    Trackpt_store = namedtuple('Trackpt_store', type_store)
-    Trackpt_store.__new__.__defaults__ = (None,) * len(Trackpt_store._fields)
+    TrackptType00 = namedtuple('TrackptType00', TYPE00)
+    TrackptType80 = namedtuple('TrackptType80', TYPE80)
+    TrackptTypeC0 = namedtuple('TrackptTypeC0', TYPEC0)
+    TrackptStore = namedtuple('TrackptStore', TYPE_STORE)
+    TrackptStore.__new__.__defaults__ = (None,) * len(TrackptStore._fields)
 
     # We will use mtime as start_time, because the start/stop times stored in 
     # the route files are always 0, which means January 1st 0 AD 00:00:00.
-    trackpt_store = Trackpt_store() # A temporal storage to pass the trackpt.
+    trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=in_file.stat().st_mtime, t_time=0, dist=0)
     
     # The main loop to read the trackpoints.
-    while track_count < num_trackpt:
+    while track_count < NUM_TRACKPT:
     
         pointer = f.tell()
         header_fmt = 'B' # Read the 1-byte header.
@@ -308,7 +309,7 @@ with in_file.open(mode='rb') as f:
         
         if header in {0x00, 0x02, 0x03}:
         
-            (Trackpt, fmt) = (Trackpt_type00, '<I3iHI')
+            (Trackpt, fmt) = (TrackptType00, '<I3iHI')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist)
             # Read 22 bytes of data(4+4+4+4+2+4).  Negative y and x mean South and West, respectively.
             trackpt = Trackpt._make(read_unpack(fmt, f)) # Wrap it with named tuple.
@@ -335,7 +336,7 @@ with in_file.open(mode='rb') as f:
         
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
             
-                Trackpt = Trackpt_type80
+                Trackpt = TrackptType80
                 # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist)
                 
                 if header in {0x80, 0x82, 0x83}:
@@ -347,7 +348,7 @@ with in_file.open(mode='rb') as f:
                 
             elif header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: # This case is quite rare.
             
-                Trackpt = Trackpt_typeC0
+                Trackpt = TrackptTypeC0
                 # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist)
                 # Unknown3 & 4 show up in distant jumps.  They might have a meaning but we can live without it.
                 
@@ -376,24 +377,24 @@ with in_file.open(mode='rb') as f:
         else: # Other headers which I don't know.
         
             print(f'{hex(header)} Error in the track point header: '
-                  f'{track_count}, {num_trackpt}')
+                  f'{track_count}, {NUM_TRACKPT}')
             print(f'At address: {hex(pointer)}')
             print(*trackpt)
             print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
             break
             
-        trackpt_store = Trackpt_store(
+        trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
             x_degree=x_degree, z_ax=z_ax, v=v, d_dist=trackpt.d_dist / 1e5, 
-            dist=dist, track_count=track_count, file_type=file_type)
+            dist=dist, track_count=track_count, file_type=FILE_TYPE)
         store_trackpt(trackpt_store)
         
         track_count += 1
         
         
 # Handling of errors.
-if track_count != num_trackpt:
-    print(f'Track point count error: {track_count}, {num_trackpt}')
-    quit()
+if track_count != NUM_TRACKPT:
+    print(f'Track point count error: {track_count}, {NUM_TRACKPT}')
+    sys.exit(1)
 
-finalize_gpx(gpx, write_file=False) # True=write file, False=print.
+finalize_gpx(gpx, FILE_TYPE, write_file=False) # True=write file, False=print.
