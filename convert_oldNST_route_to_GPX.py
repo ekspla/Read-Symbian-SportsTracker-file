@@ -132,12 +132,12 @@ def store_trackpt(tp):
 
 def initialize_gpx(file_type):
     # Creating a new GPX:
-    gpx = gpxpy.gpx.GPX()
+    gpx_ = gpxpy.gpx.GPX()
 
     # Add TrackPointExtension namespaces and schema locations.
-    gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
-    gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
-    gpx.schema_locations = [
+    gpx_.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
+    gpx_.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
+    gpx_.schema_locations = [
         'http://www.topografix.com/GPX/1/1',
         'http://www.topografix.com/GPX/1/1/gpx.xsd',
         'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
@@ -148,18 +148,18 @@ def initialize_gpx(file_type):
     if file_type == 0x3:
         # Create the first route in the GPX:
         gpx_route = gpxpy.gpx.GPXRoute()
-        gpx.routes.append(gpx_route)
-        return gpx, gpx_route
+        gpx_.routes.append(gpx_route)
+        return gpx_, gpx_route
     else:
         # Create the first track in the GPX:
         gpx_track = gpxpy.gpx.GPXTrack()
-        gpx.tracks.append(gpx_track)
+        gpx_.tracks.append(gpx_track)
         # Create the first segment in the GPX track:
         gpx_segment = gpxpy.gpx.GPXTrackSegment()
         gpx_track.segments.append(gpx_segment)
-        return gpx, gpx_segment
+        return gpx_, gpx_segment
 
-def finalize_gpx(gpx, file_type, write_file=None):
+def finalize_gpx(gpx_, file_type, write_file=None):
     # Add a summary.  This part may be informative.
     total_time_ = t_time if total_time == 0 else total_time
     total_distance_ = dist if total_distance == 0 else total_distance
@@ -167,40 +167,64 @@ def finalize_gpx(gpx, file_type, write_file=None):
     descr = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
              f'Total distance: {round(total_distance_, 3)} km' '; '
              f'Net speed: {round(net_speed_, 3)} km/h')
-    gpx.name = f'[{route_name}]' if file_type == 0x3 else f'[{track_name}]'
+    gpx_.name = f'[{route_name}]' if file_type == 0x3 else f'[{track_name}]'
     if file_type == 0x3: # Route files.
-        gpx.routes[0].name = gpx.name
-        gpx.routes[0].description = (f'{descr}' ']')
+        gpx_.routes[0].name = gpx_.name
+        gpx_.routes[0].description = (f'{descr}' ']')
     else: # Track files.
-        gpx.tracks[0].name = gpx.name
+        gpx_.tracks[0].name = gpx_.name
         stop_localtime_ = (
             stop_localtime if stop_localtime != symbian_to_unix_time(0) 
             else unix_time + TZ_HOURS * 3600)
         real_time_ = stop_localtime_ - start_localtime
         gross_speed_ = total_distance_ / (real_time_ / 3600) # km/h.
-        gpx.tracks[0].description = (
+        gpx_.tracks[0].description = (
             f'{descr}' '; '
             f'Start localtime: {format_datetime(start_localtime)}' '; '
             f'Stop localtime: {format_datetime(stop_localtime_)}' '; '
             f'Real time: {format_timedelta(real_time_)}' '; '
             f'Gross speed: {round(gross_speed_, 3)} km/h' ']')
-        gpx.description = f'[{description}]' # Activity type: run, bicycle, etc.
-        gpx.author_name = str(USER_ID)
-        gpx.time = dt_from_timestamp(
+        gpx_.description = f'[{description}]' # Activity: run, bicycle, etc.
+        gpx_.author_name = str(USER_ID)
+        gpx_.time = dt_from_timestamp(
             start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
-        if 'comment' in globals():
-            if comment: gpx.tracks[0].comment = comment
+        if comment: gpx_.tracks[0].comment = comment
 
     # Finally, print or write the gpx.
     write_file = False if write_file is None else write_file
     if write_file:
         gpx_file = Path(str(in_file)[:-3] + 'gpx')
-        result = gpx.to_xml('1.1')
+        result = gpx_.to_xml('1.1')
         result_file = open(gpx_file, 'w')
         result_file.write(result)
         result_file.close()
     else:
-        print(gpx.to_xml('1.1'))
+        print(gpx_.to_xml('1.1'))
+
+def print_raw_pause():
+    utc_time = f'{format_datetime(unix_time)}' # The old ver. in localtime.
+    if NST: utc_time += 'Z' # The new version NST in UTC (Z).
+    print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utc_time}')
+
+def print_pause_list():
+    d_t = 'Datetime Z' if NST else 'Datetime local'
+    print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
+    for pause in pause_list:
+        t_time_, pause_time_, unix_time_ = pause
+        print(f'{format_timedelta(t_time_)}\t{format_timedelta(pause_time_)}\t'
+              f'{format_datetime(unix_time_)}')
+    print()
+
+def print_raw_track(): # Remove symbiantime from trackpt if NST and header0x07.
+    times = f'{t_time} {format_datetime(unix_time)}Z'
+    trackpt_ = trackpt[1:-1] if NST and header == 0x07 else trackpt[1:]
+    print(hex(f.tell()), hex(header), times, *trackpt_)
+
+def print_other_header_error():
+    print(f'{header:#x} Error in the track point header: {track_count}, '
+          f'{NUM_TRACKPT}' '\n' f'At address: {pointer:#x}')
+    print(*trackpt)
+    print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
 
 
 # Arguments and help.
@@ -217,6 +241,7 @@ in_file = Path(argvs[1])
 #print(in_file)
 
 
+track_name, route_name, comment = (None for x in range(3))
 with in_file.open(mode='rb') as f:
 
     # Check if it is the correct file.
@@ -312,7 +337,6 @@ with in_file.open(mode='rb') as f:
         (header, ) = read_unpack(header_fmt, f)
 
         if header in {0x00, 0x02, 0x03}:
-
             (Trackpt, fmt) = (TrackptType00, '<I3iHI')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist)
             # 22 bytes (4+4+4+4+2+4).  Negative y (x) means South (West).
@@ -331,15 +355,12 @@ with in_file.open(mode='rb') as f:
             dist = trackpt_store.dist + trackpt.d_dist / 1e5 # Distance/km.
             unix_time = (
                 trackpt_store.unix_time + (t_time - trackpt_store.t_time))
-
-            #times = f'{t_time} {format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), hex(header), times, *trackpt[1:])
+            #print_raw_track() # For debugging purposes.
 
         elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
                         0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
 
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
-
                 Trackpt = TrackptType80
                 # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist)
 
@@ -350,8 +371,7 @@ with in_file.open(mode='rb') as f:
                 else: # 0x9A, 0x9B; 2-byte dv. 4-byte d_dist.
                     fmt = '<B4hI' # 13 bytes (1+2+2+2+2+4).
 
-            elif header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: # Rare cases.
-
+            else: # Header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: Rare cases.
                 Trackpt = TrackptTypeC0
                 # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist)
                 # Unknown3 & 4 show up in distant jumps.
@@ -374,17 +394,10 @@ with in_file.open(mode='rb') as f:
             v = trackpt_store.v + trackpt.dv / 100 * 3.6 # Velocity / km/h.
             dist = trackpt_store.dist + trackpt.d_dist / 1e5 # Distance / km.
             unix_time = trackpt_store.unix_time + trackpt.dt_time / 100
-
-            #times = f'{t_time} {format_datetime(unix_time)}Z'
-            #print(hex(f.tell()), hex(header), times, *trackpt[1:])
+            #print_raw_track() # For debugging purposes.
 
         else: # Other headers which I don't know.
-
-            print(f'{hex(header)} Error in the track point header: '
-                  f'{track_count}, {NUM_TRACKPT}')
-            print(f'At address: {hex(pointer)}')
-            print(*trackpt)
-            print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
+            print_other_header_error()
             break
 
         trackpt_store = TrackptStore(
