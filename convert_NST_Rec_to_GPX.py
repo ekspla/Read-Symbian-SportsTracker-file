@@ -269,7 +269,7 @@ with in_file.open(mode='rb') as f:
 
     # Start address of the main part (mixed pause and trackpoint data).
     # We don't read the address from the file because it is useless.
-    start_address = 0x250 # Not quite sure if this is the best starting point.
+    START_ADDRESS = 0x250 # Not quite sure if this is the best starting point.
 
     # Track ID and Totaltime.
     f.seek(0x00014 + 0x4, 0) # Go to 0x00014 + 0x4, this address is fixed.
@@ -343,7 +343,7 @@ with in_file.open(mode='rb') as f:
 
 
     # Go to the first data.
-    f.seek(start_address, 0)
+    f.seek(START_ADDRESS, 0)
     track_count = 0
 
     # Factory functions for creating named tuples.

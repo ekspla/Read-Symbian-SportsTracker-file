@@ -272,9 +272,9 @@ with in_file.open(mode='rb') as f:
     #     the old track 0x0400 = 0x03ff + 0x1 and 
     #     the old route 0x0100 = 0x00ff + 0x1
     # but can be changed in a very rare case.
-    (start_address, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
-    start_address -= 1
-    #print(f'Main part address: {hex(start_address)}')
+    (START_ADDRESS, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
+    START_ADDRESS -= 1
+    #print(f'Main part address: {hex(START_ADDRESS)}')
 
     # Track ID and Totaltime.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
@@ -360,11 +360,11 @@ with in_file.open(mode='rb') as f:
 
 
     # Number of pause data.
-    #start_address = 0x007ff # Usually 0x007ff.
-    f.seek(start_address, 0) # Go to the start address of the main part.
+    #START_ADDRESS = 0x007ff # Usually 0x007ff.
+    f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
     (NUM_PAUSE, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
     #print(f'Number of pause data: {NUM_PAUSE}')
-    pause_address = f.tell() # start_address + 4
+    PAUSE_ADDRESS = f.tell() # START_ADDRESS + 4
 
     # Number of track points.
     f.seek(NUM_PAUSE * 14, 1) # Skip pause data (14 bytes each).
@@ -374,7 +374,7 @@ with in_file.open(mode='rb') as f:
 
 
     # Go to the first pause data.
-    f.seek(pause_address, 0)
+    f.seek(PAUSE_ADDRESS, 0)
 
     pause_count = 0
     pause_list = []

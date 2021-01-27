@@ -272,9 +272,9 @@ with in_file.open(mode='rb') as f:
     #     the old track 0x0400 = 0x03ff + 0x1 and 
     #     the old route 0x0100 = 0x00ff + 0x1
     # but can be changed in a very rare case.
-    (start_address, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
-    start_address -= 1
-    #print(f'Main part address: {hex(start_address)}')
+    (START_ADDRESS, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
+    START_ADDRESS -= 1
+    #print(f'Main part address: {hex(START_ADDRESS)}')
 
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
@@ -295,8 +295,8 @@ with in_file.open(mode='rb') as f:
 
 
     # Number of track points.
-    #start_address = 0x000ff # Usually 0x000ff.
-    f.seek(start_address, 0) # Go to the start address of the main part.
+    #START_ADDRESS = 0x000ff # Usually 0x000ff.
+    f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
     (NUM_TRACKPT, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
     #print(f'Number of track/route pts: {NUM_TRACKPT}')
 
