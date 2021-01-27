@@ -370,7 +370,7 @@ with in_file.open(mode='rb') as f:
     f.seek(NUM_PAUSE * 14, 1) # Skip pause data (14 bytes each).
     (NUM_TRACKPT, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
     #print(f'Number of track/route pts: {NUM_TRACKPT}')
-    track_address = f.tell()
+    TRACK_ADDRESS = f.tell()
 
 
     # Go to the first pause data.
@@ -426,7 +426,7 @@ with in_file.open(mode='rb') as f:
 
 
     # Go to the first trackpoint.
-    f.seek(track_address, 0)
+    f.seek(TRACK_ADDRESS, 0)
     track_count = 0
 
     # Factory functions for creating named tuples.
