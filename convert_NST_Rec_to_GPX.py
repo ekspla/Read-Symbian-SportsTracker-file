@@ -429,15 +429,15 @@ with in_file.open(mode='rb') as f:
                     t_time = trackpt_store.t_time + delta_unix_time
                     print(f'Bad totaltime at: {hex(pointer)}')
 
-                if track_count > 0: # Spikes in y, x, z and total_distance.
-                    # Replace it with its previous value.
+                if track_count > 0: # Use previous values for spikes in y, x, z 
+                    # and total_distance.  Interpolation would be better choice.
                     if abs(trackpt_store.y_degree - y_degree) >= 0.001: # deg.
                         y_degree = trackpt_store.y_degree
                         print(f'Bad y at: {hex(pointer)}')
                     if abs(trackpt_store.x_degree - x_degree) >= 0.001:
                         x_degree = trackpt_store.x_degree
                         print(f'Bad x at: {hex(pointer)}')
-                    if abs(trackpt_store.z_ax - z_ax) >= 500: # meter.
+                    if abs(trackpt_store.z_ax - z_ax) >= 500: # Meter.
                         z_ax = trackpt_store.z_ax
                 if not 0 <= dist - trackpt_store.dist < 1: # Up to 1 km.
                     dist = trackpt_store.dist
