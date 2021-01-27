@@ -451,7 +451,7 @@ with in_file.open(mode='rb') as f:
             x_degree += x_mm_mmmm / 1e4 / 60
 
             z_ax = trackpt.z_ax / 10 # Altitude / meter.
-            v = trackpt.v / 100 * 3.6 # Convert velocity, from m/s to km/h.
+            v = trackpt.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
             dist = trackpt_store.dist + trackpt.d_dist / 1e5 # Distance/km.
             unix_time = (
                 trackpt_store.unix_time + (t_time - trackpt_store.t_time))
