@@ -307,7 +307,7 @@ with in_file.open(mode='rb') as f:
     #print(f'Start: {format_datetime(start_localtime)}+09:00')
     #print(f'Stop : {format_datetime(stop_localtime)}+09:00')
 
-    # Calculate Realtime, which is geater than Totaltime if pause is used.
+    # Calculate Realtime, which is greater than totaltime if pause is used.
     real_time = stop_localtime - start_localtime # Realtime in seconds.
     #print(f'Realtime: {format_timedelta(real_time)}')
 
