@@ -201,21 +201,21 @@ def finalize_gpx(gpx_, file_type, write_file=None):
     else:
         print(gpx_.to_xml('1.1'))
 
-def read_pause_data(file_object):
-    (NUM_PAUSE, ) = read_unpack('<I', file_object) # 4 bytes, little endian U32.
-    #print(f'Number of pause data: {NUM_PAUSE}')
-    #PAUSE_ADDRESS = file_object.tell() # START_ADDRESS + 4
-    #print(f'Pause address: {hex(PAUSE_ADDRESS)}')
+def read_pause_data(file_obj):
+    (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
+    #print(f'Number of pause data: {num_pause}')
+    #pause_address = file_obj.tell() # START_ADDRESS + 4
+    #print(f'Pause address: {hex(pause_address)}')
 
     p_count = 0 # pause_count
     p_list = [] # pause_list
 
-    while p_count < NUM_PAUSE:
+    while p_count < num_pause:
 
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
         # in localtime zone, while those of the new version in UTC (Z).
         # The first unknown field (always 0x01) seems to have no meaning.
-        (unknown, to_time, flag, symbiantime) = read_unpack('<BIBq', file_object)
+        (unknown, to_time, flag, symbiantime) = read_unpack('<BIBq', file_obj)
 
         to_time /= 100 # Totaltime in seconds.
         unixtime = symbian_to_unix_time(symbiantime)
@@ -256,6 +256,7 @@ def read_pause_data(file_object):
 
         p_count += 1
 
+    del unknown, starttime, start_t_time, stoptime, stop_t_time
     return p_list, p_count
 
 def print_pause_list(p_list):
