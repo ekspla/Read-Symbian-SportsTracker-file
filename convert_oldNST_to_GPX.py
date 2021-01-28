@@ -201,18 +201,70 @@ def finalize_gpx(gpx_, file_type, write_file=None):
     else:
         print(gpx_.to_xml('1.1'))
 
-def print_raw_pause():
-    utc_time = f'{format_datetime(unix_time)}' # The old ver. in localtime.
-    if NST: utc_time += 'Z' # The new version NST in UTC (Z).
-    print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utc_time}')
+def read_pause_data(file_object):
+    (NUM_PAUSE, ) = read_unpack('<I', file_object) # 4 bytes, little endian U32.
+    #print(f'Number of pause data: {NUM_PAUSE}')
+    #PAUSE_ADDRESS = file_object.tell() # START_ADDRESS + 4
+    #print(f'Pause address: {hex(PAUSE_ADDRESS)}')
 
-def print_pause_list():
+    p_count = 0 # pause_count
+    p_list = [] # pause_list
+
+    while p_count < NUM_PAUSE:
+
+        # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
+        # in localtime zone, while those of the new version in UTC (Z).
+        # The first unknown field (always 0x01) seems to have no meaning.
+        (unknown, to_time, flag, symbiantime) = read_unpack('<BIBq', file_object)
+
+        to_time /= 100 # Totaltime in seconds.
+        unixtime = symbian_to_unix_time(symbiantime)
+
+        # For debugging purposes.
+        #utctime = f'{format_datetime(unixtime)}' # The old ver. in localtime.
+        #if NST: utctime += 'Z' # The new version NST in UTC (Z).
+        #print(f'{unknown}\t{format_timedelta(to_time)}\t{flag}\t{utctime}')
+
+        # Start: we don't use these data.  Store them for the future purposes.
+        if flag == 1:
+            starttime = unixtime
+            start_t_time = to_time
+
+        # Stop: we don't use these data.  Store them for the future purposes.
+        elif flag == 2:
+            stoptime = unixtime
+            stop_t_time = to_time
+
+        # Suspend: flag = 3 (manually) or 4 (automatically).
+        elif flag in {3, 4}:
+            suspendtime = unixtime
+            to4_time = to_time
+
+        # Resume.  A suspend--resume pair should have a common totaltime.
+        elif flag == 5:
+            if to4_time != to_time:
+                print('Error in pause.')
+                sys.exit(1)
+
+            p_time = unixtime - suspendtime # Time between suspend and resume.
+            p_list.append((to_time, p_time, unixtime))
+
+        # Flag = 8.  Use it as a correction of time.
+        elif flag == 8:
+            p_time = 0
+            p_list.append((to_time, p_time, unixtime))
+
+        p_count += 1
+
+    return p_list, p_count
+
+def print_pause_list(p_list):
     d_t = 'Datetime Z' if NST else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
-    for pause in pause_list:
-        t_time_, pause_time_, unix_time_ = pause
-        print(f'{format_timedelta(t_time_)}\t{format_timedelta(pause_time_)}\t'
-              f'{format_datetime(unix_time_)}')
+    for p in p_list:
+        to_time, p_time, unixtime = p
+        print(f'{format_timedelta(to_time)}\t{format_timedelta(p_time)}\t'
+              f'{format_datetime(unixtime)}')
     print()
 
 def print_raw_track(): # Remove symbiantime from trackpt if NST and header0x07.
@@ -354,74 +406,21 @@ with in_file.open(mode='rb') as f:
     #print(f'Realtime Z: {format_timedelta(real_time)}')
 
 
-    # Number of pause data.
     #START_ADDRESS = 0x003ff # Usually 0x003ff.
     f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
-    (NUM_PAUSE, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
-    #print(f'Number of pause data: {NUM_PAUSE}')
-    PAUSE_ADDRESS = f.tell() # START_ADDRESS + 4
 
-    # Number of track points.
-    f.seek(NUM_PAUSE * 14, 1) # Skip pause data (14 bytes each).
-    (NUM_TRACKPT, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
-    #print(f'Number of track/route pts: {NUM_TRACKPT}')
-    TRACK_ADDRESS = f.tell()
-
-
-    # Go to the first pause data.
-    f.seek(PAUSE_ADDRESS, 0)
-
-    pause_count = 0
-    pause_list = []
-
-    while pause_count < NUM_PAUSE:
-
-        # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
-        # in localtime zone, while those of the new version in UTC (Z).
-        # The first unknown field (always 0x01) seems to have no meaning.
-        (unknown, t_time, flag, symbian_time) = read_unpack('<BIBq', f)
-
-        t_time /= 100 # Totaltime in seconds.
-        unix_time = symbian_to_unix_time(symbian_time)
-        #print_raw_pause() # For debugging purposes.
-
-        # Start: we don't use these data.  Store them for the future purposes.
-        if flag == 1:
-            starttime = unix_time
-            start_t_time = t_time
-
-        # Stop: we don't use these data.  Store them for the future purposes.
-        elif flag == 2:
-            stoptime = unix_time
-            stop_t_time = t_time
-
-        # Suspend: flag = 3 (manually) or 4 (automatically).
-        elif flag in {3, 4}:
-            suspend_time = unix_time
-            t4_time = t_time
-
-        # Resume.  A suspend--resume pair should have a common totaltime.
-        elif flag == 5:
-            if t4_time != t_time:
-                print('Error in pause.')
-                sys.exit(1)
-
-            pause_time = unix_time - suspend_time # Between suspend and resume.
-            pause_list.append((t_time, pause_time, unix_time))
-
-        # Flag = 8.  Use it as a correction of time.
-        elif flag == 8:
-            pause_time = 0
-            pause_list.append((t_time, pause_time, unix_time))
-
-        pause_count += 1
-
-    #print_pause_list() # For debugging purposes.
+    (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
+        ([], None) if FILE_TYPE in {ROUTE, TMP} else read_pause_data(f))
+    #print_pause_list(pause_list) # For debugging purposes.
     #sys.exit(0)
 
+    # Number of track points.
+    (NUM_TRACKPT, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
+    #print(f'Number of track/route pts: {NUM_TRACKPT}')
+    #TRACK_ADDRESS = f.tell()
+    #print(f'Track address: {hex(TRACK_ADDRESS)}')
+    #f.seek(TRACK_ADDRESS, 0) # Go to the first trackpoint.
 
-    # Go to the first trackpoint.
-    f.seek(TRACK_ADDRESS, 0)
     track_count = 0
 
     # In contrast to the new version, we have to calculate the timestamps in 
@@ -442,6 +441,9 @@ with in_file.open(mode='rb') as f:
     TrackptStore = namedtuple('TrackptStore', TYPE_STORE)
     TrackptStore.__new__.__defaults__ = (None,) * len(TrackptStore._fields)
 
+    # For oldNST_route, use mtime as start_time, because the start/stop times 
+    # stored are always 0, which means January 1st 0 AD 00:00:00.
+    if OLDNST_ROUTE: start_time = in_file.stat().st_mtime
     trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=start_time, t_time=0, dist=0)

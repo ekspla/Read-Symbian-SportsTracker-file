@@ -201,20 +201,6 @@ def finalize_gpx(gpx_, file_type, write_file=None):
     else:
         print(gpx_.to_xml('1.1'))
 
-def print_raw_pause():
-    utc_time = f'{format_datetime(unix_time)}' # The old ver. in localtime.
-    if NST: utc_time += 'Z' # The new version NST in UTC (Z).
-    print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utc_time}')
-
-def print_pause_list():
-    d_t = 'Datetime Z' if NST else 'Datetime local'
-    print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
-    for pause in pause_list:
-        t_time_, pause_time_, unix_time_ = pause
-        print(f'{format_timedelta(t_time_)}\t{format_timedelta(pause_time_)}\t'
-              f'{format_datetime(unix_time_)}')
-    print()
-
 def print_raw_track(): # Remove symbiantime from trackpt if NST and header0x07.
     times = f'{t_time} {format_datetime(unix_time)}Z'
     trackpt_ = trackpt[1:-1] if NST and header == 0x07 else trackpt[1:]
@@ -294,15 +280,21 @@ with in_file.open(mode='rb') as f:
     #print(f'Total distance: {round(total_distance, 3)} km')
 
 
-    # Number of track points.
     #START_ADDRESS = 0x000ff # Usually 0x000ff.
     f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
+
+    (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
+        ([], None) if FILE_TYPE in {ROUTE, TMP} else read_pause_data(f))
+    #print_pause_list(pause_list) # For debugging purposes.
+    #sys.exit(0)
+
+    # Number of track points.
     (NUM_TRACKPT, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
     #print(f'Number of track/route pts: {NUM_TRACKPT}')
+    #TRACK_ADDRESS = f.tell()
+    #print(f'Track address: {hex(TRACK_ADDRESS)}')
+    #f.seek(TRACK_ADDRESS, 0) # Go to the first trackpoint.
 
-
-    # There are no pause data in route files.   
-    # Go to the first trackpoint.
     track_count = 0
 
     # In contrast to the new version, we have to calculate the timestamps in 
@@ -323,11 +315,12 @@ with in_file.open(mode='rb') as f:
     TrackptStore = namedtuple('TrackptStore', TYPE_STORE)
     TrackptStore.__new__.__defaults__ = (None,) * len(TrackptStore._fields)
 
-    # We will use mtime as start_time, because the start/stop times stored in 
-    # the route files are always 0, which means January 1st 0 AD 00:00:00.
+    # For oldNST_route, use mtime as start_time, because the start/stop times 
+    # stored are always 0, which means January 1st 0 AD 00:00:00.
+    if OLDNST_ROUTE: start_time = in_file.stat().st_mtime
     trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
     trackpt_store = trackpt_store._replace(
-        unix_time=in_file.stat().st_mtime, t_time=0, dist=0)
+        unix_time=start_time, t_time=0, dist=0)
 
     # The main loop to read the trackpoints.
     while track_count < NUM_TRACKPT:
@@ -399,6 +392,19 @@ with in_file.open(mode='rb') as f:
         else: # Other headers which I don't know.
             print_other_header_error()
             break
+
+        if pause_list:
+            t4_time, pause_time, resume_time = pause_list[0]
+
+            # Just after the pause, use the pause data.
+            if t_time + 0.5 >= t4_time:
+                resume_time -= TZ_HOURS * 3600 # Convert from localtime to UTC.
+
+                if unix_time < resume_time:
+                    # There might be few second of error, which I don't care.
+                    unix_time = (t_time - t4_time) + resume_time
+
+                del pause_list[0]
 
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 

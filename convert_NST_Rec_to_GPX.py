@@ -201,20 +201,6 @@ def finalize_gpx(gpx_, file_type, write_file=None):
     else:
         print(gpx_.to_xml('1.1'))
 
-def print_raw_pause():
-    utc_time = f'{format_datetime(unix_time)}' # The old ver. in localtime.
-    if NST: utc_time += 'Z' # The new version NST in UTC (Z).
-    print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utc_time}')
-
-def print_pause_list():
-    d_t = 'Datetime Z' if NST else 'Datetime local'
-    print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
-    for pause in pause_list:
-        t_time_, pause_time_, unix_time_ = pause
-        print(f'{format_timedelta(t_time_)}\t{format_timedelta(pause_time_)}\t'
-              f'{format_datetime(unix_time_)}')
-    print()
-
 def print_raw_track(): # Remove symbiantime from trackpt if NST and header0x07.
     times = f'{t_time} {format_datetime(unix_time)}Z'
     trackpt_ = trackpt[1:-1] if NST and header == 0x07 else trackpt[1:]
@@ -338,13 +324,21 @@ with in_file.open(mode='rb') as f:
     if comment: print(f'Comment: {comment}')
 
 
+    f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
+
+    (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
+        ([], None) if FILE_TYPE in {ROUTE, TMP} else read_pause_data(f))
+    #print_pause_list(pause_list) # For debugging purposes.
+    #sys.exit(0)
+
     # Number of track points.
     NUM_TRACKPT = None # The number in the Rec*.tmp file is useless.
-
-
     # Go to the first data.
-    f.seek(START_ADDRESS, 0)
+
     track_count = 0
+
+    # In contrast to the new version, we have to calculate the timestamps in 
+    # all of the trackpoints because of no Symbiantimes given in the old one.
 
     # Factory functions for creating named tuples.
     TYPE00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
@@ -361,6 +355,9 @@ with in_file.open(mode='rb') as f:
     TrackptStore = namedtuple('TrackptStore', TYPE_STORE)
     TrackptStore.__new__.__defaults__ = (None,) * len(TrackptStore._fields)
 
+    # For oldNST_route, use mtime as start_time, because the start/stop times 
+    # stored are always 0, which means January 1st 0 AD 00:00:00.
+    if OLDNST_ROUTE: start_time = in_file.stat().st_mtime
     trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=start_time, t_time=0, dist=0)
