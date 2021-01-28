@@ -390,14 +390,14 @@ with in_file.open(mode='rb') as f:
     # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
     # principle because they can be SCSU-encoded non-ASCII characters.
     track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
-    if NST: track_name_addr += 0x04 # Offset before total_distance (-> 0x4a).
+    if NST: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
     if FILE_TYPE == TMP: track_name_addr += 0x04 # The 4-byte blank (-> 0x4e).
     track_name = scsu_reader(f, track_name_addr)
     #print(f'Track name: {track_name}')
 
     # Starttime & Stoptime in UTC.
     start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
-    if NST: start_stop_z_addr += 0x04 # Offset before total_distance (0x192).
+    if NST: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
     if FILE_TYPE == TMP: start_stop_z_addr += 0x04 # The 4-byte blank (0x196).
     f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = read_unpack('<2q', f)
