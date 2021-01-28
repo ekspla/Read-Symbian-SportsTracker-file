@@ -251,7 +251,7 @@ with in_file.open(mode='rb') as f:
 
     gpx, gpx_target = initialize_gpx(FILE_TYPE)
 
-    # Start address of the main part (pause and trackpoint data).
+    # Start address of the main part (a trackpt block).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
     #     the new track 0x0800 = 0x07ff + 0x1, 
@@ -280,7 +280,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Total distance: {round(total_distance, 3)} km')
 
 
-    #START_ADDRESS = 0x000ff # Usually 0x000ff.
     f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
 
     (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.

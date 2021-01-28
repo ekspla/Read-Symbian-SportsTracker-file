@@ -318,7 +318,7 @@ with in_file.open(mode='rb') as f:
 
     gpx, gpx_target = initialize_gpx(FILE_TYPE)
 
-    # Start address of the main part (pause and trackpoint data).
+    # Start address of the main part (a pause data block and a trackpt block).
     #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
     # Usually the numbers are for 
     #     the new track 0x0800 = 0x07ff + 0x1, 
@@ -330,8 +330,9 @@ with in_file.open(mode='rb') as f:
     #print(f'Main part address: {hex(START_ADDRESS)}')
 
     # Track ID and Totaltime.
-    f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
-    # 8 (4+4) bytes, little endian U32+U32.
+    track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST track.
+    if FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
+    f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
     (TRACK_ID, total_time) = read_unpack('<2I', f)
     #print(f'Track ID: {TRACK_ID}')
 
@@ -339,6 +340,7 @@ with in_file.open(mode='rb') as f:
     #print(f'Total time: {format_timedelta(total_time)}')
 
     # Total Distance.
+    if NST: f.seek(0x00004, 1) # Skip.  4-byte offset to oldNST due to this.
     (total_distance, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
     total_distance /= 1e5 # Total distance in km.
     #print(f'Total distance: {round(total_distance, 3)} km')
@@ -387,12 +389,17 @@ with in_file.open(mode='rb') as f:
     # In most cases the name consists of 16-byte ASCII characters, e.g. 
     # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
     # principle because they can be SCSU-encoded non-ASCII characters.
-    track_name = scsu_reader(f, 0x00046) # This address is fixed.
+    track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
+    if NST: track_name_addr += 0x04 # Offset before total_distance (-> 0x4a).
+    if FILE_TYPE == TMP: track_name_addr += 0x04 # The 4-byte blank (-> 0x4e).
+    track_name = scsu_reader(f, track_name_addr)
     #print(f'Track name: {track_name}')
 
     # Starttime & Stoptime in UTC.
-    f.seek(0x0018e, 0) # Go to 0x0018e, this address is fixed.
-    # 16 (8+8) bytes, little endian I64+I64.
+    start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
+    if NST: start_stop_z_addr += 0x04 # Offset before total_distance (0x192).
+    if FILE_TYPE == TMP: start_stop_z_addr += 0x04 # The 4-byte blank (0x196).
+    f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
     stop_time = symbian_to_unix_time(stop_time)
@@ -407,7 +414,6 @@ with in_file.open(mode='rb') as f:
     #print(f'Realtime Z: {format_timedelta(real_time)}')
 
 
-    #START_ADDRESS = 0x003ff # Usually 0x003ff.
     f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
 
     (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.

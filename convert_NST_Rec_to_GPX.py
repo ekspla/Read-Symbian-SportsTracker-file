@@ -258,8 +258,9 @@ with in_file.open(mode='rb') as f:
     START_ADDRESS = 0x250 # Not quite sure if this is the best starting point.
 
     # Track ID and Totaltime.
-    f.seek(0x00014 + 0x4, 0) # Go to 0x00014 + 0x4, this address is fixed.
-    # 8 (4+4) bytes, little endian U32+U32.
+    track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST track.
+    if FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
+    f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
     (TRACK_ID, total_time) = read_unpack('<2I', f)
     print(f'Track ID: {TRACK_ID}')
 
@@ -267,7 +268,7 @@ with in_file.open(mode='rb') as f:
     print(f'Total time: {format_timedelta(total_time)}')
 
     # Total Distance.
-    f.seek(0x00004, 1) # Skip 4 bytes.  4-byte offset to oldNST due to this.
+    if NST: f.seek(0x00004, 1) # Skip.  4-byte offset to oldNST due to this.
     (total_distance, ) = read_unpack('<I', f) # 4 bytes, little endian U32.
     total_distance /= 1e5 # Total distance in km.
     print(f'Total distance: {round(total_distance, 3)} km')
@@ -304,12 +305,17 @@ with in_file.open(mode='rb') as f:
     # In most cases the name consists of 16-byte ASCII characters, e.g. 
     # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
     # principle because they can be SCSU-encoded non-ASCII characters.
-    track_name = scsu_reader(f, 0x0004a + 0x4) # This address is fixed.
+    track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
+    if NST: track_name_addr += 0x04 # Offset before total_distance (-> 0x4a).
+    if FILE_TYPE == TMP: track_name_addr += 0x04 # The 4-byte blank (-> 0x4e).
+    track_name = scsu_reader(f, track_name_addr)
     print(f'Track name: {track_name}')
 
     # Starttime & Stoptime in UTC.
-    f.seek(0x00192 + 0x4, 0) # Go to 0x00192 + 0x4, this address is fixed.
-    # 16 (8+8) bytes, little endian I64+I64.
+    start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
+    if NST: start_stop_z_addr += 0x04 # Offset before total_distance (0x192).
+    if FILE_TYPE == TMP: start_stop_z_addr += 0x04 # The 4-byte blank (0x196).
+    f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = read_unpack('<2q', f)
     start_time = symbian_to_unix_time(start_time)
     stop_time = symbian_to_unix_time(stop_time)
@@ -320,7 +326,9 @@ with in_file.open(mode='rb') as f:
     TZ_HOURS = int(start_localtime - start_time) / 3600
 
     # Read SCSU encoded user comment of variable length.
-    comment = scsu_reader(f, 0x00222 + 0x4) # This address is fixed.
+    comment_addr = 0x00222 # Fixed address of NST tracks.
+    if FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
+    comment = scsu_reader(f, comment_addr) # This address is fixed.
     if comment: print(f'Comment: {comment}')
 
 
