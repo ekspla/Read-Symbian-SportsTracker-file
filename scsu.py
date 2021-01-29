@@ -1,7 +1,6 @@
 #coding:utf-8
-
-# This is a ported version of the following code written in C.
-#
+"""This is a ported version of Roman Czyborra's decoder written in C.
+"""
 #/* http://czyborra.com/scsu/scsu.c
 # * 1998-08-04 written by Roman Czyborra@dds.nl
 # * on Andrea's balcony in North Amsterdam on 1998-08-04
@@ -67,18 +66,20 @@ win = [
 
 def decode(byte_array, size = None):
     """Decode SCSU encoded bytes/bytearray to UTF-8
-    
+
     Args:
-        byte_array: SCSU encoded bytes or bytearray.  The length can be longer than neccessary.
-        size: number of the characters to be decoded, defaults to the full length of the byte_array.
-        
+        byte_array: SCSU encoded bytes or bytearray.  The length can be longer 
+            than neccessary.
+        size: number of the characters to be decoded, defaults to the full 
+            length of the byte_array.
+
     Returns:
         output_array: decoded bytearray in UTF-8.
         counter: number of bytes read from the input byte_array.
         char_counter: number of characters decoded.
     """
     input_array = bytearray(byte_array)
-    if size == None:
+    if size is None:
         size = len(input_array) # Maximum length of characters to be decoded.
     char_counter = 0 # Number of decoded characters.
     output_array = bytearray()
@@ -95,10 +96,10 @@ def decode(byte_array, size = None):
         else:
             raise LookupError
 
-    def output(c, output_array):    
+    def output(c, output_array):
         char_count = 0
         nonlocal d
- 
+
         # /* join UTF-16 surrogates without any pairing sanity checks */
 
         if 0xD800 <= c <= 0xDBFF:
@@ -148,19 +149,20 @@ def decode(byte_array, size = None):
                 char_counter += output(c, output_array)
 
             elif 0x1 <= c <= 0x8: #/* SQn */
-                #/* single quote */ 
+                #/* single quote */
                 d = nextchar(input_array)
                 if d < 0x80:
                     char_counter += output(d + start[c - 0x1], output_array)
-                else: 
-                    char_counter += output(d - 0x80 + slide[c - 0x1], output_array)
+                else:
+                    char_counter += output(d - 0x80 + slide[c - 0x1], 
+                                           output_array)
 
             elif 0x10 <= c <= 0x17: #/* SCn */
-                #/* change window */ 
+                #/* change window */
                 active = c - 0x10
 
             elif 0x18 <= c <= 0x1F: # /* SDn */
-                #/* define window */ 
+                #/* define window */
                 active = c - 0x18
                 slide[active] = win[nextchar(input_array)]
 
@@ -172,21 +174,24 @@ def decode(byte_array, size = None):
 
             elif c == 0xE: # /* SQU */
                 c = nextchar(input_array)
-                char_counter += output(c << 8 | nextchar(input_array), output_array)
+                char_counter += output(c << 8 | nextchar(input_array), 
+                                       output_array)
 
             elif c == 0xF: # /* SCU */
-                #/* change to Unicode mode */ 
+                #/* change to Unicode mode */
                 mode = 1
 
                 while mode and char_counter < size:
                     c = nextchar(input_array)
 
                     if c <= 0xDF or c >= 0xF3:
-                        char_counter += output(c << 8 | nextchar(input_array), output_array)
+                        char_counter += output(c << 8 | nextchar(input_array), 
+                                               output_array)
 
                     elif c == 0xF0: # /* UQU */
                         c = nextchar(input_array)
-                        char_counter += output(c << 8 | nextchar(input_array), output_array)
+                        char_counter += output(c << 8 | nextchar(input_array), 
+                                               output_array)
 
                     elif 0xE0 <= c <= 0xE7: #/* UCn */
                         active = c - 0xE0
