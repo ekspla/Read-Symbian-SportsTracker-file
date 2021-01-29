@@ -1,9 +1,8 @@
 #coding:utf-8
 #
 # (c) 2020 ekspla.
-# This code is written by ekspla and distributed at the following site
-# under LGPL v2.1 license.
-# https://github.com/ekspla/Read-Symbian-SportsTracker-file
+# This code is written by ekspla and distributed at the following site under 
+# LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """This script reads track log files of the old-version Nokia SportsTracker.
 """
 import sys
@@ -26,9 +25,8 @@ except ImportError:
 import scsu
 
 
-#  The native Symbian time format is a 64-bit value that represents 
-#  microseconds since January 1st 0 AD 00:00:00 local time, nominal Gregorian.
-#  BC dates are represented by negative values.
+#  Symbiantimes are 64-bit values that represents microsecs since 1 Jan. 0 AD 
+#  00:00:00 localtime, nominal Gregorian.  Negative values represent BC dates.
 def symbian_to_unix_time(symbiantime):
     return symbiantime / 1e6 - 62168256000
 
@@ -75,11 +73,10 @@ def scsu_reader(file_object, address=None):
         decoded_strings: strings of UTF-8.
     """
     if address is not None: file_object.seek(address, 0)
-    (size, ) = read_unpack('B', file_object) # U8.
-    if size & 0x1: # If LSB == 1, character_length >= 64.
+    (size, ) = read_unpack('B', file_object) # U8, character_length * 4.
+    if size & 0x1: # If LSB == 1: char_len >= 64. If LSB == 0: char_len < 64.
         (size, ) = struct.unpack('<H', bytes([size]) + file_object.read(1))
         size >>= 1 # Divide character_length * 8 (U16) by 2.
-    # Else if LSB == 0, character_length < 64. U8, character_length * 4.
     start_of_scsu = file_object.tell()
     in_bytes = file_object.read(size) # Character_length * 4 is sufficient.
     size >>= 2 # Divide by 4 to obtain the character_length.
@@ -100,10 +97,9 @@ def store_trackpt(tp):
              d_dist(km), dist(km), track_count(int), file_type(int: 2, 3 or 4))
     """
     # Print delimited text.
-    #utc_time = f'{format_datetime(tp.unix_time)}Z'
-    #to_time = format_timedelta(tp.t_time)
-    #print(f'{to_time}\t{utc_time}\t{round(tp.d_dist, 3)}\t{round(tp.dist, 3)}'
-    #      f'\t{round(tp.y_degree, 10)}\t{round(tp.x_degree, 10)}\t'
+    #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
+    #print(f'{times}\t{round(tp.d_dist, 3)}\t{round(tp.dist, 3)}\t'
+    #      f'{round(tp.y_degree, 10)}\t{round(tp.x_degree, 10)}\t'
     #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
 
     # Print gpx xml.
@@ -131,8 +127,7 @@ def store_trackpt(tp):
     gpx_point.extensions.append(gpx_extension_speed)
 
 def initialize_gpx(file_type):
-    # Creating a new GPX:
-    gpx_ = gpxpy.gpx.GPX()
+    gpx_ = gpxpy.gpx.GPX() # Create a new GPX.
 
     # Add TrackPointExtension namespaces and schema locations.
     gpx_.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
@@ -145,13 +140,11 @@ def initialize_gpx(file_type):
         'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
         'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
-    if file_type == 0x3:
-        # Create the first route in the GPX:
+    if file_type == 0x3: # Create the first route in the GPX.
         gpx_route = gpxpy.gpx.GPXRoute()
         gpx_.routes.append(gpx_route)
         return gpx_, gpx_route
-    else:
-        # Create the first track in the GPX:
+    else: # Create the first track in the GPX.
         gpx_track = gpxpy.gpx.GPXTrack()
         gpx_.tracks.append(gpx_track)
         # Create the first segment in the GPX track:
@@ -190,9 +183,8 @@ def finalize_gpx(gpx_, file_type, write_file=None):
             start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
         if comment: gpx_.tracks[0].comment = comment
 
-    # Finally, print or write the gpx.
     write_file = False if write_file is None else write_file
-    if write_file:
+    if write_file: # Finally, print or write the gpx.
         gpx_file = Path(str(in_file)[:-3] + 'gpx')
         result = gpx_.to_xml('1.1')
         result_file = open(gpx_file, 'w')
@@ -207,11 +199,15 @@ def read_pause_data(file_obj):
     #pause_address = file_obj.tell() # START_ADDRESS + 4
     #print(f'Pause address: {hex(pause_address)}')
 
+    def print_raw_data(): # For debugging purposes.
+        utctime = f'{format_datetime(unixtime)}' # The old ver. in localtime.
+        if NST: utctime += 'Z' # The new version NST in UTC (Z).
+        print(f'{unknown}\t{format_timedelta(to_time)}\t{flag}\t{utctime}')
+
     p_count = 0 # pause_count
     p_list = [] # pause_list
 
     while p_count < num_pause:
-
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
         # in localtime zone, while those of the new version in UTC (Z).
         # The first unknown field (always 0x01) seems to have no meaning.
@@ -219,36 +215,27 @@ def read_pause_data(file_obj):
 
         to_time /= 100 # Totaltime in seconds.
         unixtime = symbian_to_unix_time(symbiantime)
-
-        # For debugging purposes.
-        #utctime = f'{format_datetime(unixtime)}' # The old ver. in localtime.
-        #if NST: utctime += 'Z' # The new version NST in UTC (Z).
-        #print(f'{unknown}\t{format_timedelta(to_time)}\t{flag}\t{utctime}')
+        #print_raw_data() # For debugging purposes.
 
         # Start: we don't use these data.  Store them for the future purposes.
         if flag == 1:
             starttime = unixtime
             start_t_time = to_time
-
         # Stop: we don't use these data.  Store them for the future purposes.
         elif flag == 2:
             stoptime = unixtime
             stop_t_time = to_time
-
         # Suspend: flag = 3 (manually) or 4 (automatically).
         elif flag in {3, 4}:
             suspendtime = unixtime
             to4_time = to_time
-
         # Resume.  A suspend--resume pair should have a common totaltime.
         elif flag == 5:
             if to4_time != to_time:
                 print('Error in pause.')
                 sys.exit(1)
-
             p_time = unixtime - suspendtime # Time between suspend and resume.
             p_list.append((to_time, p_time, unixtime))
-
         # Flag = 8.  Use it as a correction of time.
         elif flag == 8:
             p_time = 0
@@ -289,7 +276,6 @@ if argc < 2:
         SportsTracker.""")
     sys.exit(0)
 #print(argvs[1])
-#path = Path('.')
 in_file = Path(argvs[1])
 #print(in_file)
 
@@ -376,13 +362,11 @@ with in_file.open(mode='rb') as f:
     # Type of activity.  For details, please see config.dat.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity, ) = read_unpack('<H', f) # 2 bytes, little endian U16.
-    activities = [
-        'Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
+    a_list = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
         'Other 3', 'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 
         'Hiking', 'Roller skating', 'Downhill skiing', 'Paddling', 'Rowing', 
         'Golf', 'Indoor']
-    description = (activities[activity] if activity < len(activities) 
-                   else str(activity))
+    description = a_list[activity] if activity < len(a_list) else str(activity)
     #print(f'Activity: {description}')
 
     # Read SCSU encoded name of the track, which is usually the datetime.
@@ -448,8 +432,8 @@ with in_file.open(mode='rb') as f:
     TrackptStore = namedtuple('TrackptStore', TYPE_STORE)
     TrackptStore.__new__.__defaults__ = (None,) * len(TrackptStore._fields)
 
-    # For oldNST_route, use mtime as start_time, because the start/stop times 
-    # stored are always 0, which means January 1st 0 AD 00:00:00.
+    # For oldNST_route, use mtime as start_time because the start/stop times 
+    # stored are always 0 which means January 1st 0 AD 00:00:00.
     if OLDNST_ROUTE: start_time = in_file.stat().st_mtime
     trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
     trackpt_store = trackpt_store._replace(
@@ -457,7 +441,6 @@ with in_file.open(mode='rb') as f:
 
     # The main loop to read the trackpoints.
     while track_count < NUM_TRACKPT:
-
         pointer = f.tell()
         header_fmt = 'B' # 1-byte header.
         (header, ) = read_unpack(header_fmt, f)
@@ -465,7 +448,7 @@ with in_file.open(mode='rb') as f:
         if header in {0x00, 0x02, 0x03}:
             (Trackpt, fmt) = (TrackptType00, '<I3iHI')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist)
-            # 22 bytes (4+4+4+4+2+4).  Negative y (x) means South (West).
+            # 22 bytes (4+4+4+4+2+4).  y(+/-): N/S; x(+/-): E/W.
             trackpt = Trackpt._make(read_unpack(fmt, f)) # Namedtuple wrapped.
 
             t_time = trackpt.t_time / 100 # Totaltime / second.
@@ -546,7 +529,6 @@ with in_file.open(mode='rb') as f:
         store_trackpt(trackpt_store)
 
         track_count += 1
-
 
 # Handling of errors.
 if track_count != NUM_TRACKPT:
