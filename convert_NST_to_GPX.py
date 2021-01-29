@@ -140,8 +140,7 @@ def store_trackpt(tp):
     gpx_point.extensions.append(gpx_extension_speed)
 
 def initialize_gpx(file_type):
-    # Creating a new GPX:
-    gpx_ = gpxpy.gpx.GPX()
+    gpx_ = gpxpy.gpx.GPX() # Create a new GPX.
 
     # Add TrackPointExtension namespaces and schema locations.
     gpx_.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
@@ -154,16 +153,14 @@ def initialize_gpx(file_type):
         'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
         'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
-    if file_type == 0x3:
-        # Create the first route in the GPX:
+    if file_type == 0x3: # Create the first route in the GPX.
         gpx_route = gpxpy.gpx.GPXRoute()
         gpx_.routes.append(gpx_route)
         return gpx_, gpx_route
-    else:
-        # Create the first track in the GPX:
+    else: # Create the first track in the GPX.
         gpx_track = gpxpy.gpx.GPXTrack()
         gpx_.tracks.append(gpx_track)
-        # Create the first segment in the GPX track:
+        # Create the first segment in the GPX track.
         gpx_segment = gpxpy.gpx.GPXTrackSegment()
         gpx_track.segments.append(gpx_segment)
         return gpx_, gpx_segment

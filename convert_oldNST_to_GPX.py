@@ -160,7 +160,7 @@ def initialize_gpx(file_type):
     else: # Create the first track in the GPX.
         gpx_track = gpxpy.gpx.GPXTrack()
         gpx_.tracks.append(gpx_track)
-        # Create the first segment in the GPX track:
+        # Create the first segment in the GPX track.
         gpx_segment = gpxpy.gpx.GPXTrackSegment()
         gpx_track.segments.append(gpx_segment)
         return gpx_, gpx_segment
