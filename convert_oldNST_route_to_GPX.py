@@ -89,7 +89,7 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
-def dmm_to_decdeg(dmm):
+def dmm_to_decdeg(dddmm_mmmm):
     """Convert signed int. DDDMM MMMM format to decimal degree.
     
     >>> dmm_to_decdeg(45300000)
@@ -97,10 +97,10 @@ def dmm_to_decdeg(dmm):
     >>> dmm_to_decdeg(-135150000)
     -135.25
     """
-    sign_dmm = (dmm > 0) - (dmm < 0)
-    (decimal_degree, mm_mmmm) = divmod(abs(dmm), 1e6)
+    sign_dddmm_mmmm = (dddmm_mmmm > 0) - (dddmm_mmmm < 0)
+    (decimal_degree, mm_mmmm) = divmod(abs(dddmm_mmmm), 1e6)
     decimal_degree += mm_mmmm / 1e4 / 60
-    return sign_dmm * decimal_degree
+    return sign_dddmm_mmmm * decimal_degree
 
 def store_trackpt(tp):
     """Do whatever with the trackpt data: print, gpx, store in a database, etc.
