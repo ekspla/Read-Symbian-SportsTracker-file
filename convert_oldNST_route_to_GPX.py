@@ -32,7 +32,7 @@ def symbian_to_unix_time(symbiantime):
 
 WORKAROUND = False
 def dt_from_timestamp(timestamp, tz_info=None):
-    """A workaround of datetime.fromtimestamp() for a few platforms after 2038.
+    """A workaround of datetime.fromtimestamp() for a few platform after 2038.
 
     Set WORKAROUND = True, if necessary.
     """
@@ -89,7 +89,14 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
-def dmm_to_decdeg(dmm): # Convert signed int. DDDMM MMMM to decimal degree.
+def dmm_to_decdeg(dmm):
+    """Convert signed int. DDDMM MMMM format to decimal degree.
+    
+    >>> dmm_to_decdeg(45300000)
+    45.5
+    >>> dmm_to_decdeg(-135150000)
+    -135.25
+    """
     sign_dmm = (dmm > 0) - (dmm < 0)
     (decimal_degree, mm_mmmm) = divmod(abs(dmm), 1e6)
     decimal_degree += mm_mmmm / 1e4 / 60

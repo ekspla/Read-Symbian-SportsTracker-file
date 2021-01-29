@@ -48,7 +48,8 @@ the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The f
 
 ## TODO
 - A few unknown field in the track points.
-- Support for heart rate in track log files of the new version (example files needed). 
+- Support for heart rate in track log files of the new version (example files needed).
+- A test for a file in the West or South hemisphere.  These scripts were only tested for the real files in the North-East quadrant.
 
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
