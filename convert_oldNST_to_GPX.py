@@ -89,6 +89,12 @@ def scsu_reader(file_object, address=None):
     file_object.seek(start_of_scsu + byte_length, 0) # Go to the next field.
     return decoded_strings
 
+def dmm_to_decdeg(dmm): # Convert signed int. DDDMM MMMM to decimal degree.
+    sign_dmm = (dmm > 0) - (dmm < 0)
+    (decimal_degree, mm_mmmm) = divmod(abs(dmm), 1e6)
+    decimal_degree += mm_mmmm / 1e4 / 60
+    return sign_dmm * decimal_degree
+
 def store_trackpt(tp):
     """Do whatever with the trackpt data: print, gpx, store in a database, etc.
 
@@ -454,10 +460,8 @@ with in_file.open(mode='rb') as f:
             t_time = trackpt.t_time / 100 # Totaltime / second.
 
             # The lat. and lon. are in I32s (DDDmm mmmm format).
-            (y_degree, y_mm_mmmm) = divmod(trackpt.y_ax, 1e6)
-            (x_degree, x_mm_mmmm) = divmod(trackpt.x_ax, 1e6)
-            y_degree += y_mm_mmmm / 1e4 / 60 # Convert minutes to degrees.
-            x_degree += x_mm_mmmm / 1e4 / 60
+            y_degree = dmm_to_decdeg(trackpt.y_ax)# Convert to decimal degrees.
+            x_degree = dmm_to_decdeg(trackpt.x_ax)
 
             z_ax = trackpt.z_ax / 10 # Altitude / meter.
             v = trackpt.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
