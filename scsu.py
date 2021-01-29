@@ -25,58 +25,6 @@
 # *
 # * This is freeware as long as you properly attribute my contribution.  */
 
-
-
-def output(c, output_array):    
-    char_count = 0
-    global d
-    
-    # /* join UTF-16 surrogates without any pairing sanity checks */
-    
-    if (0xD800 <= c <= 0xDBFF):
-        d = c & 0x3FF
-        return char_count
-        
-    if (0xDC00 <= c <= 0xDFFF):
-        c = c + 0x2400 + d * 0x400
-        
-    # /* output one character as UTF-8 multibyte sequence */
-    if (c < 0x80):
-        output_array.append(c)
-        char_count += 1
-        
-    elif (c < 0x800):
-        output_array.append(0xC0 | c>>6)
-        output_array.append(0x80 | c & 0x3F)
-        char_count += 1
-        
-    elif (c < 0x10000):
-        output_array.append(0xE0 | c>>12)
-        output_array.append(0x80 | c>>6 & 0x3F)
-        output_array.append(0x80 | c & 0x3F)
-        char_count += 1
-        
-    elif (c < 0x200000):
-        output_array.append(0xF0 | c>>18)
-        output_array.append(0x80 | c>>12 & 0x3F)
-        output_array.append(0x80 | c>>6 & 0x3F)
-        output_array.append(0x80 | c & 0x3F)
-        char_count += 1
-        
-    return char_count
-
-
-def nextchar(input_array):
-    # /* read one byte if available */
-    global counter
-    if input_array:
-        c = input_array.pop(0)
-        counter += 1
-        return c
-    else:
-        raise LookupError
-
-
 # /* SCSU uses the following variables and default values: */
 
 start = [0x0000,0x0080,0x0100,0x0300,0x2000,0x2080,0x2100,0x3000]
@@ -130,85 +78,133 @@ def decode(byte_array, size = None):
         char_counter: number of characters decoded.
     """
     input_array = bytearray(byte_array)
-    char_counter = 0 # Number of decoded characters.
-    output_array = bytearray()
-    global counter # Number of bytes read from the input bytearray.
-    counter = 0
-    active = 0
     if size == None:
         size = len(input_array) # Maximum length of characters to be decoded.
-    
+    char_counter = 0 # Number of decoded characters.
+    output_array = bytearray()
+    counter = 0
+    active = 0
+
+    def nextchar(input_array):
+        # /* read one byte if available */
+        nonlocal counter
+        if input_array:
+            c = input_array.pop(0)
+            counter += 1
+            return c
+        else:
+            raise LookupError
+
+    def output(c, output_array):    
+        char_count = 0
+        nonlocal d
+ 
+        # /* join UTF-16 surrogates without any pairing sanity checks */
+
+        if 0xD800 <= c <= 0xDBFF:
+            d = c & 0x3FF
+            return char_count
+
+        if 0xDC00 <= c <= 0xDFFF:
+            c = c + 0x2400 + d * 0x400
+
+        # /* output one character as UTF-8 multibyte sequence */
+        if c < 0x80:
+            output_array.append(c)
+            char_count += 1
+
+        elif c < 0x800:
+            output_array.append(0xC0 | c>>6)
+            output_array.append(0x80 | c & 0x3F)
+            char_count += 1
+
+        elif c < 0x10000:
+            output_array.append(0xE0 | c>>12)
+            output_array.append(0x80 | c>>6 & 0x3F)
+            output_array.append(0x80 | c & 0x3F)
+            char_count += 1
+
+        elif c < 0x200000:
+            output_array.append(0xF0 | c>>18)
+            output_array.append(0x80 | c>>12 & 0x3F)
+            output_array.append(0x80 | c>>6 & 0x3F)
+            output_array.append(0x80 | c & 0x3F)
+            char_count += 1
+
+        return char_count
+
+
     while char_counter < size:
         try:
             c = nextchar(input_array)
-            
-            if (c >= 0x80):
+
+            if c >= 0x80:
                 char_counter += output(c - 0x80 + slide[active], output_array)
-                
-            elif (0x20 <= c <= 0x7F):
+
+            elif 0x20 <= c <= 0x7F:
                 char_counter += output(c, output_array)
-                
+
             elif c in {0x0, 0x9, 0xA, 0xC, 0xD}:
                 char_counter += output(c, output_array)
-                
-            elif (0x1 <= c <= 0x8): #/* SQn */
+
+            elif 0x1 <= c <= 0x8: #/* SQn */
                 #/* single quote */ 
                 d = nextchar(input_array)
-                if (d < 0x80):
+                if d < 0x80:
                     char_counter += output(d + start[c - 0x1], output_array)
                 else: 
                     char_counter += output(d - 0x80 + slide[c - 0x1], output_array)
-                
-            elif (0x10 <= c <= 0x17): #/* SCn */
+
+            elif 0x10 <= c <= 0x17: #/* SCn */
                 #/* change window */ 
                 active = c - 0x10
-                
-            elif (0x18 <= c <= 0x1F): # /* SDn */
+
+            elif 0x18 <= c <= 0x1F: # /* SDn */
                 #/* define window */ 
                 active = c - 0x18
                 slide[active] = win[nextchar(input_array)]
-                
-            elif (c == 0xB): #/* SDX */
+
+            elif c == 0xB: #/* SDX */
                 c = nextchar(input_array)
                 d = nextchar(input_array)
                 active = c >> 5
                 slide[active] = 0x10000 + (((c & 0x1F) << 8 | d) << 7)
-                
-            elif (c == 0xE): # /* SQU */
+
+            elif c == 0xE: # /* SQU */
                 c = nextchar(input_array)
                 char_counter += output(c << 8 | nextchar(input_array), output_array)
-                
-            elif (c == 0xF): # /* SCU */
+
+            elif c == 0xF: # /* SCU */
                 #/* change to Unicode mode */ 
                 mode = 1
-                
-                while (mode) & (char_counter < size):
+
+                while mode and char_counter < size:
                     c = nextchar(input_array)
-                    
-                    if (c <= 0xDF) | (c >= 0xF3):
+
+                    if c <= 0xDF or c >= 0xF3:
                         char_counter += output(c << 8 | nextchar(input_array), output_array)
-                        
-                    elif (c == 0xF0): # /* UQU */
+
+                    elif c == 0xF0: # /* UQU */
                         c = nextchar(input_array)
                         char_counter += output(c << 8 | nextchar(input_array), output_array)
-                        
-                    elif (0xE0 <= c <= 0xE7): #/* UCn */
+
+                    elif 0xE0 <= c <= 0xE7: #/* UCn */
                         active = c - 0xE0
                         mode = 0
-                        
-                    elif (0xE8 <= c <= 0xEF): # /* UDn */
+
+                    elif 0xE8 <= c <= 0xEF: # /* UDn */
                         active = c - 0xE8
                         slide[active] = win[nextchar(input_array)]
                         mode = 0
-                        
-                    elif (c == 0xF1): # /* UDX */
+
+                    elif c == 0xF1: # /* UDX */
                         c = nextchar(input_array)
                         d = nextchar(input_array)
                         active = c >> 5
                         slide[active] = 0x10000 + (((c & 0x1F) << 8 | d) << 7)
                         mode = 0
-                        
+
         except LookupError:
             break
-            
+
     return output_array, counter, char_counter
