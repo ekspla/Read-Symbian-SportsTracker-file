@@ -206,6 +206,7 @@ def finalize_gpx(gpx_, file_type, write_file=None):
     else:
         print(gpx_.to_xml('1.1'))
 
+DEBUG_READ_PAUSE = False
 def read_pause_data(file_obj):
     (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
     #print(f'Number of pause data: {num_pause}')
@@ -228,7 +229,7 @@ def read_pause_data(file_obj):
 
         to_time /= 100 # Totaltime in seconds.
         unixtime = symbian_to_unix_time(symbiantime)
-        #print_raw_data() # For debugging purposes.
+        if DEBUG_READ_PAUSE: print_raw_data() # For debugging purposes.
 
         # Start: we don't use these data.  Store them for the future purposes.
         if flag == 1:
