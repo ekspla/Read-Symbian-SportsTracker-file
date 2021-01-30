@@ -262,7 +262,7 @@ with in_file.open(mode='rb') as f:
     START_ADDRESS = 0x250 # Not quite sure if this is the best starting point.
 
     # Track ID and Totaltime.
-    track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST track.
+    track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
     if FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
     f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
     (TRACK_ID, total_time) = read_unpack('<2I', f)
