@@ -30,6 +30,12 @@ import scsu
     USER_ID, start_time, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
     in_file) = (None, ) * 14
 
+# Types of activities in (Nokia) Sports Tracker.
+ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
+              'Other 3', 'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 
+              'Hiking', 'Roller skating', 'Downhill skiing', 'Paddling', 
+              'Rowing', 'Golf', 'Indoor')
+
 
 def symbian_to_unix_time(symbiantime):
     """Convert a timestamp from symbiantime to unixtime.

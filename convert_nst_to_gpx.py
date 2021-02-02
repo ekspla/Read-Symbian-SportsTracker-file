@@ -101,15 +101,11 @@ with nst.in_file.open(mode='rb') as f:
     (nst.USER_ID, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     #print(f'User id: {nst.USER_ID}')
 
-    # Type of activity.  For details, please see config.dat.
+    # Type of activity.  Walk, run, bicycle, etc. See config.dat for details.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity, ) = nst.read_unpack('<H', f) # 2 bytes, little endian U16.
-    a_list = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
-        'Other 3', 'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 
-        'Hiking', 'Roller skating', 'Downhill skiing', 'Paddling', 'Rowing', 
-        'Golf', 'Indoor']
-    nst.description = (a_list[activity] if activity < len(a_list) 
-                       else str(activity))
+    nst.description = (str(activity) if activity >= len(nst.ACTIVITIES) 
+                       else nst.ACTIVITIES[activity])
     #print(f'Activity: {nst.description}')
 
     # Read SCSU encoded name of the track, which is usually the datetime.

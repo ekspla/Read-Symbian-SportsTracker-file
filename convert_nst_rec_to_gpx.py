@@ -99,15 +99,11 @@ with nst.in_file.open(mode='rb') as f:
     (nst.USER_ID, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     print(f'User id: {nst.USER_ID}')
 
-    # Type of activity.  For details, please see config.dat.
+    # Type of activity.  Walk, run, bicycle, etc. See config.dat for details.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity, ) = nst.read_unpack('<H', f) # 2 bytes, little endian U16.
-    a_list = ['Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
-        'Other 3', 'Other 4', 'Other 5', 'Other 6', 'Mountain biking', 
-        'Hiking', 'Roller skating', 'Downhill skiing', 'Paddling', 'Rowing', 
-        'Golf', 'Indoor']
-    nst.description = (a_list[activity] if activity < len(a_list) 
-                       else str(activity))
+    nst.description = (str(activity) if activity >= len(nst.ACTIVITIES) 
+                       else nst.ACTIVITIES[activity])
     print(f'Activity: {nst.description}')
 
     # Read SCSU encoded name of the track, which is usually the datetime.
@@ -116,14 +112,14 @@ with nst.in_file.open(mode='rb') as f:
     # principle because they can be SCSU-encoded non-ASCII characters.
     track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
     if nst.NST: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
-    if nst.FILE_TYPE == TMP: track_name_addr += 0x04 # The 4-byte blank (-> 0x4e).
+    if nst.FILE_TYPE == TMP: track_name_addr += 0x04 # 4-byte blank (-> 0x4e).
     nst.track_name = nst.scsu_reader(f, track_name_addr)
     print(f'Track name: {nst.track_name}')
 
     # Starttime & Stoptime in UTC.
     start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
     if nst.NST: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
-    if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # The 4-byte blank (0x196).
+    if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
     f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = nst.read_unpack('<2q', f)
     nst.start_time = nst.symbian_to_unix_time(start_time)
@@ -215,7 +211,7 @@ with nst.in_file.open(mode='rb') as f:
                 t_time = trackpt.t_time / 100 # Totaltime / seconds.
 
                 # The lat. and lon. are in I32s (DDDmm mmmm format).
-                y_degree = nst.dmm_to_decdeg(trackpt.y_ax)# Convert to decimal degrees.
+                y_degree = nst.dmm_to_decdeg(trackpt.y_ax)# Decimal degrees.
                 x_degree = nst.dmm_to_decdeg(trackpt.x_ax)
 
                 z_ax = trackpt.z_ax / 10 # Altitude / meter.
@@ -233,7 +229,7 @@ with nst.in_file.open(mode='rb') as f:
                 good_unix_time = 0 < delta_unix_time < 1 * 3600 # Up to 1 hr.
                 good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
 
-                if track_count == 0 or suspect_pause == True:
+                if track_count == 0 or suspect_pause:
                     suspect_pause = False # No time correction; reset the flag.
 
                 # There are four cases due to the two boolean conditions.
