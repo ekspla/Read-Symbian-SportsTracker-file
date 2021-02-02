@@ -1,5 +1,5 @@
 # Read-Symbian-SportsTracker-file -- How to read binary dat files.
- This python script, `convert_NST_to_GPX.py`, describes how you can read **symbian (Nokia) Sports Tracker log files (.dat)** stored 
+ This python script, `convert_nst_to_gpx.py`, describes how you can read **symbian (Nokia) Sports Tracker log files (.dat)** stored 
 in your phone as **binary format**.  You can use this code, as it is, to **convert from dat to gpx** by using 
 [gpxpy](https://github.com/tkrajina/gpxpy).
 
@@ -8,7 +8,7 @@ with GPS receiver, never tested with heart-rate sensor, though...
 
  There is still a few unknown part in the track logs.  So, your feedback is welcomed.
 
- For track log files created by **the old Nokia Sports Tracker**, use `convert_oldNST_to_GPX.py`. 
+ For track log files created by **the old Nokia Sports Tracker**, use `convert_oldnst_to_gpx.py`. 
 This is because the file format of the old version Sports Tracker is a bit different from those 
 of the new version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  For details, please see 
 the script.  (1-byte instead of 2-byte long header, start address of trackpoint is different, 
@@ -37,10 +37,10 @@ There are files as followings in the directory named **_drive_name_:\SportsTrack
 - `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other as
 mentioned before.  [A fetched sample file](https://www.elektroda.pl/rtvforum/topic1416097.html) and the converted gpx are in `references/`.
 - `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks timestamps, is very similar to that of 
-track log.  See `convert_oldNST_route_to_GPX.py` for details.
+track log.  See `convert_oldnst_route_to_gpx.py` for details.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
 the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The file format seems to be very simple, see 
-`./references/Rec211109168_dump.txt` (a hex dump file with comments), `convert_NST_Rec_to_GPX.py` (the script)  and 
+`./references/Rec211109168_dump.txt` (a hex dump file with comments), `convert_nst_rec_to_gpx.py` (the script)  and 
 `./references/Rec211109168.gpx` (the converted gpx file) for details. 
 
 ## Limitation
