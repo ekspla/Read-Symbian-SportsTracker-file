@@ -24,7 +24,7 @@ except ImportError:
 import scsu
 
 
-# Initialize global variables.
+# Initialize variables.
 (total_time, total_distance) = (0, ) * 2
 (comment, route_name, track_name, TZ_HOURS, start_localtime, description, 
     USER_ID, start_time, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
@@ -237,6 +237,9 @@ def read_pause_data(file_obj):
     p_count = 0 # pause_count
     p_list = [] # pause_list
 
+    (start, stop, manual_suspend, automatic_suspend, resume, flag_8) = (
+        1, 2, 3, 4, 5, 8)
+
     while p_count < num_pause:
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
         # in localtime zone, while those of the new version in UTC (Z).
@@ -247,27 +250,26 @@ def read_pause_data(file_obj):
         unixtime = symbian_to_unix_time(symbiantime)
         if DEBUG_READ_PAUSE: print_raw_data() # For debugging purposes.
 
-        # Start: we don't use these data.  Store them for the future purposes.
-        if flag == 1:
+        if flag == start:
             starttime = unixtime
             start_t_time = to_time
-        # Stop: we don't use these data.  Store them for the future purposes.
-        elif flag == 2:
+
+        elif flag == stop:
             stoptime = unixtime
             stop_t_time = to_time
-        # Suspend: flag = 3 (manually) or 4 (automatically).
-        elif flag in {3, 4}:
+
+        elif flag in {manual_suspend, automatic_suspend}:
             suspendtime = unixtime
             to4_time = to_time
-        # Resume.  A suspend--resume pair should have a common totaltime.
-        elif flag == 5:
-            if to4_time != to_time:
+
+        elif flag == resume:
+            if to4_time != to_time: # Suspend-resume pair has a common to_time.
                 print('Error in pause.')
                 sys.exit(1)
             p_time = unixtime - suspendtime # Time between suspend and resume.
             p_list.append((to_time, p_time, unixtime))
-        # Flag = 8.  Use it as a correction of time.
-        elif flag == 8:
+
+        elif flag == flag_8: # Use it as a correction of time.
             p_time = 0
             p_list.append((to_time, p_time, unixtime))
 
