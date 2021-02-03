@@ -3,7 +3,7 @@
 # (c) 2020 ekspla.
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
-"""A module for Nokia SportsTracker files.
+"""A module for reading Nokia SportsTracker files.
 """
 import sys
 import struct

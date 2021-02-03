@@ -37,7 +37,6 @@ if argc < 2:
 nst.in_file = Path(argvs[1])
 #print(nst.in_file)
 
-
 with nst.in_file.open(mode='rb') as f:
 
     # Check if it is the correct file.
@@ -71,10 +70,10 @@ with nst.in_file.open(mode='rb') as f:
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
     if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
     f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
-    (TRACK_ID, nst.total_time) = nst.read_unpack('<2I', f)
+    (TRACK_ID, total_time) = nst.read_unpack('<2I', f)
     print(f'Track ID: {TRACK_ID}')
 
-    nst.total_time = nst.total_time / 100 # Totaltime in seconds.
+    nst.total_time = total_time / 100 # Totaltime in seconds.
     print(f'Total time: {nst.format_timedelta(nst.total_time)}')
 
     # Total Distance.
@@ -93,7 +92,7 @@ with nst.in_file.open(mode='rb') as f:
     # timezone information in Symbian.  Take difference of starttime in 
     # localtime and those in UTC (see below) to see the timezone+DST.
     print(f'Start: {nst.format_datetime(nst.start_localtime)}+07:00')
-    #print(f'Stop : {nst.format_datetime(stop_localtime)}+07:00')
+    #print(f'Stop : {nst.format_datetime(nst.stop_localtime)}+07:00')
 
     # User ID, please see config.dat.
     (nst.USER_ID, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
@@ -149,9 +148,6 @@ with nst.in_file.open(mode='rb') as f:
     # Go to the first data.
 
     track_count = 0
-
-    # In contrast to the new version, we have to calculate the timestamps in 
-    # all of the trackpoints because of no Symbiantimes given in the old one.
 
     # Factory functions for creating named tuples.
     TYPE00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'

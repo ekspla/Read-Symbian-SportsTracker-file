@@ -29,7 +29,7 @@ with nst.in_file.open(mode='rb') as f:
     #f.seek(0x00000, 0)
     # 8 (4+4) bytes, little endian U32+U32.
     (APPLICATION_ID, nst.FILE_TYPE) = nst.read_unpack('<2I', f)
-    (CONFIG, TRACK, ROUTE, TMP) = (0x1, 0x2, 0x3, 0x4) # nst.FILE_TYPE.
+    (CONFIG, TRACK, ROUTE, TMP) = (0x1, 0x2, 0x3, 0x4) # FILE_TYPE.
     if APPLICATION_ID != 0x0e4935e8 or nst.FILE_TYPE != TRACK:
         print(f'Unexpected file type: {nst.FILE_TYPE}')
         sys.exit(1)
@@ -137,10 +137,10 @@ with nst.in_file.open(mode='rb') as f:
     #print(f'Realtime Z: {nst.format_timedelta(real_time)}')
 
     # Read SCSU encoded user comment of variable length.
-    comment_addr = 0x00222 # Fixed address of nst.NST tracks.
+    comment_addr = 0x00222 # Fixed address of NST tracks.
     if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
     nst.comment = nst.scsu_reader(f, comment_addr) # This address is fixed.
-    #if comment: print(f'Comment: {nst.comment}')
+    #if nst.comment: print(f'Comment: {nst.comment}')
 
 
     f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
@@ -151,9 +151,9 @@ with nst.in_file.open(mode='rb') as f:
     #sys.exit(0)
 
     # Read trackpoint data.  The last trackpoint is necessary in summarizing.
-    (track_count, trackpoint_store) = nst.read_trackpoints(f, pause_list)
+    (track_count, trackpt_store) = nst.read_trackpoints(f, pause_list)
 
-nst.add_gpx_summary(gpx, trackpoint_store)
+nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = False
 gpx_path = (Path(str(nst.in_file)[:-3] + 'gpx') if WRITE_FILE
             else None)
