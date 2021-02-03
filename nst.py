@@ -136,7 +136,7 @@ def store_trackpt(tp):
     #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
 
     # Print gpx xml.
-    gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == 0x3 
+    gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == ROUTE 
                      else gpxpy.gpx.GPXTrackPoint)
     gpx_point = gpx_point_def(
         latitude=round(tp.y_degree, 10), 
@@ -173,7 +173,7 @@ def initialize_gpx(file_type):
         'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
         'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
 
-    if file_type == 0x3: # Create the first route in the GPX.
+    if file_type == ROUTE: # Create the first route in the GPX.
         gpx_route = gpxpy.gpx.GPXRoute()
         gpx_.routes.append(gpx_route)
         return gpx_, gpx_route
@@ -193,11 +193,12 @@ def add_gpx_summary(gpx_, tp): # tp: trackpt_store
     descr = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
              f'Total distance: {round(total_distance_, 3)} km' '; '
              f'Net speed: {round(net_speed_, 3)} km/h')
-    gpx_.name = f'[{route_name}]' if tp.file_type == 0x3 else f'[{track_name}]'
-    if tp.file_type == 0x3: # Route files.
+    if tp.file_type == ROUTE:
+        gpx_.name = f'[{route_name}]'
         gpx_.routes[0].name = gpx_.name
         gpx_.routes[0].description = (f'{descr}' ']')
     else: # Track files.
+        gpx_.name = f'[{track_name}]'
         gpx_.tracks[0].name = gpx_.name
         stop_localtime_ = (
             stop_localtime if stop_localtime != symbian_to_unix_time(0) 
