@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import nst
+(CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
 
 # Arguments and help.
@@ -28,9 +29,8 @@ with nst.in_file.open(mode='rb') as f:
     # Check if it is the correct file.
     #f.seek(0x00000, 0)
     # 8 (4+4) bytes, little endian U32+U32.
-    (APPLICATION_ID, nst.FILE_TYPE) = nst.read_unpack('<2I', f)
-    (CONFIG, TRACK, ROUTE, TMP) = (0x1, 0x2, 0x3, 0x4) # FILE_TYPE.
-    if APPLICATION_ID != 0x0e4935e8 or nst.FILE_TYPE != TRACK:
+    (application_id, nst.FILE_TYPE) = nst.read_unpack('<2I', f)
+    if application_id != nst.APP_ID or nst.FILE_TYPE != TRACK:
         print(f'Unexpected file type: {nst.FILE_TYPE}')
         sys.exit(1)
 

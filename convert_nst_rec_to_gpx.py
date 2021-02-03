@@ -11,6 +11,7 @@ from collections import namedtuple
 from pathlib import Path
 
 import nst
+(CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
 
 def print_raw_track(): # Remove symbiantime from trackpt if NST and header0x07.
@@ -44,9 +45,8 @@ with nst.in_file.open(mode='rb') as f:
     # Due to this blank, there is a 4-byte offset to the addresses shown below.
     #f.seek(0x00000, 0)
     # 12 (4+4+4) bytes, little endian U32+U32+U32.
-    (APPLICATION_ID, nst.FILE_TYPE, blank) = nst.read_unpack('<3I', f)
-    (CONFIG, TRACK, ROUTE, TMP) = (0x1, 0x2, 0x3, 0x4) # FILE_TYPE.
-    if APPLICATION_ID != 0x0e4935e8 or nst.FILE_TYPE != TMP or blank != 0x0:
+    (application_id, nst.FILE_TYPE, blank) = nst.read_unpack('<3I', f)
+    if application_id != nst.APP_ID or nst.FILE_TYPE != TMP or blank != 0x0:
         print(f'Unexpected file type: {nst.FILE_TYPE}')
         sys.exit(1)
 

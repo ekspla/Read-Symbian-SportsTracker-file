@@ -36,6 +36,9 @@ ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2',
               'Hiking', 'Roller skating', 'Downhill skiing', 'Paddling', 
               'Rowing', 'Golf', 'Indoor')
 
+(CONFIG, TRACK, ROUTE, TMP) = (0x1, 0x2, 0x3, 0x4) # FILE_TYPE.
+APP_ID = 0x0e4935e8
+
 
 def symbian_to_unix_time(symbiantime):
     """Convert a timestamp from symbiantime to unixtime.
