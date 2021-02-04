@@ -122,7 +122,7 @@ def dmm_to_decdeg(dddmm_mmmm):
     decimal_degree += mm_mmmm / 1e4 / 60
     return sign_dddmm_mmmm * decimal_degree
 
-def store_trackpt(tp):
+def store_trackpt(tp): # tp: trackpt_store
     """Do whatever with the trackpt data: print, gpx, store in a database, etc.
 
     Args:
@@ -185,15 +185,14 @@ def initialize_gpx(file_type):
         gpx_track.segments.append(gpx_segment)
         return gpx, gpx_segment
 
-def add_gpx_summary(gpx, tp): # tp: trackpt_store
-    # Add a summary.  This part may be informative.
-    total_time_ = tp.t_time if total_time == 0 else total_time
-    total_distance_ = tp.dist if total_distance == 0 else total_distance
+def add_gpx_summary(gpx, tp_store):
+    total_time_ = tp_store.t_time if total_time == 0 else total_time
+    total_distance_ = tp_store.dist if total_distance == 0 else total_distance
     net_speed = total_distance_ / (total_time_ / 3600) # km/h.
     descr = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
              f'Total distance: {round(total_distance_, 3)} km' '; '
              f'Net speed: {round(net_speed, 3)} km/h')
-    if tp.file_type == ROUTE:
+    if tp_store.file_type == ROUTE:
         gpx.name = f'[{route_name}]'
         gpx.routes[0].name = gpx.name
         gpx.routes[0].description = (f'{descr}' ']')
@@ -202,7 +201,7 @@ def add_gpx_summary(gpx, tp): # tp: trackpt_store
         gpx.tracks[0].name = gpx.name
         stop_localtime_ = (
             stop_localtime if stop_localtime != symbian_to_unix_time(0) 
-            else tp.unix_time + TZ_HOURS * 3600)
+            else tp_store.unix_time + TZ_HOURS * 3600)
         real_time = stop_localtime_ - start_localtime
         gross_speed = total_distance_ / (real_time / 3600) # km/h.
         gpx.tracks[0].description = (
@@ -294,8 +293,8 @@ def print_pause_list(pause_list):
 DEBUG_READ_TRACK = False
 def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
 
-    def print_raw(to_time, unix_time, hdr, tp):
-        times = f'{to_time} {format_datetime(unix_time)}Z'
+    def print_raw(t_time, unix_time, hdr, tp):
+        times = f'{t_time} {format_datetime(unix_time)}Z'
         # Remove symbiantime from trackpt if NST and header0x07.
         trackpt_ = tp[1:-1] if NST and hdr == 0x07 else tp[1:]
         print(hex(file_obj.tell()), hex(hdr), times, *trackpt_)
@@ -304,53 +303,51 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
         print(f'{hdr:#x} Error in the track point header: {track_count}, '
               f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
 
-    def process_track_type00(tp, tp_store):
-        to_time = tp.t_time / 100 # Totaltime / second.
+    def process_trackpt_type00(tp, tp_store):
+        t_time = tp.t_time / 100 # Totaltime / second.
 
         # The lat. and lon. are in I32s (DDDmm mmmm format).
         y = dmm_to_decdeg(tp.y_ax)# Convert to decimal degrees.
         x = dmm_to_decdeg(tp.x_ax)
 
         z = tp.z_ax / 10 # Altitude / meter.
-        v_ = tp.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
-        d = tp_store.dist + tp.d_dist / 1e5 # Distance/km.
-        d_d = tp.d_dist / 1e5 # Delta distance/km.
+        v = tp.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
+        d_dist = tp.d_dist / 1e5 # Delta distance/km.
+        dist = tp_store.dist + d_dist # Distance/km.
         # In contrast to the new NST, we have to calculate the timestamps in 
         # all of the trackpts because of no symbiantimes given in the OLDNSTs.
-        unix_time = (tp_store.unix_time + (to_time - tp_store.t_time) if not NST
-                    else symbian_to_unix_time(tp.symbian_time)) # OLDNST/_ROUTE.
-        return unix_time, to_time, y, x, z, v_, d_d, d
+        unix_time = (tp_store.unix_time + (t_time - tp_store.t_time) if not NST
+                    else symbian_to_unix_time(tp.symbian_time))
+        return unix_time, t_time, y, x, z, v, d_dist, dist
 
-    def process_track_type80(tp, tp_store):
-        to_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
+    def process_trackpt_type80(tp, tp_store):
+        t_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
 
         y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
         x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
 
         z = tp_store.z_ax + tp.dz_ax / 10 # Altitude / m.
-        v_ = tp_store.v + tp.dv / 100 * 3.6 # Velocity / km/h.
-        d = tp_store.dist + tp.d_dist / 1e5 # Distance / km.
-        d_d = tp.d_dist / 1e5 # Delta distance/km.
+        v = tp_store.v + tp.dv / 100 * 3.6 # Velocity / km/h.
+        d_dist = tp.d_dist / 1e5 # Delta distance/km.
+        dist = tp_store.dist + d_dist # Distance / km.
         unix_time = tp_store.unix_time + tp.dt_time / 100
-        return unix_time, to_time, y, x, z, v_, d_d, d
+        return unix_time, t_time, y, x, z, v, d_dist, dist
 
-    def read_oldnst_track():
+    def read_oldnst_trackpt():
         nonlocal trackpt_store
         pointer = file_obj.tell()
         header_fmt = 'B' # 1-byte header.
         (header, ) = read_unpack(header_fmt, file_obj)
 
         if header in {0x00, 0x02, 0x03}:
+            process_trackpt = process_trackpt_type00
             (Trackpt, fmt) = (TrackptType00, '<I3iHI')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist)
             # 22 bytes (4+4+4+4+2+4).  y(+/-): N/S; x(+/-): E/W.
-            trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Namedtuple.
-            unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-                process_track_type00(trackpt, trackpt_store))
-            if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
 
         elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
                         0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
+            process_trackpt = process_trackpt_type80
 
             if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
                 Trackpt = TrackptType80
@@ -375,20 +372,21 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
                 else: # 0xDA, 0xDB; 2-byte dv. 4-byte d_dist.
                     fmt = '<B6hI' # 17 bytes (1+2+2+2+2+2+2+4).
 
-            trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Namedtuple.
-            unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-                process_track_type80(trackpt, trackpt_store))
-            if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
-
         else: # Other headers which I don't know.
             print_other_header_error(pointer, header)
             return 1
 
+        trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read tp and wrap.
+
+        unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
+           process_trackpt(trackpt, trackpt_store)) # Use tp & the previous one.
+        if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
+
         if pause_list: # Adjust unix_time by using pause_list.
             t4_time, pause_time, resume_time = pause_list[0]
 
-            # Just after the pause, use the pause data.
-            if t_time + 0.5 >= t4_time:
+            if t_time + 0.5 >= t4_time: # After the pause, use the pause data.
+                del pause_list[0]
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
                 resume_time -= TZ_HOURS * 3600 # Convert from localtime to UTC.
 
@@ -396,17 +394,14 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
 
-                del pause_list[0]
-
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
             x_degree=x_degree, z_ax=z_ax, v=v, d_dist=d_dist, 
             dist=dist, track_count=track_count, file_type=FILE_TYPE)
-        store_trackpt(trackpt_store)
 
         return 0
 
-    def read_nst_track():
+    def read_nst_trackpt():
         nonlocal trackpt_store
         pointer = file_obj.tell()
         header_fmt = '2B' # 2-byte header.
@@ -414,15 +409,13 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
         del header1 # We don't use header1.
 
         if header == 0x07: # Typically, 0783 or 0782.
+            process_trackpt = process_trackpt_type00
             (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
             # 30 bytes (4+4+4+4+2+4+8).  y(+/-): N/S; x(+/-): E/W.
-            trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Namedtuple.
-            unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-                process_track_type00(trackpt, trackpt_store))
-            if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
 
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
+            process_trackpt = process_trackpt_type80
 
             if header in {0x87, 0x97}: # Typically 8783, 8782, 9783, 9782.
                 Trackpt = TrackptType80
@@ -440,33 +433,31 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
                 # 0xC7: 16 bytes (1+2+2+2+2+2+1+2+1+1).  1-byte dv.
                 # 0xD7: 17 bytes (1+2+2+2+2+2+2+2+1+1).  2-byte dv.
 
-            trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Namedtuple.
-            unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-                process_track_type80(trackpt, trackpt_store))
-            if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
-
         else: # Other headers which I don't know.
             print_other_header_error(pointer, header)
             return 1
 
+        trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read tp and wrap.
+
+        unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
+           process_trackpt(trackpt, trackpt_store)) # Use tp & the previous one.
+        if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
+
         if pause_list: # Adjust unix_time by using pause_list.
             t4_time, pause_time, resume_time = pause_list[0]
 
-            # Just after the pause, use the pause data.
-            if t_time + 0.5 >= t4_time:
+            if t_time + 0.5 >= t4_time: # After the pause, use the pause data.
+                del pause_list[0]
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
 
                 if header != 0x07: # The trackpoint lacks for symbiantime.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
 
-                del pause_list[0]
-
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
             x_degree=x_degree, z_ax=z_ax, v=v, d_dist=d_dist, 
             dist=dist, track_count=track_count, file_type=FILE_TYPE)
-        store_trackpt(trackpt_store)
 
         return 0
 
@@ -501,11 +492,13 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
 
     # This is the main loop.
     track_count = 0
-    read_and_store_track = read_nst_track if NST else read_oldnst_track
+    read_trackpt = read_nst_trackpt if NST else read_oldnst_trackpt
     while track_count < num_trackpt:
 
-        exit_code = read_and_store_track() # In trackpt_store, after processing.
+        exit_code = read_trackpt() # In trackpt_store, after processing.
         if exit_code: break
+
+        store_trackpt(trackpt_store)
 
         track_count += 1
 
