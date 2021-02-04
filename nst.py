@@ -301,7 +301,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
         print(hex(file_obj.tell()), hex(hdr), times, *trackpt_)
 
     def print_other_header_error(ptr, hdr): # pointer, header.
-        print(f'{hdr:#x} Error in the track point header: {t_count}, '
+        print(f'{hdr:#x} Error in the track point header: {track_count}, '
               f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
 
     def process_track_type00(tp, tp_store):
@@ -401,7 +401,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
             x_degree=x_degree, z_ax=z_ax, v=v, d_dist=d_dist, 
-            dist=dist, track_count=t_count, file_type=FILE_TYPE)
+            dist=dist, track_count=track_count, file_type=FILE_TYPE)
         store_trackpt(trackpt_store)
 
         return 0
@@ -465,7 +465,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
             x_degree=x_degree, z_ax=z_ax, v=v, d_dist=d_dist, 
-            dist=dist, track_count=t_count, file_type=FILE_TYPE)
+            dist=dist, track_count=track_count, file_type=FILE_TYPE)
         store_trackpt(trackpt_store)
 
         return 0
@@ -500,20 +500,20 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
         unix_time=starttime, t_time=0, dist=0)
 
     # This is the main loop.
-    t_count = 0 # track_count.
+    track_count = 0
     read_and_store_track = read_nst_track if NST else read_oldnst_track
-    while t_count < num_trackpt:
+    while track_count < num_trackpt:
 
         exit_code = read_and_store_track() # In trackpt_store, after processing.
         if exit_code: break
 
-        t_count += 1
+        track_count += 1
 
     # Handling of errors.
-    if t_count != num_trackpt:
-        print(f'Track point count error: {t_count}, {num_trackpt}')
+    if track_count != num_trackpt:
+        print(f'Track point count error: {track_count}, {num_trackpt}')
         print(*trackpt_store)
         sys.exit(1)
 
     else:
-        return t_count, trackpt_store
+        return track_count, trackpt_store
