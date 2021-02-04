@@ -160,12 +160,12 @@ def store_trackpt(tp):
     gpx_point.extensions.append(gpx_extension_speed)
 
 def initialize_gpx(file_type):
-    gpx_ = gpxpy.gpx.GPX() # Create a new GPX.
+    gpx = gpxpy.gpx.GPX() # Create a new GPX.
 
     # Add TrackPointExtension namespaces and schema locations.
-    gpx_.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
-    gpx_.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
-    gpx_.schema_locations = [
+    gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
+    gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
+    gpx.schema_locations = [
         'http://www.topografix.com/GPX/1/1',
         'http://www.topografix.com/GPX/1/1/gpx.xsd',
         'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
@@ -175,56 +175,56 @@ def initialize_gpx(file_type):
 
     if file_type == ROUTE: # Create the first route in the GPX.
         gpx_route = gpxpy.gpx.GPXRoute()
-        gpx_.routes.append(gpx_route)
-        return gpx_, gpx_route
+        gpx.routes.append(gpx_route)
+        return gpx, gpx_route
     else: # Create the first track in the GPX.
         gpx_track = gpxpy.gpx.GPXTrack()
-        gpx_.tracks.append(gpx_track)
+        gpx.tracks.append(gpx_track)
         # Create the first segment in the GPX track.
         gpx_segment = gpxpy.gpx.GPXTrackSegment()
         gpx_track.segments.append(gpx_segment)
-        return gpx_, gpx_segment
+        return gpx, gpx_segment
 
-def add_gpx_summary(gpx_, tp): # tp: trackpt_store
+def add_gpx_summary(gpx, tp): # tp: trackpt_store
     # Add a summary.  This part may be informative.
     total_time_ = tp.t_time if total_time == 0 else total_time
     total_distance_ = tp.dist if total_distance == 0 else total_distance
-    net_speed_ = total_distance_ / (total_time_ / 3600) # km/h.
+    net_speed = total_distance_ / (total_time_ / 3600) # km/h.
     descr = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
              f'Total distance: {round(total_distance_, 3)} km' '; '
-             f'Net speed: {round(net_speed_, 3)} km/h')
+             f'Net speed: {round(net_speed, 3)} km/h')
     if tp.file_type == ROUTE:
-        gpx_.name = f'[{route_name}]'
-        gpx_.routes[0].name = gpx_.name
-        gpx_.routes[0].description = (f'{descr}' ']')
+        gpx.name = f'[{route_name}]'
+        gpx.routes[0].name = gpx.name
+        gpx.routes[0].description = (f'{descr}' ']')
     else: # Track files.
-        gpx_.name = f'[{track_name}]'
-        gpx_.tracks[0].name = gpx_.name
+        gpx.name = f'[{track_name}]'
+        gpx.tracks[0].name = gpx.name
         stop_localtime_ = (
             stop_localtime if stop_localtime != symbian_to_unix_time(0) 
             else tp.unix_time + TZ_HOURS * 3600)
-        real_time_ = stop_localtime_ - start_localtime
-        gross_speed_ = total_distance_ / (real_time_ / 3600) # km/h.
-        gpx_.tracks[0].description = (
+        real_time = stop_localtime_ - start_localtime
+        gross_speed = total_distance_ / (real_time / 3600) # km/h.
+        gpx.tracks[0].description = (
             f'{descr}' '; '
             f'Start localtime: {format_datetime(start_localtime)}' '; '
             f'Stop localtime: {format_datetime(stop_localtime_)}' '; '
-            f'Real time: {format_timedelta(real_time_)}' '; '
-            f'Gross speed: {round(gross_speed_, 3)} km/h' ']')
-        gpx_.description = f'[{description}]' # ACTIVITIES: run, bicycle, etc.
-        gpx_.author_name = str(USER_ID)
-        gpx_.time = dt_from_timestamp(
+            f'Real time: {format_timedelta(real_time)}' '; '
+            f'Gross speed: {round(gross_speed, 3)} km/h' ']')
+        gpx.description = f'[{description}]' # ACTIVITIES: run, bicycle, etc.
+        gpx.author_name = str(USER_ID)
+        gpx.time = dt_from_timestamp(
             start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
-        if comment: gpx_.tracks[0].comment = comment
+        if comment: gpx.tracks[0].comment = comment
 
-def finalize_gpx(gpx_, outfile_path=None):
+def finalize_gpx(gpx, outfile_path=None):
     if outfile_path is not None: # Finally, print or write the gpx.
-        result = gpx_.to_xml('1.1')
+        result = gpx.to_xml('1.1')
         result_file = open(outfile_path, 'w')
         result_file.write(result)
         result_file.close()
     else:
-        print(gpx_.to_xml('1.1'))
+        print(gpx.to_xml('1.1'))
 
 DEBUG_READ_PAUSE = False
 def read_pause_data(file_obj):
@@ -234,68 +234,68 @@ def read_pause_data(file_obj):
     #print(f'Pause address: {hex(pause_address)}')
 
     def print_raw_data(): # For debugging purposes.
-        utctime = f'{format_datetime(unixtime)}' # The old ver. in localtime.
+        utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
         if NST: utctime += 'Z' # The new version NST in UTC (Z).
         print(f'{unknown}\t{format_timedelta(to_time)}\t{flag}\t{utctime}')
 
-    p_count = 0 # pause_count
-    p_list = [] # pause_list
+    pause_count = 0
+    pause_list = []
 
     (start, stop, manual_suspend, automatic_suspend, resume, flag_8) = (
         1, 2, 3, 4, 5, 8)
 
-    while p_count < num_pause:
+    while pause_count < num_pause:
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
         # in localtime zone, while those of the new version in UTC (Z).
         # The first unknown field (always 0x01) seems to have no meaning.
         (unknown, to_time, flag, symbiantime) = read_unpack('<BIBq', file_obj)
 
         to_time /= 100 # Totaltime in seconds.
-        unixtime = symbian_to_unix_time(symbiantime)
+        unix_time = symbian_to_unix_time(symbiantime)
         if DEBUG_READ_PAUSE: print_raw_data() # For debugging purposes.
 
         if flag == start:
-            starttime = unixtime
+            starttime = unix_time
             start_t_time = to_time
 
         elif flag == stop:
-            stoptime = unixtime
+            stoptime = unix_time
             stop_t_time = to_time
 
         elif flag in {manual_suspend, automatic_suspend}:
-            suspendtime = unixtime
+            suspendtime = unix_time
             to4_time = to_time
 
         elif flag == resume:
             if to4_time != to_time: # Suspend-resume pair has a common to_time.
                 print('Error in pause.')
                 sys.exit(1)
-            p_time = unixtime - suspendtime # Time between suspend and resume.
-            p_list.append((to_time, p_time, unixtime))
+            pause_time = unix_time - suspendtime
+            pause_list.append((to_time, pause_time, unix_time))
 
         elif flag == flag_8: # Use it as a correction of time.
-            p_time = 0
-            p_list.append((to_time, p_time, unixtime))
+            pause_time = 0
+            pause_list.append((to_time, pause_time, unix_time))
 
-        p_count += 1
+        pause_count += 1
 
     del unknown, starttime, start_t_time, stoptime, stop_t_time
-    return p_list, p_count
+    return pause_list, pause_count
 
-def print_pause_list(p_list):
+def print_pause_list(pause_list):
     d_t = 'Datetime Z' if NST else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
-    for p in p_list:
-        to_time, p_time, unixtime = p
-        print(f'{format_timedelta(to_time)}\t{format_timedelta(p_time)}\t'
-              f'{format_datetime(unixtime)}')
+    for p in pause_list:
+        to_time, pause_time, unix_time = p
+        print(f'{format_timedelta(to_time)}\t{format_timedelta(pause_time)}\t'
+              f'{format_datetime(unix_time)}')
     print()
 
 DEBUG_READ_TRACK = False
-def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
+def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
 
-    def print_raw(to_time, unixtime, hdr, tp):
-        times = f'{to_time} {format_datetime(unixtime)}Z'
+    def print_raw(to_time, unix_time, hdr, tp):
+        times = f'{to_time} {format_datetime(unix_time)}Z'
         # Remove symbiantime from trackpt if NST and header0x07.
         trackpt_ = tp[1:-1] if NST and hdr == 0x07 else tp[1:]
         print(hex(file_obj.tell()), hex(hdr), times, *trackpt_)
@@ -317,9 +317,9 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
         d_d = tp.d_dist / 1e5 # Delta distance/km.
         # In contrast to the new NST, we have to calculate the timestamps in 
         # all of the trackpts because of no symbiantimes given in the OLDNSTs.
-        unixtime = (tp_store.unix_time + (to_time - tp_store.t_time) if not NST
+        unix_time = (tp_store.unix_time + (to_time - tp_store.t_time) if not NST
                     else symbian_to_unix_time(tp.symbian_time)) # OLDNST/_ROUTE.
-        return unixtime, to_time, y, x, z, v_, d_d, d
+        return unix_time, to_time, y, x, z, v_, d_d, d
 
     def process_track_type80(tp, tp_store):
         to_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
@@ -331,8 +331,8 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
         v_ = tp_store.v + tp.dv / 100 * 3.6 # Velocity / km/h.
         d = tp_store.dist + tp.d_dist / 1e5 # Distance / km.
         d_d = tp.d_dist / 1e5 # Delta distance/km.
-        unixtime = tp_store.unix_time + tp.dt_time / 100
-        return unixtime, to_time, y, x, z, v_, d_d, d
+        unix_time = tp_store.unix_time + tp.dt_time / 100
+        return unix_time, to_time, y, x, z, v_, d_d, d
 
     def read_oldnst_track():
         nonlocal trackpt_store
@@ -384,8 +384,8 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
             print_other_header_error(pointer, header)
             return 1
 
-        if pauselist: # Adjust unix_time by using pause_list.
-            t4_time, pause_time, resume_time = pauselist[0]
+        if pause_list: # Adjust unix_time by using pause_list.
+            t4_time, pause_time, resume_time = pause_list[0]
 
             # Just after the pause, use the pause data.
             if t_time + 0.5 >= t4_time:
@@ -396,7 +396,7 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
 
-                del pauselist[0]
+                del pause_list[0]
 
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
@@ -449,8 +449,8 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
             print_other_header_error(pointer, header)
             return 1
 
-        if pauselist: # Adjust unix_time by using pause_list.
-            t4_time, pause_time, resume_time = pauselist[0]
+        if pause_list: # Adjust unix_time by using pause_list.
+            t4_time, pause_time, resume_time = pause_list[0]
 
             # Just after the pause, use the pause data.
             if t_time + 0.5 >= t4_time:
@@ -460,7 +460,7 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
 
-                del pauselist[0]
+                del pause_list[0]
 
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
@@ -495,7 +495,7 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = in_file.stat().st_mtime if OLDNST_ROUTE else start_time
-    trackpt_store = TrackptStore() # A temporal storage for a processed trackpt.
+    trackpt_store = TrackptStore() # Temporal storage for the processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)
 
