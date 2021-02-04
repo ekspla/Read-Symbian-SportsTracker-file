@@ -235,7 +235,7 @@ def read_pause_data(file_obj):
     def print_raw_data(): # For debugging purposes.
         utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
         if NST: utctime += 'Z' # The new version NST in UTC (Z).
-        print(f'{unknown}\t{format_timedelta(to_time)}\t{flag}\t{utctime}')
+        print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utctime}')
 
     pause_count = 0
     pause_list = []
@@ -247,34 +247,34 @@ def read_pause_data(file_obj):
         # Read 14 bytes of data(1+4+1+8).  Symbiantimes of the old version are 
         # in localtime zone, while those of the new version in UTC (Z).
         # The first unknown field (always 0x01) seems to have no meaning.
-        (unknown, to_time, flag, symbiantime) = read_unpack('<BIBq', file_obj)
+        (unknown, t_time, flag, symbiantime) = read_unpack('<BIBq', file_obj)
 
-        to_time /= 100 # Totaltime in seconds.
+        t_time /= 100 # Totaltime in seconds.
         unix_time = symbian_to_unix_time(symbiantime)
         if DEBUG_READ_PAUSE: print_raw_data() # For debugging purposes.
 
         if flag == start:
             starttime = unix_time
-            start_t_time = to_time
+            start_t_time = t_time
 
         elif flag == stop:
             stoptime = unix_time
-            stop_t_time = to_time
+            stop_t_time = t_time
 
         elif flag in {manual_suspend, automatic_suspend}:
             suspendtime = unix_time
-            to4_time = to_time
+            t4_time = t_time
 
         elif flag == resume:
-            if to4_time != to_time: # Suspend-resume pair has a common to_time.
+            if t4_time != t_time: # Suspend-resume pair has a common t_time.
                 print('Error in pause.')
                 sys.exit(1)
             pause_time = unix_time - suspendtime
-            pause_list.append((to_time, pause_time, unix_time))
+            pause_list.append((t_time, pause_time, unix_time))
 
         elif flag == flag_8: # Use it as a correction of time.
             pause_time = 0
-            pause_list.append((to_time, pause_time, unix_time))
+            pause_list.append((t_time, pause_time, unix_time))
 
         pause_count += 1
 
@@ -285,8 +285,8 @@ def print_pause_list(pause_list):
     d_t = 'Datetime Z' if NST else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
     for p in pause_list:
-        to_time, pause_time, unix_time = p
-        print(f'{format_timedelta(to_time)}\t{format_timedelta(pause_time)}\t'
+        t_time, pause_time, unix_time = p
+        print(f'{format_timedelta(t_time)}\t{format_timedelta(pause_time)}\t'
               f'{format_datetime(unix_time)}')
     print()
 
