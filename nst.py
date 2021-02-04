@@ -211,14 +211,14 @@ def add_gpx_summary(gpx_, tp): # tp: trackpt_store
             f'Stop localtime: {format_datetime(stop_localtime_)}' '; '
             f'Real time: {format_timedelta(real_time_)}' '; '
             f'Gross speed: {round(gross_speed_, 3)} km/h' ']')
-        gpx_.description = f'[{description}]' # Activity: run, bicycle, etc.
+        gpx_.description = f'[{description}]' # ACTIVITIES: run, bicycle, etc.
         gpx_.author_name = str(USER_ID)
         gpx_.time = dt_from_timestamp(
             start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
         if comment: gpx_.tracks[0].comment = comment
 
 def finalize_gpx(gpx_, outfile_path=None):
-    if outfile_path: # Finally, print or write the gpx.
+    if outfile_path is not None: # Finally, print or write the gpx.
         result = gpx_.to_xml('1.1')
         result_file = open(outfile_path, 'w')
         result_file.write(result)
@@ -384,13 +384,12 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
             print_other_header_error(pointer, header)
             return 1
 
-        if pauselist: # pause_list
+        if pauselist: # Adjust unix_time by using pause_list.
             t4_time, pause_time, resume_time = pauselist[0]
-            del pause_time # We don't use pause_time.
 
             # Just after the pause, use the pause data.
             if t_time + 0.5 >= t4_time:
-                #print(pause_time)
+                if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
                 resume_time -= TZ_HOURS * 3600 # Convert from localtime to UTC.
 
                 if unix_time < resume_time:
@@ -450,12 +449,12 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
             print_other_header_error(pointer, header)
             return 1
 
-        if pauselist: # pause_list
+        if pauselist: # Adjust unix_time by using pause_list.
             t4_time, pause_time, resume_time = pauselist[0]
-            del pause_time # We don't use pause_time.
 
             # Just after the pause, use the pause data.
             if t_time + 0.5 >= t4_time:
+                if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
 
                 if header != 0x07: # The trackpoint lacks for symbiantime.
                     # There might be few second of error, which I don't care.
@@ -496,7 +495,7 @@ def read_trackpoints(file_obj, pauselist=None): # No pauselist in ROUTE & TMP.
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = in_file.stat().st_mtime if OLDNST_ROUTE else start_time
-    trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
+    trackpt_store = TrackptStore() # A temporal storage for a processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)
 
