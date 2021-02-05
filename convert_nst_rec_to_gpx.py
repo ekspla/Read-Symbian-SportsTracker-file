@@ -197,7 +197,7 @@ with nst.in_file.open(mode='rb') as f:
         process_trackpt = nst.process_trackpt_type00
         (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
         # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
-        # 30 bytes (4+4+4+4+2+4+8).  y(+/-): N/S; x(+/-): E/W.
+        # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
         num_bytes = struct.calcsize(fmt)
         track_data = f.read(num_bytes)
         if len(track_data) < num_bytes: # Check end of file.
@@ -223,9 +223,9 @@ with nst.in_file.open(mode='rb') as f:
 
         # There are four cases due to the two boolean conditions.
         elif good_unix_time and good_t_time:
-            # Set the max of usual pause (suppose traffic signal).
-            # Out of this range is most likely caused by a very long 
-            # pause (e.g. lunch), but might be by an error.
+            # Set the max of usual pause in seconds (suppose traffic signal).
+            # Out of this range is most likely caused by a very long pause 
+            # (e.g. lunch), but might be by an error.
             if not -0.5 < delta_unix_time - delta_t_time <= 130:
                 (unix_time, t_time) = (
                     t + min(delta_unix_time, delta_t_time) for t in 
@@ -249,14 +249,14 @@ with nst.in_file.open(mode='rb') as f:
             print(f'Bad totaltime at: {hex(pointer)}')
 
         if track_count > 0: # Use previous values for spikes in y, x, z 
-            # and total_distance.  Interpolation would be better choice.
-            if abs(trackpt_store.y_degree - y_degree) >= 0.001: # deg.
+            # and total_distance.  Interpolation would be a better choice.
+            if abs(trackpt_store.y_degree - y_degree) >= 0.001: # degree.
                 y_degree = trackpt_store.y_degree
                 print(f'Bad y at: {hex(pointer)}')
             if abs(trackpt_store.x_degree - x_degree) >= 0.001:
                 x_degree = trackpt_store.x_degree
                 print(f'Bad x at: {hex(pointer)}')
-            if abs(trackpt_store.z_ax - z_ax) >= 500: # Meter.
+            if abs(trackpt_store.z_ax - z_ax) >= 500: # Up to 500 m.
                 z_ax = trackpt_store.z_ax
         if not 0 <= dist - trackpt_store.dist < 1: # Up to 1 km.
             dist = trackpt_store.dist

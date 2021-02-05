@@ -364,7 +364,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
             process_trackpt = process_trackpt_type00
             (Trackpt, fmt) = (TrackptType00, '<I3iHI')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist)
-            # 22 bytes (4+4+4+4+2+4).  y(+/-): N/S; x(+/-): E/W.
+            # 22 bytes (4+4+4+4+2+4).  y(+/-): North/South; x(+/-): East/West.
 
         elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
                         0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
@@ -433,7 +433,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
             process_trackpt = process_trackpt_type00
             (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
             # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
-            # 30 bytes (4+4+4+4+2+4+8).  y(+/-): N/S; x(+/-): E/W.
+            # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
 
         elif header in {0x87, 0x97, 0xC7, 0xD7}:
             process_trackpt = process_trackpt_type80
