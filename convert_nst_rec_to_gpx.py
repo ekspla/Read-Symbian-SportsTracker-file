@@ -7,7 +7,6 @@
 """
 import sys
 import struct
-from collections import namedtuple
 from pathlib import Path
 
 import nst
@@ -150,19 +149,8 @@ with nst.in_file.open(mode='rb') as f:
     track_count = 0
 
     # Factory functions for creating named tuples.
-    TYPE00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
-    TYPE80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
-    TYPEC0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
-    if nst.NST: # The fields shown below are added in the new version.
-        TYPE00 += ', symbian_time'
-        TYPE80, TYPEC0 = (t + ', unknown1, unknown2' for t in (TYPE80, TYPEC0))
-    TYPE_STORE = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
-                  'dist, track_count, file_type')
-    TrackptType00 = namedtuple('TrackptType00', TYPE00)
-    TrackptType80 = namedtuple('TrackptType80', TYPE80)
-    TrackptTypeC0 = namedtuple('TrackptTypeC0', TYPEC0)
-    TrackptStore = namedtuple('TrackptStore', TYPE_STORE)
-    TrackptStore.__new__.__defaults__ = (None,) * len(TrackptStore._fields)
+    TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
+        nst.prepare_namedtuples())
 
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
@@ -185,105 +173,103 @@ with nst.in_file.open(mode='rb') as f:
         preceding_label = f.read(len(track_label))
         if len(preceding_label) < len(track_label): # Check end of file.
             break
-        elif preceding_label == track_label:
-            pointer = f.tell()
-            header_fmt = '2B' # 2-byte header.
-            num_bytes = struct.calcsize(header_fmt)
-            headers = f.read(num_bytes)
-            if len(headers) < num_bytes: # Check end of file.
-                break
-            (header, header1) = struct.unpack(header_fmt, headers)
-
-            if header == 0x07 and header1 in {0x83, 0x82}:
-                (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
-                # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
-                # 30 bytes (4+4+4+4+2+4+8).  y(+/-): N/S; x(+/-): E/W.
-                num_bytes = struct.calcsize(fmt)
-                track_data = f.read(num_bytes)
-                if len(track_data) < num_bytes: # Check end of file.
-                    break
-                # Namedtuple wrapped.
-                trackpt = Trackpt._make(struct.unpack(fmt, track_data))
-                t_time = trackpt.t_time / 100 # Totaltime / seconds.
-
-                # The lat. and lon. are in I32s (DDDmm mmmm format).
-                y_degree = nst.dmm_to_decdeg(trackpt.y_ax)# Decimal degrees.
-                x_degree = nst.dmm_to_decdeg(trackpt.x_ax)
-
-                z_ax = trackpt.z_ax / 10 # Altitude / meter.
-                v = trackpt.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
-                dist = trackpt_store.dist + trackpt.d_dist / 1e5 # Distance/km.
-                unix_time = nst.symbian_to_unix_time(trackpt.symbian_time)
-                print_raw_track() # For debugging purposes.
-
-                # Remove spikes: there are lots of errors in the tmp file.
-                # TODO: It is better to read and use both the trackpt and pause 
-                #       data to correct bad timestamps in the temporal file.
-                # In most cases, the two delta_s (~1 s) are equal each other.
-                delta_unix_time = unix_time - trackpt_store.unix_time
-                delta_t_time = t_time - trackpt_store.t_time
-                good_unix_time = 0 < delta_unix_time < 1 * 3600 # Up to 1 hr.
-                good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
-
-                if track_count == 0 or suspect_pause:
-                    suspect_pause = False # No time correction; reset the flag.
-
-                # There are four cases due to the two boolean conditions.
-                elif good_unix_time and good_t_time:
-                    # Set the max of usual pause (suppose traffic signal).
-                    # Out of this range is most likely caused by a very long 
-                    # pause (e.g. lunch), but might be by an error.
-                    if not -0.5 < delta_unix_time - delta_t_time <= 130:
-                        (unix_time, t_time) = (
-                            t + min(delta_unix_time, delta_t_time) for t in 
-                            (trackpt_store.unix_time, trackpt_store.t_time))
-                        # Set the flag to see if this is because of a pause.
-                        suspect_pause = True
-                        print(f'Bad.  Two distinct delta_s at: {hex(pointer)}')
-                elif (not good_unix_time) and good_t_time:
-                    # Correct unixtime by using totaltime.
-                    unix_time = trackpt_store.unix_time + delta_t_time
-                    print(f'Bad unixtime at: {hex(pointer)}')
-                elif (not good_unix_time) and (not good_t_time):
-                    # Add 0.2 s (should be < 1.0 s) to both, as a compromise.
-                    (unix_time, t_time) = (
-                        t + 0.2 for t in
-                        (trackpt_store.unix_time, trackpt_store.t_time))
-                    print(f'Bad unixtime and totaltime at: {hex(pointer)}')
-                else: # good_unix_time and (not good_t_time)
-                    # Correct totaltime by using unixtime.
-                    t_time = trackpt_store.t_time + delta_unix_time
-                    print(f'Bad totaltime at: {hex(pointer)}')
-
-                if track_count > 0: # Use previous values for spikes in y, x, z 
-                    # and total_distance.  Interpolation would be better choice.
-                    if abs(trackpt_store.y_degree - y_degree) >= 0.001: # deg.
-                        y_degree = trackpt_store.y_degree
-                        print(f'Bad y at: {hex(pointer)}')
-                    if abs(trackpt_store.x_degree - x_degree) >= 0.001:
-                        x_degree = trackpt_store.x_degree
-                        print(f'Bad x at: {hex(pointer)}')
-                    if abs(trackpt_store.z_ax - z_ax) >= 500: # Meter.
-                        z_ax = trackpt_store.z_ax
-                if not 0 <= dist - trackpt_store.dist < 1: # Up to 1 km.
-                    dist = trackpt_store.dist
-
-            else: # Other headers which I don't know.
-                if not (header == 0x00 and header1 == 0x00):
-                    print_other_header_error()
-                continue
-                #break
-
-            trackpt_store = TrackptStore(
-                unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
-                x_degree=x_degree, z_ax=z_ax, v=v, d_dist=trackpt.d_dist / 1e5, 
-                dist=dist, track_count=track_count, file_type=nst.FILE_TYPE)
-            nst.store_trackpt(trackpt_store)
-
-            track_count += 1
-
-        else:
+        elif preceding_label != track_label:
             f.seek(-3, 1) # Seek forward (4 - 3 = +1 byte).
+            continue
+
+        # if preceding_label == track_label:
+        pointer = f.tell()
+        header_fmt = '2B' # 2-byte header.
+        num_bytes = struct.calcsize(header_fmt)
+        headers = f.read(num_bytes)
+        if len(headers) < num_bytes: # Check end of file.
+            break
+
+        (header, header1) = struct.unpack(header_fmt, headers)
+        # Other headers which I don't know.
+        if header != 0x07 or header1 not in {0x83, 0x82}:
+            if not (header == 0x00 and header1 == 0x00):
+                print_other_header_error()
+            continue
+            #break
+
+        # if header == 0x07 and header1 in {0x83, 0x82}:
+        process_trackpt = nst.process_trackpt_type00
+        (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
+        # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
+        # 30 bytes (4+4+4+4+2+4+8).  y(+/-): N/S; x(+/-): E/W.
+        num_bytes = struct.calcsize(fmt)
+        track_data = f.read(num_bytes)
+        if len(track_data) < num_bytes: # Check end of file.
+            break
+
+        trackpt = Trackpt._make(struct.unpack(fmt, track_data)) # Read and wrap.
+
+        unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
+            process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
+        print_raw_track() # For debugging purposes.
+
+        # Remove spikes: there are lots of errors in the tmp file.
+        # TODO: It is better to read and use both the trackpt and pause 
+        #       data to correct bad timestamps in the temporal file.
+        # In most cases, the two delta_s (~1 s) are equal each other.
+        delta_unix_time = unix_time - trackpt_store.unix_time
+        delta_t_time = t_time - trackpt_store.t_time
+        good_unix_time = 0 < delta_unix_time < 1 * 3600 # Up to 1 hr.
+        good_t_time = 0 <= delta_t_time < 5 * 60 # Up to 5 min.
+
+        if track_count == 0 or suspect_pause:
+            suspect_pause = False # No time correction; reset the flag.
+
+        # There are four cases due to the two boolean conditions.
+        elif good_unix_time and good_t_time:
+            # Set the max of usual pause (suppose traffic signal).
+            # Out of this range is most likely caused by a very long 
+            # pause (e.g. lunch), but might be by an error.
+            if not -0.5 < delta_unix_time - delta_t_time <= 130:
+                (unix_time, t_time) = (
+                    t + min(delta_unix_time, delta_t_time) for t in 
+                    (trackpt_store.unix_time, trackpt_store.t_time))
+                # Set the flag to see if this is because of a pause.
+                suspect_pause = True
+                print(f'Bad.  Two distinct delta_s at: {hex(pointer)}')
+        elif (not good_unix_time) and good_t_time:
+            # Correct unixtime by using totaltime.
+            unix_time = trackpt_store.unix_time + delta_t_time
+            print(f'Bad unixtime at: {hex(pointer)}')
+        elif (not good_unix_time) and (not good_t_time):
+            # Add 0.2 s (should be < 1.0 s) to both, as a compromise.
+            (unix_time, t_time) = (
+                t + 0.2 for t in
+                (trackpt_store.unix_time, trackpt_store.t_time))
+            print(f'Bad unixtime and totaltime at: {hex(pointer)}')
+        else: # good_unix_time and (not good_t_time)
+            # Correct totaltime by using unixtime.
+            t_time = trackpt_store.t_time + delta_unix_time
+            print(f'Bad totaltime at: {hex(pointer)}')
+
+        if track_count > 0: # Use previous values for spikes in y, x, z 
+            # and total_distance.  Interpolation would be better choice.
+            if abs(trackpt_store.y_degree - y_degree) >= 0.001: # deg.
+                y_degree = trackpt_store.y_degree
+                print(f'Bad y at: {hex(pointer)}')
+            if abs(trackpt_store.x_degree - x_degree) >= 0.001:
+                x_degree = trackpt_store.x_degree
+                print(f'Bad x at: {hex(pointer)}')
+            if abs(trackpt_store.z_ax - z_ax) >= 500: # Meter.
+                z_ax = trackpt_store.z_ax
+        if not 0 <= dist - trackpt_store.dist < 1: # Up to 1 km.
+            dist = trackpt_store.dist
+
+        trackpt_store = TrackptStore(
+            unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
+            x_degree=x_degree, z_ax=z_ax, v=v, d_dist=trackpt.d_dist / 1e5, 
+            dist=dist, track_count=track_count, file_type=nst.FILE_TYPE)
+
+        nst.store_trackpt(trackpt_store)
+
+        track_count += 1
+
 
 nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = True
