@@ -174,7 +174,7 @@ with nst.in_file.open(mode='rb') as f:
         if len(preceding_label) < len(track_label): # Check end of file.
             break
         elif preceding_label != track_label:
-            f.seek(-3, 1) # Seek forward (4 - 3 = +1 byte).
+            f.seek(1 - len(preceding_label), 1) # Seek forward for 1 byte.
             continue
 
         # if preceding_label == track_label:
