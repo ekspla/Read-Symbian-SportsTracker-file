@@ -342,7 +342,7 @@ def process_trackpt_type80(tp, tp_store, nst=None):
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
 DEBUG_READ_TRACK = False
-def read_trackpoints(file_obj, pause_list=None): # No pause_list in ROUTE & TMP.
+def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
