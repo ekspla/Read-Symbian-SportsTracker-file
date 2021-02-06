@@ -399,7 +399,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     Args:
         file_obj: the pointer must be at appropriate position prior to read.
-        pause_list: a list obtained from read_pause_data().
+        pause_list (optional): a list obtained from read_pause_data().
 
     Returns:
         track_count: number of trackpoints read.
