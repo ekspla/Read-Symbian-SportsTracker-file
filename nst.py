@@ -80,7 +80,7 @@ def format_timedelta(t_delta):
     return str(dt.timedelta(seconds=round(t_delta, 3)))[:-3]
 
 def read_unpack(struct_fmt, file_object):
-    """A helper function of file_object.read() and struct.unpack().
+    """A helper function complising file_object.read() and struct.unpack().
     """
     size = struct.calcsize(struct_fmt)
     return struct.unpack(struct_fmt, file_object.read(size))
@@ -142,7 +142,7 @@ def store_trackpt(tp, target=None):
     #      f'{round(tp.y_degree, 10)}\t{round(tp.x_degree, 10)}\t'
     #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
 
-    target = gpx_target if target is None else target
+    if target is None: target = gpx_target
     # Print gpx xml.
     gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == ROUTE 
                      else gpxpy.gpx.GPXTrackPoint)
@@ -337,8 +337,8 @@ def prepare_namedtuples(nst=None):
         nst: True/False = new/old version.  Defaults to global const NST (bool).
 
     Returns:
-        TrackptType00, TrackptType80, TrackptTypeC0: use to wrap after reading.
-        TrackptStore: use to wrap a trackpoint after processing.
+        TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
+        TrackptStore: used to wrap a trackpoint after processing.
     """
     if nst is None: nst = NST
     # Factory functions for creating named tuples.
@@ -362,7 +362,7 @@ def process_trackpt_type00(tp, tp_store, nst=None):
 
     Args:
         tp: namedtuple of a trackpoint data after read.
-        tp_store: namedtuple of the previous trackpoint data after processing.
+        tp_store: namedtuple of a processed data of the previous trackpoint.
         nst: True/False = new/old version.  Defaults to global const NST (bool).
 
     Returns:
@@ -390,7 +390,7 @@ def process_trackpt_type80(tp, tp_store, nst=None):
 
     Args:
         tp: namedtuple of a trackpoint data after read.
-        tp_store: namedtuple of the previous trackpoint data after processing.
+        tp_store: namedtuple of a processed data of the previous trackpoint.
         nst: True/False = new/old version.  Defaults to global const NST (bool).
 
     Returns:
@@ -421,6 +421,9 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     Returns:
         track_count: number of trackpoints read.
         trackpt_store: a namedtuple of the last trackpoint after processing.
+
+    Requires:
+        FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old version)
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
