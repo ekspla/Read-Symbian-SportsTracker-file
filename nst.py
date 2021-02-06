@@ -423,7 +423,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt_store: a namedtuple of the last trackpoint after processing.
 
     Requires:
-        FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old version)
+        FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks)
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
@@ -587,7 +587,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = in_file.stat().st_mtime if OLDNST_ROUTE else start_time
-    trackpt_store = TrackptStore() # Temporal storage for the processed trackpt.
+    trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)
 

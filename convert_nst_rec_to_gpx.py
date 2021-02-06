@@ -155,7 +155,7 @@ with nst.in_file.open(mode='rb') as f:
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     if nst.OLDNST_ROUTE: nst.start_time = nst.in_file.stat().st_mtime
-    trackpt_store = TrackptStore() # A temporal storage to pass the trackpt.
+    trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=start_time, t_time=0, dist=0)
 
@@ -170,8 +170,9 @@ with nst.in_file.open(mode='rb') as f:
 
     # The main loop to read the trackpoints.
     while True: # We don't know how many trackpoints exist in the temporal file.
-        preceding_label = f.read(len(track_label))
-        if len(preceding_label) < len(track_label): # Check end of file.
+        num_bytes = len(track_label)
+        preceding_label = f.read(num_bytes)
+        if len(preceding_label) < num_bytes: # Check end of file.
             break
         elif preceding_label != track_label:
             f.seek(1 - len(preceding_label), 1) # Seek forward for 1 byte.
@@ -275,4 +276,4 @@ nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = True
 gpx_path = (Path(str(nst.in_file)[:-3] + 'gpx') if WRITE_FILE
             else None)
-nst.finalize_gpx(gpx, gpx_path) # Gpx to a file or print (if None).
+nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).

@@ -150,11 +150,11 @@ with nst.in_file.open(mode='rb') as f:
     #nst.print_pause_list(pause_list) # For debugging purposes.
     #sys.exit(0)
 
-    # Read trackpoint data.  The last trackpoint is necessary in summarizing.
+    # Read trackpoint data.  The last trackpt_store is necessary in summarizing.
     (track_count, trackpt_store) = nst.read_trackpoints(f, pause_list)
 
 nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = False
 gpx_path = (Path(str(nst.in_file)[:-3] + 'gpx') if WRITE_FILE
             else None)
-nst.finalize_gpx(gpx, gpx_path) # Gpx to a file or print (if None).
+nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
