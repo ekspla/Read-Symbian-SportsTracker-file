@@ -90,9 +90,9 @@ def scsu_reader(file_object, address=None):
 
     Args:
         file_object: file object to be read.
-        address: start address of the SCSU encoded part.  The data is preceded 
-            by one/two byte integer which indicates the character length multi-
-            plied by four/eight.
+        address (optional): start address of the SCSU encoded part.  The data 
+            is preceded by one/two byte integer which indicates the character 
+            length multiplied by four/eight.
 
     Returns:
         decoded_strings: strings of UTF-8.
@@ -127,13 +127,14 @@ def dmm_to_decdeg(dddmm_mmmm):
     decimal_degree += mm_mmmm / 1e4 / 60
     return sign_dddmm_mmmm * decimal_degree
 
-def store_trackpt(tp): # tp: trackpt_store
+def store_trackpt(tp, target=None):
     """Do whatever with the trackpt data: print, gpx, store in a database, etc.
 
     Args:
-        tp namedtuple: 
+        tp (a namedtuple of trackpt_store):
             (unix_time(s), t_time(s), y_degree, x_degree, z_ax(m), v(km/h), 
              d_dist(km), dist(km), track_count(int), file_type(int: 2, 3 or 4))
+        target (optional): gpx_route or gpx_segment. Defaults to gpx_target.
     """
     # Print delimited text.
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
@@ -141,6 +142,7 @@ def store_trackpt(tp): # tp: trackpt_store
     #      f'{round(tp.y_degree, 10)}\t{round(tp.x_degree, 10)}\t'
     #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
 
+    target = gpx_target if target is None else target
     # Print gpx xml.
     gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == ROUTE 
                      else gpxpy.gpx.GPXTrackPoint)
@@ -150,7 +152,7 @@ def store_trackpt(tp): # tp: trackpt_store
         elevation=round(tp.z_ax, 1), 
         time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name=str(tp.track_count + 1))
-    gpx_target.points.append(gpx_point) # gpx_target = gpx_route or gpx_segment.
+    target.points.append(gpx_point)
 
     # This part may be informative.  Comment it out, if not necessary.
     gpx_point.description = (
@@ -167,6 +169,13 @@ def store_trackpt(tp): # tp: trackpt_store
 
 def initialize_gpx(file_type):
     """Initialize a route or a track segment (determined by the file_type: 2-4).
+
+    Args:
+        file_type: int. 2, 3 or 4.  See definitions of the global constants.
+
+    Returns:
+        gpx
+        gpx_route/gpx_segment (store it in gpx_target).
     """
     gpx = gpxpy.gpx.GPX() # Create a new GPX.
 
@@ -195,6 +204,10 @@ def initialize_gpx(file_type):
 
 def add_gpx_summary(gpx, tp_store):
     """Add a short summary (time, distance, speed, etc.) to gpx route/track.
+
+    Args:
+        gpx
+        tp_store (namedtuple): the last trackpt_store in the route/track.
     """
     total_time_ = tp_store.t_time if total_time == 0 else total_time
     total_distance_ = tp_store.dist if total_distance == 0 else total_distance
@@ -228,6 +241,10 @@ def add_gpx_summary(gpx, tp_store):
 
 def finalize_gpx(gpx, outfile_path=None):
     """Output gpx xml to the outfile_path (or print if not specified).
+
+    Args:
+        gpx
+        outfile_path (optional): write gpx xml to the file or print (if None).
     """
     if outfile_path is not None: # Finally, print or write the gpx.
         result = gpx.to_xml('1.1')
