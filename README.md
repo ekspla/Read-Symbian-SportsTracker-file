@@ -24,7 +24,7 @@ The track log readers of the old and the new NST, respectively, were tested for 
 
  These codes are **not based on reverse engineering of the app** itself, but on careful analysis of the track log files.
  
- Non ASCII (non-alphanumeric) characters contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) 
+ **Non ASCII** (non-alphanumeric) **characters** contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) 
  are read by using an external module, `scsu.py`.  This is a ported version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), 
  `references/scsu.c`.  (Characters of Arabic, Bengali, Chinese, German, Hindi, Japanese, Portuguese, Punjabi, Russian, Spanish and surrogate pairs 
  were tested, see `test_scsu/`.)
