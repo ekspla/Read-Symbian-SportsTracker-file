@@ -264,7 +264,7 @@ with nst.in_file.open(mode='rb') as f:
 
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
-            x_degree=x_degree, z_ax=z_ax, v=v, d_dist=trackpt.d_dist / 1e5, 
+            x_degree=x_degree, z_ax=z_ax, v=v, d_dist=d_dist, 
             dist=dist, track_count=track_count, file_type=nst.FILE_TYPE)
 
         nst.store_trackpt(trackpt_store)
