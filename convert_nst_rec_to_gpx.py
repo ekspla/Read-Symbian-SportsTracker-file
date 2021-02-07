@@ -257,9 +257,10 @@ with nst.in_file.open(mode='rb') as f:
             if abs(trackpt_store.x_degree - x_degree) >= 0.001:
                 x_degree = trackpt_store.x_degree
                 print(f'Bad x at: {hex(pointer)}')
-            if abs(trackpt_store.z_ax - z_ax) >= 500: # Up to 500 m.
+            if abs(trackpt_store.z_ax - z_ax) >= 500: # meter.
                 z_ax = trackpt_store.z_ax
-        if not 0 <= dist - trackpt_store.dist < 1: # Up to 1 km.
+        if not 0 <= d_dist < 1: # km.
+            d_dist = 0
             dist = trackpt_store.dist
 
         trackpt_store = TrackptStore(
