@@ -139,7 +139,7 @@ with nst.in_file.open(mode='rb') as f:
     # Read pause data.
     (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
         ([], None) if nst.FILE_TYPE in {ROUTE, TMP} else nst.read_pause_data(f))
-    #print_pause_list(pause_list) # For debugging purposes.
+    #nst.print_pause_list(pause_list) # For debugging purposes.
     #sys.exit(0)
 
     # Number of track points.
