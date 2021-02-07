@@ -80,7 +80,7 @@ def format_timedelta(t_delta):
     return str(dt.timedelta(seconds=round(t_delta, 3)))[:-3]
 
 def read_unpack(struct_fmt, file_object):
-    """A helper function complising file_object.read() and struct.unpack().
+    """A helper function comprising file_object.read() and struct.unpack().
     """
     size = struct.calcsize(struct_fmt)
     return struct.unpack(struct_fmt, file_object.read(size))
@@ -246,7 +246,7 @@ def finalize_gpx(gpx, outfile_path=None):
         gpx
         outfile_path (optional): write gpx xml to the file or print (if None).
     """
-    if outfile_path is not None: # Finally, print or write the gpx.
+    if outfile_path is not None:
         result = gpx.to_xml('1.1')
         result_file = open(outfile_path, 'w')
         result_file.write(result)
@@ -412,7 +412,7 @@ def process_trackpt_type80(tp, tp_store, nst=None):
 
 DEBUG_READ_TRACK = False
 def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
-    """Read/process/store trackpoints: returns count and the last trackpt_store.
+    """Read/process/store trackpoints.  Uses a few global constant (see below).
 
     Args:
         file_obj: the pointer must be at appropriate position prior to read.
