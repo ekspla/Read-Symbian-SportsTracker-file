@@ -175,7 +175,7 @@ def initialize_gpx(file_type):
 
     Returns:
         gpx
-        gpx_route/gpx_segment (store it in gpx_target).
+        gpx_route/gpx_segment (name it as gpx_target).
     """
     gpx = gpxpy.gpx.GPX() # Create a new GPX.
 
@@ -255,16 +255,18 @@ def finalize_gpx(gpx, outfile_path=None):
         print(gpx.to_xml('1.1'))
 
 DEBUG_READ_PAUSE = False
-def read_pause_data(file_obj):
+def read_pause_data(file_obj, nst=None):
     """Make a list of t_time, pause_time and unix_time from the file_object.
 
     Args:
         file_object: the pointer should be at START_ADDRESS prior to read.
+        nst (optional):  True/False = new/old version.  Defaults to global NST.
 
     Returns:
         pause_list: the list of t_time, pause_time and unix_time.
         pause_count: number of pause data read.
     """
+    if nst is None: nst = NST
     (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
     #print(f'Number of pause data: {num_pause}')
     #pause_address = file_obj.tell() # START_ADDRESS + 4
@@ -272,7 +274,7 @@ def read_pause_data(file_obj):
 
     def print_raw_data(): # For debugging purposes.
         utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
-        if NST: utctime += 'Z' # The new version NST in UTC (Z).
+        if nst: utctime += 'Z' # The new version NST in UTC (Z).
         print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utctime}')
 
     pause_count = 0
@@ -319,10 +321,11 @@ def read_pause_data(file_obj):
     del unknown, starttime, start_t_time, stoptime, stop_t_time
     return pause_list, pause_count
 
-def print_pause_list(pause_list):
+def print_pause_list(pause_list, nst=None):
     """Print formatted pause_list, maybe useful in analyzing track files.
     """
-    d_t = 'Datetime Z' if NST else 'Datetime local'
+    if nst is None: nst = NST
+    d_t = 'Datetime Z' if nst else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
     for p in pause_list:
         t_time, pause_time, unix_time = p
@@ -334,7 +337,7 @@ def prepare_namedtuples(nst=None):
     """Factory functions of namedtuples used in reading/processing trackpoints.
 
     Args:
-        nst: True/False = new/old version.  Defaults to global const NST (bool).
+        nst (optional): True/False = new/old version.  Defaults to global NST.
 
     Returns:
         TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
@@ -361,9 +364,9 @@ def process_trackpt_type00(tp, tp_store, nst=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
 
     Args:
-        tp: namedtuple of a trackpoint data after read.
+        tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        nst: True/False = new/old version.  Defaults to global const NST (bool).
+        nst (optional): True/False = new/old version.  Defaults to global NST.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
@@ -389,9 +392,9 @@ def process_trackpt_type80(tp, tp_store, nst=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
 
     Args:
-        tp: namedtuple of a trackpoint data after read.
+        tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        nst: True/False = new/old version.  Defaults to global const NST (bool).
+        nst (optional): True/False = new/old version.  Defaults to global NST.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
