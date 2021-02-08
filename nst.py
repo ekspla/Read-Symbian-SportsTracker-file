@@ -6,17 +6,18 @@
 """A module for reading Nokia SportsTracker files.
 
 Constants depend on versions and file types (see scripts how to determine):
-              OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS (timezone in hours)
+              OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS and start_*time
 --------------------------------------------------------------------------------
-Old ver track: 1,      0,            0,   2,         indispensable.
-Old ver route: 0,      1,            0,   3,         None; not available.
-New ver track: 0,      0,            1,   2,         better to have.
-New ver tmp:   0,      0,            1,   4,         better to have.
+Old ver track: 1,      0,            0,   2,         required.
+Old ver route: 0,      1,            0,   3,         None (not available).
+New ver track: 0,      0,            1,   2,         required.
+New ver tmp:   0,      0,            1,   4,         required.
 """
 import sys
 import struct
 import datetime as dt
 from collections import namedtuple
+from pathlib import Path
 
 import gpxpy
 import gpxpy.gpx
@@ -438,7 +439,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     Requires:
         FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks),
-        start_time (tracks), in_file (Path)
+        start_time (tracks)
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
@@ -601,7 +602,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
-    starttime = in_file.stat().st_mtime if OLDNST_ROUTE else start_time
+    infile = in_file if in_file is not None else Path(file_obj.name)
+    starttime = infile.stat().st_mtime if OLDNST_ROUTE else start_time
     trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)
