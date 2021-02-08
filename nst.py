@@ -37,7 +37,7 @@ import scsu
 (total_time, total_distance) = (0, ) * 2
 (comment, route_name, track_name, TZ_HOURS, start_localtime, description, 
     USER_ID, start_time, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
-    in_file) = (None, ) * 14
+    ) = (None, ) * 13
 
 # Constants.
 ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
@@ -602,8 +602,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # For oldNST_route, use mtime as start_time because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
-    infile = in_file if in_file is not None else Path(file_obj.name)
-    starttime = infile.stat().st_mtime if OLDNST_ROUTE else start_time
+    starttime = (Path(file_obj.name).stat().st_mtime if OLDNST_ROUTE 
+                 else start_time)
     trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)

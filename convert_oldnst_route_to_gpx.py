@@ -21,10 +21,10 @@ if argc < 2:
         SportsTracker.""")
     sys.exit(0)
 #print(argvs[1])
-nst.in_file = Path(argvs[1])
-#print(nst.in_file)
+in_file = Path(argvs[1])
+#print(in_file)
 
-with nst.in_file.open(mode='rb') as f:
+with in_file.open(mode='rb') as f:
 
     # Check if it is the correct file.
     #f.seek(0x00000, 0)
@@ -87,6 +87,6 @@ with nst.in_file.open(mode='rb') as f:
 
 nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = False
-gpx_path = (Path(str(nst.in_file)[:-3] + 'gpx') if WRITE_FILE
+gpx_path = (Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE
             else None)
 nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).

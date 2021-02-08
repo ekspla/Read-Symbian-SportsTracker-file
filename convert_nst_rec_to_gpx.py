@@ -34,10 +34,10 @@ if argc < 2:
         SportsTracker.  Log files with heart-rate sensor were not tested.""")
     sys.exit(0)
 #print(argvs[1])
-nst.in_file = Path(argvs[1])
-#print(nst.in_file)
+in_file = Path(argvs[1])
+#print(in_file)
 
-with nst.in_file.open(mode='rb') as f:
+with in_file.open(mode='rb') as f:
 
     # Check if it is the correct file.
     # Chunks in the temporal file always start with b'\x00\x00\x00\x00' blank.
@@ -152,9 +152,6 @@ with nst.in_file.open(mode='rb') as f:
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         nst.prepare_namedtuples())
 
-    # For oldNST_route, use mtime as start_time because the start/stop times 
-    # stored are always 0 which means January 1st 0 AD 00:00:00.
-    if nst.OLDNST_ROUTE: nst.start_time = nst.in_file.stat().st_mtime
     trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=start_time, t_time=0, dist=0)
@@ -275,6 +272,6 @@ with nst.in_file.open(mode='rb') as f:
 
 nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = True
-gpx_path = (Path(str(nst.in_file)[:-3] + 'gpx') if WRITE_FILE
+gpx_path = (Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE
             else None)
 nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
