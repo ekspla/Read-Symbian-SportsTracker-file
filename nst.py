@@ -4,6 +4,14 @@
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """A module for reading Nokia SportsTracker files.
+
+Constants depend on versions and file types (see scripts how to determine):
+              OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS (timezone in hours)
+--------------------------------------------------------------------------------
+Old ver track: 1,      0,            0,   2,         indispensable.
+Old ver route: 0,      1,            0,   3,         None; not available.
+New ver track: 0,      0,            1,   2,         better to have.
+New ver tmp:   0,      0,            1,   4,         better to have.
 """
 import sys
 import struct
@@ -37,7 +45,6 @@ ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2',
               'Rowing', 'Golf', 'Indoor') # Types of activities.
 (CONFIG, TRACK, ROUTE, TMP) = (0x1, 0x2, 0x3, 0x4) # FILE_TYPE.
 APP_ID = 0x0e4935e8
-
 
 def symbian_to_unix_time(symbiantime):
     """Convert a timestamp from symbiantime to unixtime.
@@ -167,16 +174,17 @@ def store_trackpt(tp, target=None):
         '</gpxtpx:TrackPointExtension>')
     gpx_point.extensions.append(gpx_extension_speed)
 
-def initialize_gpx(file_type):
-    """Initialize a route or a track segment (determined by the file_type: 2-4).
+def initialize_gpx(file_type=None):
+    """Initialize a route or a track segment (determined by the file_type).
 
     Args:
-        file_type: int. 2, 3 or 4.  See definitions of the global constants.
+        file_type (optional): int. 2, 3 or 4.  See docsting of this module.
 
     Returns:
         gpx
         gpx_route/gpx_segment (name it as gpx_target).
     """
+    if file_type == None: file_type = FILE_TYPE 
     gpx = gpxpy.gpx.GPX() # Create a new GPX.
 
     # Add TrackPointExtension namespaces and schema locations.
@@ -208,6 +216,9 @@ def add_gpx_summary(gpx, tp_store):
     Args:
         gpx
         tp_store (namedtuple): the last trackpt_store in the route/track.
+
+    Requires (in tracks):
+        start_localtime, start_time, TZ_HOURS
     """
     total_time_ = tp_store.t_time if total_time == 0 else total_time
     total_distance_ = tp_store.dist if total_distance == 0 else total_distance
@@ -426,7 +437,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt_store: a namedtuple of the last trackpoint after processing.
 
     Requires:
-        FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks)
+        FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks),
+        start_time (tracks), in_file (Path)
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
