@@ -154,7 +154,7 @@ with in_file.open(mode='rb') as f:
 
     trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
-        unix_time=start_time, t_time=0, dist=0)
+        unix_time=nst.start_time, t_time=0, dist=0)
 
     # For removing spikes.
     suspect_pause = None # A flag to handle the trackpoints after a pause.
