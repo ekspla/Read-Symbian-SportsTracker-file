@@ -100,9 +100,9 @@ with in_file.open(mode='rb') as f:
     # Type of activity.  Walk, run, bicycle, etc. See config.dat for details.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity, ) = nst.read_unpack('<H', f) # 2 bytes, little endian U16.
-    nst.description = (str(activity) if activity >= len(nst.ACTIVITIES) 
-                       else nst.ACTIVITIES[activity])
-    print(f'Activity: {nst.description}')
+    nst.activity_type = (str(activity) if activity >= len(nst.ACTIVITIES) 
+                         else nst.ACTIVITIES[activity])
+    print(f'Activity: {nst.activity_type}')
 
     # Read SCSU encoded name of the track, which is usually the datetime.
     # In most cases the name consists of 16-byte ASCII characters, e.g. 

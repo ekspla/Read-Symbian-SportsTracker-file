@@ -35,7 +35,7 @@ import scsu
 
 # Initialize variables.
 (total_time, total_distance) = (0, ) * 2
-(comment, route_name, track_name, TZ_HOURS, start_localtime, description, 
+(comment, route_name, track_name, TZ_HOURS, start_localtime, activity_type, 
     USER_ID, start_time, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
     ) = (None, ) * 13
 
@@ -185,7 +185,7 @@ def initialize_gpx(file_type=None):
         gpx
         gpx_route/gpx_segment (name it as gpx_target).
     """
-    if file_type == None: file_type = FILE_TYPE 
+    if file_type is None: file_type = FILE_TYPE
     gpx = gpxpy.gpx.GPX() # Create a new GPX.
 
     # Add TrackPointExtension namespaces and schema locations.
@@ -224,13 +224,13 @@ def add_gpx_summary(gpx, tp_store):
     total_time_ = tp_store.t_time if total_time == 0 else total_time
     total_distance_ = tp_store.dist if total_distance == 0 else total_distance
     net_speed = total_distance_ / (total_time_ / 3600) # km/h.
-    descr = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
-             f'Total distance: {round(total_distance_, 3)} km' '; '
-             f'Net speed: {round(net_speed, 3)} km/h')
+    description = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
+                   f'Total distance: {round(total_distance_, 3)} km' '; '
+                   f'Net speed: {round(net_speed, 3)} km/h')
     if tp_store.file_type == ROUTE:
         gpx.name = f'[{route_name}]'
         gpx.routes[0].name = gpx.name
-        gpx.routes[0].description = (f'{descr}' ']')
+        gpx.routes[0].description = (f'{description}' ']')
     else: # Track files.
         gpx.name = f'[{track_name}]'
         gpx.tracks[0].name = gpx.name
@@ -240,12 +240,12 @@ def add_gpx_summary(gpx, tp_store):
         real_time = stop_localtime_ - start_localtime
         gross_speed = total_distance_ / (real_time / 3600) # km/h.
         gpx.tracks[0].description = (
-            f'{descr}' '; '
+            f'{description}' '; '
             f'Start localtime: {format_datetime(start_localtime)}' '; '
             f'Stop localtime: {format_datetime(stop_localtime_)}' '; '
             f'Real time: {format_timedelta(real_time)}' '; '
             f'Gross speed: {round(gross_speed, 3)} km/h' ']')
-        gpx.description = f'[{description}]' # ACTIVITIES: run, bicycle, etc.
+        gpx.description = f'[{activity_type}]' # See ACTIVITIES.
         gpx.author_name = str(USER_ID)
         gpx.time = dt_from_timestamp(
             start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
@@ -502,7 +502,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read and wrap.
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-           process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
+            process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
         if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
 
         if pause_list: # Adjust unix_time by using pause_list.
@@ -568,7 +568,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read and wrap.
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-           process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
+            process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
         if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
 
         if pause_list: # Adjust unix_time by using pause_list.
