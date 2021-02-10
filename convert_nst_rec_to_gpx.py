@@ -204,13 +204,13 @@ with in_file.open(mode='rb') as f:
         trackpt = Trackpt._make(struct.unpack(fmt, track_data)) # Read and wrap.
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-            process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
+            process_trackpt(trackpt, trackpt_store)) # Using tp & the previous.
         print_raw_track() # For debugging purposes.
 
-        # Remove spikes: there are lots of errors in the tmp file.
-        # TODO: It is better to read and use both the trackpt and pause 
-        #       data to correct bad timestamps in the temporal file.
-        # In most cases, the two delta_s (~1 s) are equal each other.
+        # Remove spikes because there are lots of errors in the temporal file.
+        # TODO: It is better to read and use both the trackpt and pause data to 
+        #       correct bad timestamps, though errors also exist in pause data.
+        # In most cases, the following two delta_s (~1 s) are equal each other.
         delta_unix_time = unix_time - trackpt_store.unix_time
         delta_t_time = t_time - trackpt_store.t_time
         good_unix_time = 0 < delta_unix_time < 1 * 3600 # Up to 1 hr.
@@ -228,7 +228,8 @@ with in_file.open(mode='rb') as f:
                 (unix_time, t_time) = (
                     t + min(delta_unix_time, delta_t_time) for t in 
                     (trackpt_store.unix_time, trackpt_store.t_time))
-                # Set the flag to see if this is because of a pause.
+                # Set the flag to see if this is due to a pause.  Seems to work 
+                # because the first step after a pause is usually very short.
                 suspect_pause = True
                 print(f'Bad.  Two distinct delta_s at: {hex(pointer)}')
         elif (not good_unix_time) and good_t_time:
@@ -236,7 +237,8 @@ with in_file.open(mode='rb') as f:
             unix_time = trackpt_store.unix_time + delta_t_time
             print(f'Bad unixtime at: {hex(pointer)}')
         elif (not good_unix_time) and (not good_t_time):
-            # Add 0.2 s (should be < 1.0 s) to both, as a compromise.
+            # Add 0.2 s (should be < 1.0) to both as a compromise; better than 
+            # step over the next.  They are adjusted within a couple of steps.
             (unix_time, t_time) = (
                 t + 0.2 for t in
                 (trackpt_store.unix_time, trackpt_store.t_time))
