@@ -179,7 +179,7 @@ def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
 
     Args:
-        file_type (optional): int. 2, 3 or 4.  See docsting of this module.
+        file_type (optional): int. 2, 3 or 4.  See docstring of this module.
 
     Returns:
         gpx
@@ -502,7 +502,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read and wrap.
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-            process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
+            process_trackpt(trackpt, trackpt_store)) # Using tp & the previous.
         if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
 
         if pause_list: # Adjust unix_time by using pause_list.
@@ -568,7 +568,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read and wrap.
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-            process_trackpt(trackpt, trackpt_store)) # Use tp & the previous.
+            process_trackpt(trackpt, trackpt_store)) # Using tp & the previous.
         if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
 
         if pause_list: # Adjust unix_time by using pause_list.
