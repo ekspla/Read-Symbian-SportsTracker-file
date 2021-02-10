@@ -3,7 +3,7 @@
 # (c) 2020 ekspla.
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
-"""A module for reading Nokia SportsTracker files.
+"""A module for reading Symbian (Nokia) SportsTracker files.
 
 Constants depend on versions and file types (see scripts how to determine):
               OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS and start_*time
@@ -12,6 +12,17 @@ Old ver track: 1,      0,            0,   2,         required.
 Old ver route: 0,      1,            0,   3,         None (not available).
 New ver track: 0,      0,            1,   2,         required.
 New ver tmp:   0,      0,            1,   4,         required.
+
+A track (or route) is parsed as follows:
+1) Read start_localtime and start_time (UTC) (not in route files).  Subtract and
+   find TZ_HOURS, which means timezone as a difference in hours from UTC.
+2) Move the pointer of file_obj to the address of the main part that contain
+   pause (not in route) and track.  Use read_pause_data() to make pause_list.
+3) Track data part is succeeding the pause part.  Use read_trackpoints() to
+   read / process / adjust timestamp of trackpoints.  The pause_list described
+   above is used in adjusting timestamps.  While reading the trackpoints, each
+   trackpoint after processing is temporally stored in trackpt_store which is
+   handed to store_trackpt() for recording.
 """
 import sys
 import struct
