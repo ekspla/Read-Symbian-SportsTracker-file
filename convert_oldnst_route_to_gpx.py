@@ -65,7 +65,7 @@ with in_file.open(mode='rb') as f:
     # Read SCSU encoded name of the route.  Its length is variable.
     #f.seek(0x00018, 0) # Go to 0x00018, this address is fixed.
     nst.route_name = nst.scsu_reader(f)
-    #print(f'Route name: {route_name}')
+    #print(f'Route name: {nst.route_name}')
 
     # Totaltime is not stored in the route file.
 
@@ -90,3 +90,4 @@ nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = False
 gpx_path = Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE else None
 nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
+
