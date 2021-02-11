@@ -80,17 +80,17 @@ with in_file.open(mode='rb') as f:
     # Starttime and Stoptime in localtime.
     # 16 (8+8) bytes, little endian I64+I64.
     (start_localtime, stop_localtime) = nst.read_unpack('<2q', f)
-    nst.start_localtime = nst.symbian_to_unix_time(start_localtime)
+    nst.START_LOCALTIME = nst.symbian_to_unix_time(start_localtime)
     nst.stop_localtime = nst.symbian_to_unix_time(stop_localtime)
 
     # Change the suffix according to your timezone, because there is no 
     # timezone information in Symbian.  Take difference of starttime in 
     # localtime and those in UTC (see below) to see the timezone+DST.
-    #print(f'Start: {nst.format_datetime(nst.start_localtime)}+09:00')
+    #print(f'Start: {nst.format_datetime(nst.START_LOCALTIME)}+09:00')
     #print(f'Stop : {nst.format_datetime(nst.stop_localtime)}+09:00')
 
     # Calculate Realtime, which is greater than totaltime if pause is used.
-    real_time = nst.stop_localtime - nst.start_localtime # Realtime in seconds.
+    real_time = nst.stop_localtime - nst.START_LOCALTIME # Realtime in seconds.
     #print(f'Realtime: {nst.format_timedelta(real_time)}')
 
     # Calculate Gross speed in km/h.
@@ -124,16 +124,16 @@ with in_file.open(mode='rb') as f:
     if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
     f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = nst.read_unpack('<2q', f)
-    nst.start_time = nst.symbian_to_unix_time(start_time)
+    nst.START_TIME = nst.symbian_to_unix_time(start_time)
     nst.stop_time = nst.symbian_to_unix_time(stop_time)
-    #print(f'Start Z: {nst.format_datetime(nst.start_time)}Z')
+    #print(f'Start Z: {nst.format_datetime(nst.START_TIME)}Z')
     #print(f'Stop Z : {nst.format_datetime(nst.stop_time)}Z')
 
     # Timezone can be calculated with the starttimes in Z and in localtime.
-    nst.TZ_HOURS = int(nst.start_localtime - nst.start_time) / 3600
+    nst.TZ_HOURS = int(nst.START_LOCALTIME - nst.START_TIME) / 3600
 
     # This will overwrite the realtime shown above.
-    real_time = nst.stop_time - nst.start_time # Realtime in seconds.
+    real_time = nst.stop_time - nst.START_TIME # Realtime in seconds.
     #print(f'Realtime Z: {nst.format_timedelta(real_time)}')
 
 
@@ -152,3 +152,4 @@ nst.add_gpx_summary(gpx, trackpt_store)
 WRITE_FILE = False
 gpx_path = Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE else None
 nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
+

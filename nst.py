@@ -6,7 +6,7 @@
 """A module for reading Symbian (Nokia) SportsTracker files.
 
 Constants depend on versions and file types (see scripts how to determine):
-              OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS and start_*time
+              OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS and START_*TIMEs
 --------------------------------------------------------------------------------
 Old ver track: 1,      0,            0,   2,         required.
 Old ver route: 0,      1,            0,   3,         None (not available).
@@ -14,10 +14,10 @@ New ver track: 0,      0,            1,   2,         required.
 New ver tmp:   0,      0,            1,   4,         required.
 
 A track (or route) is parsed as follows:
-1) Read start_localtime and start_time (UTC) (not in route files).  Subtract and
-   find TZ_HOURS, which means timezone as a difference in hours from UTC.
+1) Read and store START_LOCALTIME and START_TIME (UTC) (None in route files).
+   Store TZ_HOURS, which means timezone as a difference in hours from UTC.
 2) Move the pointer of file_obj to the address of the main part that contain
-   pause (not in route) and track.  Use read_pause_data() to make pause_list.
+   pause (not in route) and track.  Use read_pause_data() to make a pause_list.
 3) Track data part is succeeding the pause part.  Use read_trackpoints() to
    read / process / adjust timestamp of trackpoints.  The pause_list described
    above is used in adjusting timestamps.  While reading the trackpoints, each
@@ -46,8 +46,8 @@ import scsu
 
 # Initialize variables.
 (total_time, total_distance) = (0, ) * 2
-(comment, route_name, track_name, TZ_HOURS, start_localtime, activity_type, 
-    USER_ID, start_time, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
+(comment, route_name, track_name, TZ_HOURS, START_LOCALTIME, activity_type, 
+    USER_ID, START_TIME, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
     ) = (None, ) * 13
 
 # Constants.
@@ -230,7 +230,7 @@ def add_gpx_summary(gpx, tp_store):
         tp_store (namedtuple): the last trackpt_store in the route/track.
 
     Requires (in tracks):
-        start_localtime, start_time, TZ_HOURS
+        START_LOCALTIME, START_TIME, TZ_HOURS
     """
     total_time_ = tp_store.t_time if total_time == 0 else total_time
     total_distance_ = tp_store.dist if total_distance == 0 else total_distance
@@ -248,18 +248,18 @@ def add_gpx_summary(gpx, tp_store):
         stop_localtime_ = (
             stop_localtime if stop_localtime != symbian_to_unix_time(0) 
             else tp_store.unix_time + TZ_HOURS * 3600)
-        real_time = stop_localtime_ - start_localtime
+        real_time = stop_localtime_ - START_LOCALTIME
         gross_speed = total_distance_ / (real_time / 3600) # km/h.
         gpx.tracks[0].description = (
             f'{description}' '; '
-            f'Start localtime: {format_datetime(start_localtime)}' '; '
+            f'Start localtime: {format_datetime(START_LOCALTIME)}' '; '
             f'Stop localtime: {format_datetime(stop_localtime_)}' '; '
             f'Real time: {format_timedelta(real_time)}' '; '
             f'Gross speed: {round(gross_speed, 3)} km/h' ']')
         gpx.description = f'[{activity_type}]' # See ACTIVITIES.
         gpx.author_name = str(USER_ID)
         gpx.time = dt_from_timestamp(
-            start_time, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
+            START_TIME, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
         if comment: gpx.tracks[0].comment = comment
 
 def finalize_gpx(gpx, outfile_path=None):
@@ -450,7 +450,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     Requires:
         FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks),
-        start_time (tracks)
+        START_TIME (tracks)
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
@@ -611,10 +611,10 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         prepare_namedtuples())
 
-    # For oldNST_route, use mtime as start_time because the start/stop times 
+    # For oldNST_route, use mtime as starttime because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = (Path(file_obj.name).stat().st_mtime if OLDNST_ROUTE 
-                 else start_time)
+                 else START_TIME)
     trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)
@@ -639,3 +639,4 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     else:
         return track_count, trackpt_store
+
