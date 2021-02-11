@@ -47,91 +47,91 @@ def check_file_type_version(file_obj):
         version < 10000, 10000 <= version < 20000, 20000 <= version)
 
 def parse_info_part_of_tracks(file_obj):
-        # Track ID and Totaltime.
-        track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
-        if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
-        file_obj.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
-        (TRACK_ID, total_time) = nst.read_unpack('<2I', file_obj)
-        #print(f'Track ID: {TRACK_ID}')
+    # Track ID and Totaltime.
+    track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
+    if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
+    file_obj.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
+    (TRACK_ID, total_time) = nst.read_unpack('<2I', file_obj)
+    #print(f'Track ID: {TRACK_ID}')
 
-        nst.total_time = total_time / 100 # Totaltime in seconds.
-        #print(f'Total time: {nst.format_timedelta(nst.total_time)}')
+    nst.total_time = total_time / 100 # Totaltime in seconds.
+    #print(f'Total time: {nst.format_timedelta(nst.total_time)}')
 
-        # Total Distance.
-        if nst.NST: file_obj.seek(0x00004, 1) # Skip.  4-byte offset to oldNST due to this.
-        (total_distance, ) = nst.read_unpack('<I', file_obj) # 4 bytes, little endian U32.
-        nst.total_distance = total_distance / 1e5 # Total distance in km.
-        #print(f'Total distance: {round(nst.total_distance, 3)} km')
+    # Total Distance.
+    if nst.NST: file_obj.seek(0x00004, 1) # Skip.  4-byte offset to oldNST due to this.
+    (total_distance, ) = nst.read_unpack('<I', file_obj) # 4 bytes, little endian U32.
+    nst.total_distance = total_distance / 1e5 # Total distance in km.
+    #print(f'Total distance: {round(nst.total_distance, 3)} km')
 
-        # Calculate Net speed in km/h.
-        net_speed = nst.total_distance / (nst.total_time / 3600) # km/h
-        #print(f'Net speed: {round(net_speed, 3)} km/h')
+    # Calculate Net speed in km/h.
+    net_speed = nst.total_distance / (nst.total_time / 3600) # km/h
+    #print(f'Net speed: {round(net_speed, 3)} km/h')
 
-        # Starttime and Stoptime in localtime.
-        # 16 (8+8) bytes, little endian I64+I64.
-        (start_localtime, stop_localtime) = nst.read_unpack('<2q', file_obj)
-        nst.START_LOCALTIME = nst.symbian_to_unix_time(start_localtime)
-        nst.stop_localtime = nst.symbian_to_unix_time(stop_localtime)
+    # Starttime and Stoptime in localtime.
+    # 16 (8+8) bytes, little endian I64+I64.
+    (start_localtime, stop_localtime) = nst.read_unpack('<2q', file_obj)
+    nst.START_LOCALTIME = nst.symbian_to_unix_time(start_localtime)
+    nst.stop_localtime = nst.symbian_to_unix_time(stop_localtime)
 
-        # Change the suffix according to your timezone, because there is no 
-        # timezone information in Symbian.  Take difference of starttime in 
-        # localtime and those in UTC (see below) to see the timezone+DST.
-        #print(f'Start: {nst.format_datetime(nst.START_LOCALTIME)}+09:00')
-        #print(f'Stop : {nst.format_datetime(nst.stop_localtime)}+09:00')
+    # Change the suffix according to your timezone, because there is no 
+    # timezone information in Symbian.  Take difference of starttime in 
+    # localtime and those in UTC (see below) to see the timezone+DST.
+    #print(f'Start: {nst.format_datetime(nst.START_LOCALTIME)}+09:00')
+    #print(f'Stop : {nst.format_datetime(nst.stop_localtime)}+09:00')
 
-        # Calculate Realtime, which is greater than totaltime if pause is used.
-        real_time = nst.stop_localtime - nst.START_LOCALTIME # Realtime in seconds.
-        #print(f'Realtime: {nst.format_timedelta(real_time)}')
+    # Calculate Realtime, which is greater than totaltime if pause is used.
+    real_time = nst.stop_localtime - nst.START_LOCALTIME # Realtime in seconds.
+    #print(f'Realtime: {nst.format_timedelta(real_time)}')
 
-        # Calculate Gross speed in km/h.
-        gross_speed = nst.total_distance / (real_time / 3600) # km/h
-        #print(f'Gross speed: {round(gross_speed, 3)} km/h')
+    # Calculate Gross speed in km/h.
+    gross_speed = nst.total_distance / (real_time / 3600) # km/h
+    #print(f'Gross speed: {round(gross_speed, 3)} km/h')
 
-        # User ID, please see config.dat.
-        (nst.USER_ID, ) = nst.read_unpack('<I', file_obj) # 4 bytes, little endian U32.
-        #print(f'User id: {nst.USER_ID}')
+    # User ID, please see config.dat.
+    (nst.USER_ID, ) = nst.read_unpack('<I', file_obj) # 4 bytes, little endian U32.
+    #print(f'User id: {nst.USER_ID}')
 
-        # Type of activity.  Walk, run, bicycle, etc. See config.dat for details.
-        file_obj.seek(0x00004, 1) # Skip 4 bytes.
-        (activity, ) = nst.read_unpack('<H', file_obj) # 2 bytes, little endian U16.
-        nst.activity_type = (str(activity) if activity >= len(nst.ACTIVITIES) 
-                             else nst.ACTIVITIES[activity])
-        #print(f'Activity: {nst.activity_type}')
+    # Type of activity.  Walk, run, bicycle, etc. See config.dat for details.
+    file_obj.seek(0x00004, 1) # Skip 4 bytes.
+    (activity, ) = nst.read_unpack('<H', file_obj) # 2 bytes, little endian U16.
+    nst.activity_type = (str(activity) if activity >= len(nst.ACTIVITIES) 
+                         else nst.ACTIVITIES[activity])
+    #print(f'Activity: {nst.activity_type}')
 
-        # Read SCSU encoded name of the track, which is usually the datetime.
-        # In most cases the name consists of 16-byte ASCII characters, e.g. 
-        # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
-        # principle because they can be SCSU-encoded non-ASCII characters.
-        track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
-        if nst.NST: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
-        if nst.FILE_TYPE == TMP: track_name_addr += 0x04 # 4-byte blank (-> 0x4e).
-        nst.track_name = nst.scsu_reader(file_obj, track_name_addr)
-        #print(f'Track name: {nst.track_name}')
+    # Read SCSU encoded name of the track, which is usually the datetime.
+    # In most cases the name consists of 16-byte ASCII characters, e.g. 
+    # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
+    # principle because they can be SCSU-encoded non-ASCII characters.
+    track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
+    if nst.NST: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
+    if nst.FILE_TYPE == TMP: track_name_addr += 0x04 # 4-byte blank (-> 0x4e).
+    nst.track_name = nst.scsu_reader(file_obj, track_name_addr)
+    #print(f'Track name: {nst.track_name}')
 
-        # Starttime & Stoptime in UTC.
-        start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
-        if nst.NST: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
-        if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
-        file_obj.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
-        (start_time, stop_time) = nst.read_unpack('<2q', file_obj)
-        nst.START_TIME = nst.symbian_to_unix_time(start_time)
-        nst.stop_time = nst.symbian_to_unix_time(stop_time)
-        #print(f'Start Z: {nst.format_datetime(nst.START_TIME)}Z')
-        #print(f'Stop Z : {nst.format_datetime(nst.stop_time)}Z')
+    # Starttime & Stoptime in UTC.
+    start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
+    if nst.NST: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
+    if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
+    file_obj.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
+    (start_time, stop_time) = nst.read_unpack('<2q', file_obj)
+    nst.START_TIME = nst.symbian_to_unix_time(start_time)
+    nst.stop_time = nst.symbian_to_unix_time(stop_time)
+    #print(f'Start Z: {nst.format_datetime(nst.START_TIME)}Z')
+    #print(f'Stop Z : {nst.format_datetime(nst.stop_time)}Z')
 
-        # Timezone can be calculated with the starttimes in Z and in localtime.
-        nst.TZ_HOURS = int(nst.START_LOCALTIME - nst.START_TIME) / 3600
+    # Timezone can be calculated with the starttimes in Z and in localtime.
+    nst.TZ_HOURS = int(nst.START_LOCALTIME - nst.START_TIME) / 3600
 
-        # This will overwrite the realtime shown above.
-        real_time = nst.stop_time - nst.START_TIME # Realtime in seconds.
-        #print(f'Realtime Z: {nst.format_timedelta(real_time)}')
+    # This will overwrite the realtime shown above.
+    real_time = nst.stop_time - nst.START_TIME # Realtime in seconds.
+    #print(f'Realtime Z: {nst.format_timedelta(real_time)}')
 
-        if nst.NST:
-            # Read SCSU encoded user comment of variable length.
-            comment_addr = 0x00222 # Fixed address of NST tracks.
-            if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
-            nst.comment = nst.scsu_reader(file_obj, comment_addr) # This address is fixed.
-            #if nst.comment: print(f'Comment: {nst.comment}')
+    if nst.NST:
+        # Read SCSU encoded user comment of variable length.
+        comment_addr = 0x00222 # Fixed address of NST tracks.
+        if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
+        nst.comment = nst.scsu_reader(file_obj, comment_addr) # This address is fixed.
+        #if nst.comment: print(f'Comment: {nst.comment}')
 
 def parse_info_part_of_routes(file_obj):
     # Route ID.
