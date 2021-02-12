@@ -20,10 +20,10 @@ def args_usage():
     argc = len(argvs)
     if argc < 2:
         print(f'Usage: # python {argvs[0]} input_filename\n'
-            'This script reads track/route files (W*.dat/R*.dat) of the old-'
-            'version and track files of the new-version (W*.dat) Symbian '
-            '(Nokia) SportsTracker.\n Track files with heart-rate sensor (the '
-            'new ver.) were not tested.')
+              'This script reads track/route files (W*.dat/R*.dat) of the old-'
+              'version and track files of the new-version (W*.dat) Symbian '
+              '(Nokia) SportsTracker.\n Track files with heart-rate sensor ('
+              'the new ver.) were not tested.')
         sys.exit(0)
     #print(argvs[1])
     in_file = Path(argvs[1])
@@ -46,13 +46,12 @@ def check_file_type_version(f):
     (nst.OLDNST, nst.OLDNST_ROUTE, nst.NST) = (
         version < 10000, 10000 <= version < 20000, 20000 <= version)
 
-def parse_info_part_of_tracks(f):
+def parse_track_informations(f):
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
     if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
     f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
     (track_id, total_time) = nst.read_unpack('<2I', f)
-    del track_id # Not in use.
     #print(f'Track ID: {track_id}')
 
     nst.total_time = total_time / 100 # Totaltime in seconds.
@@ -66,7 +65,6 @@ def parse_info_part_of_tracks(f):
 
     # Calculate Net speed in km/h.
     net_speed = nst.total_distance / (nst.total_time / 3600) # km/h
-    del net_speed # Not in use.
     #print(f'Net speed: {round(net_speed, 3)} km/h')
 
     # Starttime and Stoptime in localtime.
@@ -87,7 +85,6 @@ def parse_info_part_of_tracks(f):
 
     # Calculate Gross speed in km/h.
     gross_speed = nst.total_distance / (real_time / 3600) # km/h
-    del gross_speed # Not in use.
     #print(f'Gross speed: {round(gross_speed, 3)} km/h')
 
     # User ID, please see config.dat.
@@ -136,11 +133,12 @@ def parse_info_part_of_tracks(f):
         nst.comment = nst.scsu_reader(f, comment_addr) # This address is fixed.
         #if nst.comment: print(f'Comment: {nst.comment}')
 
-def parse_info_part_of_routes(f):
+    del track_id, net_speed, gross_speed # Not in use.
+
+def parse_route_informations(f):
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     (route_id, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
-    del route_id # Not in use.
     #print(f'Route ID: {route_id}')
 
     # Read SCSU encoded name of the route.  Its length is variable.
@@ -154,7 +152,9 @@ def parse_info_part_of_routes(f):
     (total_distance, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     nst.total_distance = total_distance / 1e5 # Total distance in km.
     #print(f'Total distance: {round(nst.total_distance, 3)} km')
+    del route_id # Not in use.
 
+PRINT_PAUSE_LIST = False
 def read_pause_and_track(f, start_address):
     f.seek(start_address, 0) # Go to the start address of the main part.
     # Read pause data.  There is no pause data in route file.
@@ -162,7 +162,8 @@ def read_pause_and_track(f, start_address):
         ([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
         else nst.read_pause_data(f))
     del pause_count # Not in use.
-    #if nst.FILE_TYPE == TRACK: nst.print_pause_list(pause_list) # For debug.
+    if PRINT_PAUSE_LIST and nst.FILE_TYPE == TRACK: # For debugging purposes.
+        nst.print_pause_list(pause_list)
     #sys.exit(0)
 
     # Read trackpoint data.  The last trackpt_store is necessary in summarizing.
@@ -192,9 +193,9 @@ def main():
 
         # Read information part of track/route files.
         if nst.FILE_TYPE == TRACK:
-            parse_info_part_of_tracks(f)
+            parse_track_informations(f)
         elif nst.FILE_TYPE == ROUTE:
-            parse_info_part_of_routes(f)
+            parse_route_informations(f)
 
         # Read the main part consisting a pause- and a trackpoint-data blocks.
         trackpt_store = read_pause_and_track(f, start_address)
