@@ -13,7 +13,11 @@ import nst
 (CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
 def args_usage():
-    # Arguments and help.
+    """A blief explanation of usage and handling of command line arguments.
+    
+    Returns:
+        in_file: a path object of input file.
+    """
     argvs = sys.argv
     argc = len(argvs)
     if argc < 2:
@@ -27,7 +31,13 @@ def args_usage():
     return in_file
 
 def check_file_type_version(f):
-    # Check if it is the correct file.
+    """Check if it is the correct file by reading app_id, file_type and version.
+
+    Sets FILE_TYPE (int.), OLDNST, OLDNST_ROUTE and NST (bools) in nst.py modle.
+
+    Args:
+        f: a file object to be read.
+    """
     # Chunks in the temporal file always start with b'\x00\x00\x00\x00' blank.
     # Due to this blank, there is a 4-byte offset to the addresses shown below.
     #f.seek(0x00000, 0)
@@ -48,6 +58,13 @@ def check_file_type_version(f):
         sys.exit(1)
 
 def parse_track_informations(f):
+    """Read and process the information of the track.
+
+    START_LOCALTIME, START_TIME and TZ_HOURS are stored in the nst.py module.
+
+    Args:
+        f: the file object.
+    """
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
     if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
@@ -136,7 +153,15 @@ def parse_track_informations(f):
 
 PRINT_PAUSE_LIST = False
 def read_pause_and_track(f, start_address):
+    """Reads the main part that consisits of a pause- and a track-data blocks.
 
+    Args:
+        f: the file object.
+        start_address: the address of the main part.
+
+    Returns:
+        trackpt_store: the last trackpoint after processing.
+    """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {nst.format_datetime(unix_time)}Z'
         # Remove symbiantime from trackpt if NST and header0x07.

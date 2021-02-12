@@ -15,6 +15,11 @@ import nst
 (CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
 def args_usage():
+    """A blief explanation of usage and handling of command line arguments.
+    
+    Returns:
+        in_file: a path object of input file.
+    """
     # Arguments and help.
     argvs = sys.argv
     argc = len(argvs)
@@ -31,7 +36,13 @@ def args_usage():
     return in_file
 
 def check_file_type_version(f):
-    # Check if it is the correct file.
+    """Check if it is the correct file by reading app_id, file_type and version.
+
+    Sets FILE_TYPE (int.), OLDNST, OLDNST_ROUTE and NST (bools) in nst.py modle.
+
+    Args:
+        f: a file object to be read.
+    """
     #f.seek(0x00000, 0)
     # 8 (4+4) bytes, little endian U32+U32.
     (application_id, nst.FILE_TYPE) = nst.read_unpack('<2I', f)
@@ -47,6 +58,13 @@ def check_file_type_version(f):
         version < 10000, 10000 <= version < 20000, 20000 <= version)
 
 def parse_track_informations(f):
+    """Read and process the information of the track.
+
+    START_LOCALTIME, START_TIME and TZ_HOURS are stored in the nst.py module.
+
+    Args:
+        f: the file object.
+    """
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
     if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
@@ -136,6 +154,11 @@ def parse_track_informations(f):
     del track_id, net_speed, gross_speed # Not in use.
 
 def parse_route_informations(f):
+    """Read and process the information of the route.
+
+    Args:
+        f: the file object.
+    """
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
     (route_id, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
@@ -156,6 +179,15 @@ def parse_route_informations(f):
 
 PRINT_PAUSE_LIST = False
 def read_pause_and_track(f, start_address):
+    """Reads the main part that consisits of a pause- and a track-data blocks.
+
+    Args:
+        f: the file object.
+        start_address: the address of the main part.
+
+    Returns:
+        trackpt_store: the last trackpoint after processing.
+    """
     f.seek(start_address, 0) # Go to the start address of the main part.
     # Read pause data.  There is no pause data in route file.
     (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
