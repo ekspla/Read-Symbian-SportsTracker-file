@@ -3,7 +3,7 @@
 # (c) 2020 ekspla.
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
-"""This script reads temporal track log files of SportsTracker.
+"""This script reads temporal track log files (Rec*.tmp) of SportsTracker.
 """
 import sys
 import struct
@@ -31,7 +31,7 @@ def args_usage():
     return in_file
 
 def check_file_type_version(f):
-    """Check if it is the correct file by reading app_id, file_type and version.
+    """Checks if it is the correct file by reading app_id, file_type and version.
 
     Sets FILE_TYPE (int.), OLDNST, OLDNST_ROUTE and NST (bools) in nst.py modle.
 
@@ -58,7 +58,7 @@ def check_file_type_version(f):
         sys.exit(1)
 
 def parse_track_informations(f):
-    """Read and process the information of the track.
+    """Reads and processes the information of the track.
 
     START_LOCALTIME, START_TIME and TZ_HOURS are stored in the nst.py module.
 
@@ -153,7 +153,7 @@ def parse_track_informations(f):
 
 PRINT_PAUSE_LIST = False
 def read_pause_and_track(f, start_address):
-    """Reads the main part that consisits of a pause- and a track-data blocks.
+    """Reads the main part that consisits of a mixed pause- and track-data block.
 
     Args:
         f: the file object.
