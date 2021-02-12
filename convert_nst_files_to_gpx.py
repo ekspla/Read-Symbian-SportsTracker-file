@@ -20,7 +20,6 @@ def args_usage():
     Returns:
         in_file: a path object of input file.
     """
-    # Arguments and help.
     argvs = sys.argv
     argc = len(argvs)
     if argc < 2:
