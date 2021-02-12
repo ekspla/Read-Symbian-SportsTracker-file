@@ -12,33 +12,21 @@ from pathlib import Path
 import nst
 (CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
+def args_usage():
+    # Arguments and help.
+    argvs = sys.argv
+    argc = len(argvs)
+    if argc < 2:
+        print(f'Usage: # python {argvs[0]} input_filename\n'
+            'This script reads temporal track log files (Rec*.tmp) of symbian'
+            'SportsTracker.  Log files with heart-rate sensor were not tested.')
+        sys.exit(0)
+    #print(argvs[1])
+    in_file = Path(argvs[1])
+    #print(in_file)
+    return in_file
 
-def print_raw_track(): # Remove symbiantime from trackpt if NST and header0x07.
-    times = f'{t_time} {nst.format_datetime(unix_time)}Z'
-    trackpt_ = trackpt[1:-1] if nst.NST and header == 0x07 else trackpt[1:]
-    print(hex(f.tell()), hex(header), times, *trackpt_)
-
-def print_other_header_error():
-    print(f'{header:#x} Error in the track point header: {track_count}, '
-          f'{NUM_TRACKPT}' '\n' f'At address: {pointer:#x}')
-    print(*trackpt)
-    print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
-
-
-# Arguments and help.
-argvs = sys.argv
-argc = len(argvs)
-if argc < 2:
-    print(f"""Usage: # python {argvs[0]} input_filename\n
-        This script reads temporal track log files (Rec*.tmp) of symbian 
-        SportsTracker.  Log files with heart-rate sensor were not tested.""")
-    sys.exit(0)
-#print(argvs[1])
-in_file = Path(argvs[1])
-#print(in_file)
-
-with in_file.open(mode='rb') as f:
-
+def check_file_type_version(f):
     # Check if it is the correct file.
     # Chunks in the temporal file always start with b'\x00\x00\x00\x00' blank.
     # Due to this blank, there is a 4-byte offset to the addresses shown below.
@@ -50,7 +38,7 @@ with in_file.open(mode='rb') as f:
         sys.exit(1)
 
     # Preliminary version check.
-    #f.seek(0x00008 + 0x4, 0) # Go to 0x00008 + 0x4, this address is fixed.
+    #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     print(f'Version: {version}')
     (nst.OLDNST, nst.OLDNST_ROUTE, nst.NST) = (
@@ -59,27 +47,26 @@ with in_file.open(mode='rb') as f:
         print(f'Unexpected version number: {version}')
         sys.exit(1)
 
-    gpx, nst.gpx_target = nst.initialize_gpx(nst.FILE_TYPE)
-
-    # Start address of the main part (mixed pause and trackpoint data).
-    # We don't read the address from the file because it is useless.
-    START_ADDRESS = 0x250 # Not quite sure if this is the best starting point.
-
+def parse_track_informations(f):
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
     if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
     f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
-    (TRACK_ID, total_time) = nst.read_unpack('<2I', f)
-    print(f'Track ID: {TRACK_ID}')
+    (track_id, total_time) = nst.read_unpack('<2I', f)
+    print(f'Track ID: {track_id}')
 
     nst.total_time = total_time / 100 # Totaltime in seconds.
     print(f'Total time: {nst.format_timedelta(nst.total_time)}')
 
     # Total Distance.
-    if nst.NST: f.seek(0x00004, 1) # Skip.  4-byte offset to oldNST due to this.
+    if nst.NST: f.seek(0x00004, 1) # Skip.  4-byte offset to OLDNST.
     (total_distance, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     nst.total_distance = total_distance / 1e5 # Total distance in km.
     print(f'Total distance: {round(nst.total_distance, 3)} km')
+
+    # Calculate Net speed in km/h.
+    #net_speed = nst.total_distance / (nst.total_time / 3600) # km/h
+    #print(f'Net speed: {round(net_speed, 3)} km/h')
 
     # Starttime and Stoptime in localtime.
     # 16 (8+8) bytes, little endian I64+I64.
@@ -92,6 +79,14 @@ with in_file.open(mode='rb') as f:
     # localtime and those in UTC (see below) to see the timezone+DST.
     print(f'Start: {nst.format_datetime(nst.START_LOCALTIME)}+07:00')
     #print(f'Stop : {nst.format_datetime(nst.stop_localtime)}+07:00')
+
+    # Calculate Realtime, which is greater than totaltime if pause is used.
+    #real_time = nst.stop_localtime - nst.START_LOCALTIME # Realtime in seconds.
+    #print(f'Realtime: {nst.format_timedelta(real_time)}')
+
+    # Calculate Gross speed in km/h.
+    #gross_speed = nst.total_distance / (real_time / 3600) # km/h
+    #print(f'Gross speed: {round(gross_speed, 3)} km/h')
 
     # User ID, please see config.dat.
     (nst.USER_ID, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
@@ -128,22 +123,44 @@ with in_file.open(mode='rb') as f:
     # Timezone can be calculated with the starttimes in Z and in localtime.
     nst.TZ_HOURS = int(nst.START_LOCALTIME - nst.START_TIME) / 3600
 
-    # Read SCSU encoded user comment of variable length.
-    comment_addr = 0x00222 # Fixed address of NST tracks.
-    if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
-    nst.comment = nst.scsu_reader(f, comment_addr) # This address is fixed.
-    if nst.comment: print(f'Comment: {nst.comment}')
+    # This will overwrite the realtime shown above.
+    #real_time = nst.stop_time - nst.START_TIME # Realtime in seconds.
+    #print(f'Realtime Z: {nst.format_timedelta(real_time)}')
 
+    if nst.NST:
+        # Read SCSU encoded user comment of variable length.
+        comment_addr = 0x00222 # Fixed address of NST tracks.
+        if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
+        nst.comment = nst.scsu_reader(f, comment_addr) # This address is fixed.
+        if nst.comment: print(f'Comment: {nst.comment}')
 
-    f.seek(START_ADDRESS, 0) # Go to the start address of the main part.
-    # Read pause data.
+PRINT_PAUSE_LIST = False
+def read_pause_and_track(f, start_address):
+
+    def print_raw(t_time, unix_time, hdr, tp):
+        times = f'{t_time} {nst.format_datetime(unix_time)}Z'
+        # Remove symbiantime from trackpt if NST and header0x07.
+        trackpt_ = tp[1:-1] if nst.NST and hdr == 0x07 else tp[1:]
+        print(hex(f.tell()), hex(hdr), times, *trackpt_)
+
+    def print_other_header_error(ptr, hdr): # pointer, header.
+        print(f'{hdr:#x} Error in the track point header: {track_count}, '
+              f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
+        print(*trackpt)
+        print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
+
+    f.seek(start_address, 0) # Go to the start address of the main part.
+    # Read pause data.  There is no pause data in route file.
     (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
-        ([], None) if nst.FILE_TYPE in {ROUTE, TMP} else nst.read_pause_data(f))
-    #nst.print_pause_list(pause_list) # For debugging purposes.
+        ([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
+        else nst.read_pause_data(f))
+    del pause_count # Not in use.
+    if PRINT_PAUSE_LIST and nst.FILE_TYPE == TRACK: # For debugging purposes.
+        nst.print_pause_list(pause_list)
     #sys.exit(0)
 
     # Number of track points.
-    NUM_TRACKPT = None # The number in the Rec*.tmp file is useless.
+    num_trackpt = None # The number in the Rec*.tmp file is useless.
     # Go to the first data.
 
     track_count = 0
@@ -151,6 +168,7 @@ with in_file.open(mode='rb') as f:
     # Factory functions for creating named tuples.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         nst.prepare_namedtuples())
+    del TrackptType80, TrackptTypeC0 # Not in use.
 
     trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
     trackpt_store = trackpt_store._replace(
@@ -164,6 +182,7 @@ with in_file.open(mode='rb') as f:
     # data with symbian_time. Read the trackpoint data exclusively because we 
     # don't have to use pause data to see the symbian_time.
     (pause_label, track_label) = (b'\x01\x00\x00\x00', b'\x02\x00\x00\x00')
+    del pause_label # Not in use.
 
     # The main loop to read the trackpoints.
     while True: # We don't know how many trackpoints exist in the temporal file.
@@ -187,7 +206,7 @@ with in_file.open(mode='rb') as f:
         # Other headers which I don't know.
         if header != 0x07 or header1 not in {0x83, 0x82}:
             if not (header == 0x00 and header1 == 0x00):
-                print_other_header_error()
+                print_other_header_error(pointer, header)
             continue
             #break
 
@@ -205,7 +224,7 @@ with in_file.open(mode='rb') as f:
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
             process_trackpt(trackpt, trackpt_store)) # Using tp & the previous.
-        print_raw_track() # For debugging purposes.
+        print_raw(t_time, unix_time, header, trackpt) # For debugging purposes.
 
         # Remove spikes because there are lots of errors in the temporal file.
         # TODO: It is better to read and use both the trackpt and pause data to 
@@ -271,10 +290,31 @@ with in_file.open(mode='rb') as f:
 
         track_count += 1
 
-
-nst.add_gpx_summary(gpx, trackpt_store)
+    return trackpt_store
 
 WRITE_FILE = True
-gpx_path = Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE else None
-nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
+def main():
+    in_file = args_usage() # Arguments and help.
 
+    with in_file.open(mode='rb') as f:
+
+        check_file_type_version(f)
+        gpx, nst.gpx_target = nst.initialize_gpx()
+
+        # Start address of the main part (mixed pause and trackpoint data).
+        # We don't read the address from the file because it is useless.
+        start_address = 0x250 # Not quite sure if this is the best point.
+
+        parse_track_informations(f)
+
+        # Read the main part consisting a pause- and a trackpoint-data blocks.
+        trackpt_store = read_pause_and_track(f, start_address)
+
+    nst.add_gpx_summary(gpx, trackpt_store)
+
+    gpx_path = Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE else None
+    nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
+
+
+if __name__ == '__main__':
+    main()
