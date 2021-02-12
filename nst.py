@@ -291,9 +291,10 @@ def read_pause_data(file_obj, nst=None):
     """
     if nst is None: nst = NST
     (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
-    #print(f'Number of pause data: {num_pause}')
-    #pause_address = file_obj.tell() # START_ADDRESS + 4
-    #print(f'Pause address: {hex(pause_address)}')
+    if DEBUG_READ_PAUSE: 
+        print(f'Number of pause data: {num_pause}')
+        pause_address = file_obj.tell() # START_ADDRESS + 4
+        print(f'Pause address: {hex(pause_address)}')
 
     def print_raw_data(): # For debugging purposes.
         utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
