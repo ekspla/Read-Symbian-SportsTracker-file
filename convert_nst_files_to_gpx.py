@@ -225,7 +225,7 @@ def main():
         # Read information part of track/route files.
         if nst.FILE_TYPE == TRACK:
             parse_track_informations(f)
-        elif nst.FILE_TYPE == ROUTE:
+        else: # if nst.FILE_TYPE == ROUTE:
             parse_route_informations(f)
 
         # Read the main part consisting a pause- and a trackpoint-data blocks.
