@@ -122,10 +122,12 @@ def scsu_reader(file_object, address=None):
         (size, ) = struct.unpack('<H', bytes([size]) + file_object.read(1))
         size >>= 1 # Divide character_length * 8 (U16) by 2.
     start_of_scsu = file_object.tell()
+
     in_bytes = file_object.read(size) # Character_length * 4 is sufficient.
     size >>= 2 # Divide by 4 to obtain the character_length.
     (out_array, byte_length, character_length) = scsu.decode(in_bytes, size)
     del character_length # This is not in use.
+
     decoded_strings = out_array.decode('utf-8', 'ignore') # Sanitize.
     if len(decoded_strings) != size: #  Check the length.
         print('SCSU decode failed.', out_array)
@@ -238,10 +240,12 @@ def add_gpx_summary(gpx, tp_store):
     description = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
                    f'Total distance: {round(total_distance_, 3)} km' '; '
                    f'Net speed: {round(net_speed, 3)} km/h')
+
     if tp_store.file_type == ROUTE:
         gpx.name = f'[{route_name}]'
         gpx.routes[0].name = gpx.name
         gpx.routes[0].description = (f'{description}' ']')
+
     else: # Track files.
         gpx.name = f'[{track_name}]'
         gpx.tracks[0].name = gpx.name
@@ -330,7 +334,7 @@ def read_pause_data(file_obj, nst=None):
             t4_time = t_time
 
         elif flag == resume:
-            if t4_time != t_time: # Suspend-resume pair has a common t_time.
+            if t4_time != t_time: # A suspend-resume pair has a common t_time.
                 print('Error in pause.')
                 sys.exit(1)
             pause_time = unix_time - suspendtime
@@ -612,7 +616,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         prepare_namedtuples())
 
-    # For oldNST_route, use mtime as starttime because the start/stop times 
+    # For OLDNST_ROUTE, use mtime as starttime because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = (Path(file_obj.name).stat().st_mtime if OLDNST_ROUTE 
                  else START_TIME)

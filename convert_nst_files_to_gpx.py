@@ -37,7 +37,7 @@ def args_usage():
 def check_file_type_version(f):
     """Checks if it is the correct file by reading app_id, file_type and version.
 
-    Sets FILE_TYPE (int.), OLDNST, OLDNST_ROUTE and NST (bools) in nst.py modle.
+    Sets FILE_TYPE (int 2-4) and OLDNST/OLDNST_ROUTE/NST (bool) in nst.py.
 
     Args:
         f: a file object to be read.
@@ -57,7 +57,7 @@ def check_file_type_version(f):
         version < 10000, 10000 <= version < 20000, 20000 <= version)
 
 def parse_track_informations(f):
-    """Reads and processes the information of the track.
+    """Reads and processes the track information.
 
     START_LOCALTIME, START_TIME and TZ_HOURS are stored in the nst.py module.
 
@@ -153,7 +153,7 @@ def parse_track_informations(f):
     del track_id, net_speed, gross_speed # Not in use.
 
 def parse_route_informations(f):
-    """Reads and processes the information of the route.
+    """Reads and processes the route information.  No START_*TIMEs in routes.
 
     Args:
         f: the file object.
