@@ -4,6 +4,9 @@
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """This script reads temporal track log files (Rec*.tmp) of SportsTracker.
+
+External modules, nst.py and scsu.py, are used to parse the data in the files.
+For usual track/route files (W*.dat/R*.dat), use convert_nst_files_to_gpx.py.
 """
 import sys
 import struct
@@ -162,15 +165,15 @@ def read_pause_and_track(f, start_address):
     Returns:
         trackpt_store: the last trackpoint after processing.
     """
-    def print_raw(t_time, unix_time, hdr, tp):
+    def print_raw():
         times = f'{t_time} {nst.format_datetime(unix_time)}Z'
         # Remove symbiantime from trackpt if NST and header0x07.
-        trackpt_ = tp[1:-1] if nst.NST and hdr == 0x07 else tp[1:]
-        print(hex(f.tell()), hex(hdr), times, *trackpt_)
+        trackpt_ = trackpt[1:-1] if nst.NST and header == 0x07 else trackpt[1:]
+        print(hex(f.tell()), hex(header), times, *trackpt_)
 
-    def print_other_header_error(ptr, hdr): # pointer, header.
-        print(f'{hdr:#x} Error in the track point header: {track_count}, '
-              f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
+    def print_other_header_error():
+        print(f'{header:#x} Error in the track point header: {track_count}, '
+              f'{num_trackpt}' '\n' f'At address: {pointer:#x}')
         print(*trackpt)
         print(t_time, y_degree, x_degree, z_ax, v, dist, unix_time)
 
@@ -231,7 +234,7 @@ def read_pause_and_track(f, start_address):
         # Other headers which I don't know.
         if header != 0x07 or header1 not in {0x83, 0x82}:
             if not (header == 0x00 and header1 == 0x00):
-                print_other_header_error(pointer, header)
+                print_other_header_error()
             continue
             #break
 
@@ -249,7 +252,7 @@ def read_pause_and_track(f, start_address):
 
         unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
             process_trackpt(trackpt, trackpt_store)) # Using tp & the previous.
-        print_raw(t_time, unix_time, header, trackpt) # For debugging purposes.
+        print_raw() # For debugging purposes.
 
         # Remove spikes because there are lots of errors in the temporal file.
         # TODO: It is better to read and use both the trackpt and pause data to 
