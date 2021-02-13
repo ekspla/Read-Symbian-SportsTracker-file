@@ -3,9 +3,9 @@
 # (c) 2020 ekspla.
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
-"""This script reads temporal track log files (Rec*.tmp) of SportsTracker.
+"""Script to read temporal track log files (Rec*.tmp) of SportsTracker.
 
-External modules, nst.py and scsu.py, are used to parse the data in the files.
+External modules, nst.py and scsu.py, are used to parse data in the files.
 For usual track/route files (W*.dat/R*.dat), use convert_nst_files_to_gpx.py.
 """
 import sys
@@ -28,9 +28,7 @@ def args_usage():
             'This script reads temporal track log files (Rec*.tmp) of symbian'
             'SportsTracker.  Log files with heart-rate sensor were not tested.')
         sys.exit(0)
-    #print(argvs[1])
     in_file = Path(argvs[1])
-    #print(in_file)
     return in_file
 
 def check_file_type_version(f):
@@ -50,13 +48,12 @@ def check_file_type_version(f):
         print(f'Unexpected file type: {nst.FILE_TYPE}')
         sys.exit(1)
 
-    # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     print(f'Version: {version}')
     (nst.OLDNST, nst.OLDNST_ROUTE, nst.NST) = (
         version < 10000, 10000 <= version < 20000, 20000 <= version)
-    if not nst.NST:
+    if not nst.NST: # Preliminary version check.
         print(f'Unexpected version number: {version}')
         sys.exit(1)
 

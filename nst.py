@@ -120,13 +120,13 @@ def scsu_reader(file_object, address=None):
     (size, ) = read_unpack('B', file_object) # U8, character_length * 4.
     if size & 0x1: # If LSB == 1: char_len >= 64. If LSB == 0: char_len < 64.
         (size, ) = struct.unpack('<H', bytes([size]) + file_object.read(1))
-        size >>= 1 # Divide character_length * 8 (U16) by 2.
-    start_of_scsu = file_object.tell()
+        size >>= 1 # Divide character_length * 8 (U16) by 2 to obtain * 4.
 
+    start_of_scsu = file_object.tell()
     in_bytes = file_object.read(size) # Character_length * 4 is sufficient.
     size >>= 2 # Divide by 4 to obtain the character_length.
     (out_array, byte_length, character_length) = scsu.decode(in_bytes, size)
-    del character_length # This is not in use.
+    del character_length # Not in use.  We will check the length as shown below.
 
     decoded_strings = out_array.decode('utf-8', 'ignore') # Sanitize.
     if len(decoded_strings) != size: #  Check the length.
@@ -242,13 +242,11 @@ def add_gpx_summary(gpx, tp_store):
                    f'Net speed: {round(net_speed, 3)} km/h')
 
     if tp_store.file_type == ROUTE:
-        gpx.name = f'[{route_name}]'
-        gpx.routes[0].name = gpx.name
+        (gpx.name, gpx.routes[0].name) = (f'[{route_name}]', ) * 2
         gpx.routes[0].description = (f'{description}' ']')
 
     else: # Track files.
-        gpx.name = f'[{track_name}]'
-        gpx.tracks[0].name = gpx.name
+        (gpx.name, gpx.tracks[0].name) = (f'[{track_name}]', ) * 2
         stop_localtime_ = (
             stop_localtime if stop_localtime != symbian_to_unix_time(0) 
             else tp_store.unix_time + TZ_HOURS * 3600)
@@ -401,19 +399,18 @@ def process_trackpt_type00(tp, tp_store, nst=None):
     """
     if nst is None: nst = NST
     t_time = tp.t_time / 100 # Totaltime / second.
-
-    # The lat. and lon. are in I32s (DDDmm mmmm format).
-    y = dmm_to_decdeg(tp.y_ax)# Convert to decimal degrees.
-    x = dmm_to_decdeg(tp.x_ax)
-
-    z = tp.z_ax / 10 # Altitude / meter.
-    v = tp.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
-    d_dist = tp.d_dist / 1e5 # Delta distance/km.
-    dist = tp_store.dist + d_dist # Distance/km.
     # In contrast to the new NST, we have to calculate the timestamps in 
     # all of the trackpts because of no symbiantimes given in the OLDNSTs.
     unix_time = (tp_store.unix_time + (t_time - tp_store.t_time) if not nst
                 else symbian_to_unix_time(tp.symbian_time))
+
+    # The lat. and lon. in I32s (DDDmm mmmm format), converted to dec. degrees.
+    (y, x) = (dmm_to_decdeg(tp.y_ax), dmm_to_decdeg(tp.x_ax))
+    z = tp.z_ax / 10 # Altitude / meter.
+    v = tp.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
+    d_dist = tp.d_dist / 1e5 # Delta distance/km.
+    dist = tp_store.dist + d_dist # Distance/km.
+
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
 def process_trackpt_type80(tp, tp_store, nst=None):
@@ -429,15 +426,15 @@ def process_trackpt_type80(tp, tp_store, nst=None):
     """
     if nst is None: nst = NST
     t_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
+    unix_time = tp_store.unix_time + tp.dt_time / 100
 
     y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
     x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
-
     z = tp_store.z_ax + tp.dz_ax / 10 # Altitude / m.
     v = tp_store.v + tp.dv / 100 * 3.6 # Velocity / km/h.
     d_dist = tp.d_dist / 1e5 # Delta distance/km.
     dist = tp_store.dist + d_dist # Distance / km.
-    unix_time = tp_store.unix_time + tp.dt_time / 100
+
     del nst # Not in use.
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
@@ -524,7 +521,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         if pause_list: # Adjust unix_time by using pause_list.
             t4_time, pause_time, resume_time = pause_list[0]
 
-            if t_time + 0.5 >= t4_time: # After the pause, use the pause data.
+            if t_time + 0.5 >= t4_time: # After a pause, use the pause data.
                 del pause_list[0]
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
                 resume_time -= TZ_HOURS * 3600 # Convert from localtime to UTC.
@@ -590,7 +587,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         if pause_list: # Adjust unix_time by using pause_list.
             t4_time, pause_time, resume_time = pause_list[0]
 
-            if t_time + 0.5 >= t4_time: # After the pause, use the pause data.
+            if t_time + 0.5 >= t4_time: # After a pause, use the pause data.
                 del pause_list[0]
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
 

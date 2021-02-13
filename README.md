@@ -9,8 +9,8 @@
  There is still a few unknown part in the track logs.  So, your feedback is welcomed.
 
 This code works also for track/route files created by **the old Nokia Sports Tracker**, whose format is a bit different from the new 
-version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  For details, please see the codes.  
-(1-byte instead of 2-byte long header, start address of trackpoint is different, etc.)
+version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  For details, please see the codes.  (1-byte instead 
+of 2-byte long header, start address of trackpoint is different, etc.)
 
 The version number of the app used to create the file is stored as WORD at 0x0008.
 - Track log files of the old Nokia SportsTracker:          version < 10000.

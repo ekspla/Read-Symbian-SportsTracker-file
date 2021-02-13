@@ -5,7 +5,7 @@
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """Script to read the old- and the new-ver (Nokia) Symbian SportsTracker files.
 
-External modules, nst.py and scsu.py, are used to parse the data in the files.
+External modules, nst.py and scsu.py, are used to parse data in the files.
 For temporal track files (Rec*.tmp), use convert_nst_rec_to_gpx.py.
 """
 import sys
@@ -29,9 +29,7 @@ def args_usage():
               '(Nokia) SportsTracker.\n Track files with heart-rate sensor ('
               'the new ver.) were not tested.')
         sys.exit(0)
-    #print(argvs[1])
     in_file = Path(argvs[1])
-    #print(in_file)
     return in_file
 
 def check_file_type_version(f):
@@ -49,7 +47,6 @@ def check_file_type_version(f):
         print(f'Unexpected file type: {nst.FILE_TYPE}')
         sys.exit(1)
 
-    # Preliminary version check.
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
     (version, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     #print(f'Version: {version}')
