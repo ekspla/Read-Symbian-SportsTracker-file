@@ -120,7 +120,7 @@ def scsu_reader(file_object, address=None):
     (size, ) = read_unpack('B', file_object) # U8, character_length * 4.
     if size & 0x1: # If LSB == 1: char_len >= 64. If LSB == 0: char_len < 64.
         (size, ) = struct.unpack('<H', bytes([size]) + file_object.read(1))
-        size >>= 1 # Divide character_length * 8 (U16) by 2 to obtain * 4.
+        size >>= 1 # Divide character_length * 8 (U16) by 2 to get length * 4.
 
     start_of_scsu = file_object.tell()
     in_bytes = file_object.read(size) # Character_length * 4 is sufficient.
@@ -617,7 +617,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = (Path(file_obj.name).stat().st_mtime if OLDNST_ROUTE 
                  else START_TIME)
-    trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
+    trackpt_store = TrackptStore() # A temporal storage for processed trackpt.
     trackpt_store = trackpt_store._replace(
         unix_time=starttime, t_time=0, dist=0)
 
@@ -635,7 +635,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # Handling of errors.
     if track_count != num_trackpt:
-        print(f'Track point count error: {track_count}, {num_trackpt}')
+        print(f'Trackpoint count error: {track_count}, {num_trackpt}')
         print(*trackpt_store)
         sys.exit(1)
 

@@ -109,7 +109,7 @@ def parse_track_informations(f):
     (nst.USER_ID, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     print(f'User id: {nst.USER_ID}')
 
-    # Type of activity.  Walk, run, bicycle, etc. See config.dat for details.
+    # Type of activity.  Walk, run, bicycle, etc. See ACTIVITIES in nst.py.
     f.seek(0x00004, 1) # Skip 4 bytes.
     (activity, ) = nst.read_unpack('<H', f) # 2 bytes, little endian U16.
     nst.activity_type = (str(activity) if activity >= len(nst.ACTIVITIES) 
@@ -137,7 +137,7 @@ def parse_track_informations(f):
     #print(f'Start Z: {nst.format_datetime(nst.START_TIME)}Z')
     #print(f'Stop Z : {nst.format_datetime(nst.stop_time)}Z')
 
-    # Timezone can be calculated with the starttimes in Z and in localtime.
+    # Timezone can be calculated from the starttimes in Z and in localtime.
     nst.TZ_HOURS = int(nst.START_LOCALTIME - nst.START_TIME) / 3600
 
     # This will overwrite the realtime shown above.
@@ -180,7 +180,7 @@ def read_pause_and_track(f, start_address):
         ([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
         else nst.read_pause_data(f))
     del pause_count # Not in use.
-    if PRINT_PAUSE_LIST and nst.FILE_TYPE == TRACK: # For debugging purposes.
+    if PRINT_PAUSE_LIST and pause_list: # For debugging purposes.
         nst.print_pause_list(pause_list)
     #sys.exit(0)
 
@@ -323,14 +323,14 @@ def main():
 
     with in_file.open(mode='rb') as f:
 
-        check_file_type_version(f)
+        check_file_type_version(f) # FILE_TYPE, OLDNST, OLDNST_ROUTE, NST.
         gpx, nst.gpx_target = nst.initialize_gpx()
 
         # Start address of the main part (mixed pause and trackpoint data).
         # We don't read the address from the file because it is useless.
         start_address = 0x250 # Not quite sure if this is the best point.
 
-        parse_track_informations(f)
+        parse_track_informations(f) # START_LOCALTIME, START_TIME, TZ_HOURS.
 
         # Read the main part consisting a pause- and a trackpoint-data blocks.
         trackpt_store = read_pause_and_track(f, start_address)
