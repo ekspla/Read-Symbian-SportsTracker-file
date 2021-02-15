@@ -17,7 +17,8 @@ The version number of the file is stored as WORD at 0x0008.
 - Track/Route files of the old Nokia SportsTracker (ver1):     10000 <= version < 20000.
 - Track log files of Symbian SportsTracker (ver2):             20000 <= version.
 
-The script was tested for the old and the new NST versions of 9991-9998, 10102 and 20001-20002.
+The track reading script was tested for the old and the new NST versions of 9991-9998, 10102 and 20001-20002.
+The route reading one was tested for version of 11400.
 
  The file formats of symbian are completely different from those of Android and iOS.
 
