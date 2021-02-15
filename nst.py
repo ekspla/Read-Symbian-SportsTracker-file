@@ -87,8 +87,7 @@ def dt_from_timestamp(timestamp, tz_info=None):
             else d_t.astimezone(tz_info))
 
 def format_datetime(timestamp):
-    """Returns ISO-8601 string of millisecond precision from unixtime (sec).
-    """
+    """Returns ISO-8601 string of millisecond precision from unixtime (sec)."""
     d_t = dt_from_timestamp(round(timestamp, 3))
     return (d_t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] if d_t is not None 
             else f'INVALID({timestamp})')
@@ -99,8 +98,7 @@ def format_timedelta(t_delta):
     return str(dt.timedelta(seconds=round(t_delta, 3)))[:-3]
 
 def read_unpack(struct_fmt, file_object):
-    """A helper function comprising file_object.read() and struct.unpack().
-    """
+    """A helper function comprising file_object.read() and struct.unpack()."""
     size = struct.calcsize(struct_fmt)
     return struct.unpack(struct_fmt, file_object.read(size))
 
@@ -348,8 +346,7 @@ def read_pause_data(file_obj, nst=None):
     return pause_list, pause_count
 
 def print_pause_list(pause_list, nst=None):
-    """Print formatted pause_list, maybe useful in analyzing track files.
-    """
+    """Print formatted pause_list, maybe useful in analyzing track files."""
     if nst is None: nst = NST
     d_t = 'Datetime Z' if nst else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')

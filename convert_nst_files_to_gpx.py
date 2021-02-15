@@ -16,7 +16,7 @@ import nst
 
 def args_usage():
     """A blief explanation of usage and handling of command line arguments.
-    
+
     Returns:
         in_file: a path object of input file.
     """
