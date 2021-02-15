@@ -16,7 +16,7 @@ New ver tmp:   0,      0,            1,   4,         required.
 A track (or route) is parsed as follows:
 1) Read and store START_LOCALTIME and START_TIME (UTC) (None in route files).
    Store TZ_HOURS, which means timezone as a difference in hours from UTC.
-2) Move the pointer of file_obj to the address of the main part that contain
+2) Move the pointer of file_obj to start_address of the main part that contain
    pause (not in route) and track.  Use read_pause_data() to make a pause_list.
 3) Track data part is succeeding the pause part.  Use read_trackpoints() to
    read / process / adjust timestamp of trackpoints.  The pause_list described
@@ -192,7 +192,7 @@ def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
 
     Args:
-        file_type (optional): int. 2, 3 or 4.  See docstring of this module.
+        file_type (optional): int. 2, 3 or 4.  See module-level docstring.
 
     Returns:
         gpx
@@ -232,7 +232,7 @@ def add_gpx_summary(gpx, tp_store):
         tp_store (namedtuple): the last trackpt_store in the route/track.
 
     Requires (in tracks):
-        START_LOCALTIME, START_TIME, TZ_HOURS
+        START_LOCALTIME, START_TIME, TZ_HOURS.  See module-level docstring.
     """
     total_time_ = tp_store.t_time if total_time == 0 else total_time
     total_distance_ = tp_store.dist if total_distance == 0 else total_distance
@@ -284,7 +284,7 @@ def read_pause_data(file_obj, nst=None):
     """Make a list of t_time, pause_time and unix_time from the file_object.
 
     Args:
-        file_object: the pointer should be at START_ADDRESS prior to read.
+        file_object: the pointer should be at start_address prior to read.
         nst (optional):  True/False = new/old version.  Defaults to global NST.
 
     Returns:
@@ -452,7 +452,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     Requires:
         FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks),
-        START_TIME (tracks)
+        START_TIME (tracks).  See module-level docstring for details.
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'

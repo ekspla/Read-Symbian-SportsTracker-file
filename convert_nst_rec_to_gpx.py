@@ -3,7 +3,7 @@
 # (c) 2020 ekspla.
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
-"""Script to read temporal track log files (Rec*.tmp) of SportsTracker.
+"""Script to read temporal track log files (Rec*.tmp) of Symbian SportsTracker.
 
 External modules, nst.py and scsu.py, are used to parse data in the files.
 For usual track/route files (W*.dat/R*.dat), use convert_nst_files_to_gpx.py.

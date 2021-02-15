@@ -3,7 +3,7 @@
 # (c) 2020 ekspla.
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
-"""Script to read the old- and the new-ver (Nokia) Symbian SportsTracker files.
+"""Script to read the old- and the new-ver Symbian (Nokia) SportsTracker files.
 
 External modules, nst.py and scsu.py, are used to parse data in the files.
 For temporal track files (Rec*.tmp), use convert_nst_rec_to_gpx.py.
@@ -190,8 +190,7 @@ def read_pause_and_track(f, start_address):
         ([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
         else nst.read_pause_data(f))
     del pause_count # Not in use.
-    if PRINT_PAUSE_LIST and pause_list: # For debugging purposes.
-        nst.print_pause_list(pause_list)
+    if PRINT_PAUSE_LIST and pause_list: nst.print_pause_list(pause_list)
     #sys.exit(0)
 
     # Read trackpoint data.  The last trackpt_store is necessary in summarizing.
