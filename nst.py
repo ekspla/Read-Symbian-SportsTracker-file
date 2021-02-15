@@ -6,12 +6,13 @@
 """A module for reading Symbian (Nokia) SportsTracker files.
 
 Constants depend on versions and file types (see scripts how to determine):
-              OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, TZ_HOURS and START_*TIMEs
+              NEW_FMT_TP, FILE_TYPE, TZ_HOURS and START_*TIMEs
 --------------------------------------------------------------------------------
-Old ver track: 1,      0,            0,   2,         required.
-Old ver route: 0,      1,            0,   3,         None (not available).
-New ver track: 0,      0,            1,   2,         required.
-New ver tmp:   0,      0,            1,   4,         required.
+VER0 TRACK:            0,         2,        required.
+VER1 ROUTE:            0,         3,        None (not available).
+VER1 TRACK:            1,         2,        required.
+VER2 TRACK:            1,         2,        required.
+VER2 TMP:              1,         4,        required.
 
 A track (or route) is parsed as follows:
 1) Read and store START_LOCALTIME and START_TIME (UTC) (None in route files).
@@ -47,8 +48,7 @@ import scsu
 # Initialize variables.
 (total_time, total_distance) = (0, ) * 2
 (comment, route_name, track_name, TZ_HOURS, START_LOCALTIME, activity_type, 
-    USER_ID, START_TIME, OLDNST, OLDNST_ROUTE, NST, FILE_TYPE, gpx_target, 
-    ) = (None, ) * 13
+    USER_ID, START_TIME, NEW_FMT_TP, FILE_TYPE, gpx_target) = (None, ) * 11
 
 # Constants.
 ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
@@ -278,18 +278,18 @@ def finalize_gpx(gpx, outfile_path=None):
         print(gpx.to_xml('1.1'))
 
 DEBUG_READ_PAUSE = False
-def read_pause_data(file_obj, nst=None):
+def read_pause_data(file_obj, new_fmt_tp=None):
     """Make a list of t_time, pause_time and unix_time from the file_object.
 
     Args:
         file_object: the pointer should be at start_address prior to read.
-        nst (optional):  True/False = new/old version.  Defaults to global NST.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
 
     Returns:
         pause_list: the list of t_time, pause_time and unix_time.
         pause_count: number of pause data read.
     """
-    if nst is None: nst = NST
+    if new_fmt_tp is None: new_fmt_tp = NEW_FMT_TP
     (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
     if DEBUG_READ_PAUSE: 
         print(f'Number of pause data: {num_pause}')
@@ -298,7 +298,7 @@ def read_pause_data(file_obj, nst=None):
 
     def print_raw_data(): # For debugging purposes.
         utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
-        if nst: utctime += 'Z' # The new version NST in UTC (Z).
+        if new_fmt_tp: utctime += 'Z' # The new version NST in UTC (Z).
         print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utctime}')
 
     pause_count = 0
@@ -345,10 +345,10 @@ def read_pause_data(file_obj, nst=None):
     del unknown, starttime, start_t_time, stoptime, stop_t_time
     return pause_list, pause_count
 
-def print_pause_list(pause_list, nst=None):
+def print_pause_list(pause_list, new_fmt_tp=None):
     """Print formatted pause_list, maybe useful in analyzing track files."""
-    if nst is None: nst = NST
-    d_t = 'Datetime Z' if nst else 'Datetime local'
+    if new_fmt_tp is None: new_fmt_tp = NEW_FMT_TP
+    d_t = 'Datetime Z' if new_fmt_tp else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
     for p in pause_list:
         t_time, pause_time, unix_time = p
@@ -356,22 +356,22 @@ def print_pause_list(pause_list, nst=None):
               f'{format_datetime(unix_time)}')
     print()
 
-def prepare_namedtuples(nst=None):
+def prepare_namedtuples(new_fmt_tp=None):
     """Factory functions of namedtuples used in reading/processing trackpoints.
 
     Args:
-        nst (optional): True/False = new/old version.  Defaults to global NST.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
 
     Returns:
         TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
         TrackptStore: used to wrap a trackpoint after processing.
     """
-    if nst is None: nst = NST
+    if new_fmt_tp is None: new_fmt_tp = NEW_FMT_TP
     # Factory functions for creating named tuples.
     type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
     typec0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
-    if nst: # The fields shown below are added in the new version.
+    if new_fmt_tp: # The fields shown below are added in the new version format.
         type00 += ', symbian_time'
         type80, typec0 = (t + ', unknown1, unknown2' for t in (type80, typec0))
     type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
@@ -383,22 +383,22 @@ def prepare_namedtuples(nst=None):
     TrackptStore_.__new__.__defaults__ = (None,) * len(TrackptStore_._fields)
     return TrackptType00_, TrackptType80_, TrackptTypeC0_, TrackptStore_
 
-def process_trackpt_type00(tp, tp_store, nst=None):
+def process_trackpt_type00(tp, tp_store, new_fmt_tp=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
 
     Args:
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        nst (optional): True/False = new/old version.  Defaults to global NST.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
     """
-    if nst is None: nst = NST
+    if new_fmt_tp is None: new_fmt_tp = NEW_FMT_TP
     t_time = tp.t_time / 100 # Totaltime / second.
     # In contrast to the new NST, we have to calculate the timestamps in 
     # all of the trackpts because of no symbiantimes given in the OLDNSTs.
-    unix_time = (tp_store.unix_time + (t_time - tp_store.t_time) if not nst
+    unix_time = (tp_store.unix_time + (t_time - tp_store.t_time) if not new_fmt_tp
                 else symbian_to_unix_time(tp.symbian_time))
 
     # The lat. and lon. in I32s (DDDmm mmmm format), converted to dec. degrees.
@@ -410,18 +410,18 @@ def process_trackpt_type00(tp, tp_store, nst=None):
 
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
-def process_trackpt_type80(tp, tp_store, nst=None):
+def process_trackpt_type80(tp, tp_store, new_fmt_tp=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
 
     Args:
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        nst (optional): True/False = new/old version.  Defaults to global NST.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
     """
-    if nst is None: nst = NST
+    if new_fmt_tp is None: new_fmt_tp = NEW_FMT_TP
     t_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
     unix_time = tp_store.unix_time + tp.dt_time / 100
 
@@ -432,7 +432,7 @@ def process_trackpt_type80(tp, tp_store, nst=None):
     d_dist = tp.d_dist / 1e5 # Delta distance/km.
     dist = tp_store.dist + d_dist # Distance / km.
 
-    del nst # Not in use.
+    del new_fmt_tp # Not in use.
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
 DEBUG_READ_TRACK = False
@@ -448,13 +448,13 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         trackpt_store: a namedtuple of the last trackpoint after processing.
 
     Requires:
-        FILE_TYPE (int), NST (bool), OLDNST_ROUTE (bool), TZ_HOURS (old tracks),
+        FILE_TYPE (int), NEW_FMT_TP (bool), TZ_HOURS (old tracks),
         START_TIME (tracks).  See module-level docstring for details.
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
-        # Remove symbiantime from trackpt if NST and header0x07.
-        trackpt_ = tp[1:-1] if NST and hdr == 0x07 else tp[1:]
+        # Remove symbiantime from trackpt if new format and header0x07.
+        trackpt_ = tp[1:-1] if NEW_FMT_TP and hdr == 0x07 else tp[1:]
         print(hex(file_obj.tell()), hex(hdr), times, *trackpt_)
 
     def print_other_header_error(ptr, hdr): # pointer, header.
@@ -462,7 +462,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
               f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
 
     def read_oldnst_trackpt():
-        """Read/process/time-adjust old-version trackpt, store in trackpt_store.
+        """Read/process/time-adjust old-format trackpt, store in trackpt_store.
 
         Returns:
             1 (error) or 0 (success).
@@ -535,7 +535,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         return 0
 
     def read_nst_trackpt():
-        """Read/process/time-adjust new-version trackpt, store in trackpt_store.
+        """Read/process/time-adjust new-format trackpt, store in trackpt_store.
 
         Returns:
             1 (error) or 0 (success).
@@ -610,9 +610,9 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         prepare_namedtuples())
 
-    # For OLDNST_ROUTE, use mtime as starttime because the start/stop times 
+    # For ROUTE, use mtime as starttime because the start/stop times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
-    starttime = (Path(file_obj.name).stat().st_mtime if OLDNST_ROUTE 
+    starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
                  else START_TIME)
     trackpt_store = TrackptStore() # A temporal storage for processed trackpt.
     trackpt_store = trackpt_store._replace(
@@ -620,7 +620,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # This is the main loop.
     track_count = 0
-    read_trackpt = read_nst_trackpt if NST else read_oldnst_trackpt
+    read_trackpt = read_nst_trackpt if NEW_FMT_TP else read_oldnst_trackpt
     while track_count < num_trackpt:
 
         exit_code = read_trackpt() # In trackpt_store, after processing.
