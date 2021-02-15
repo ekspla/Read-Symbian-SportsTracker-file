@@ -35,10 +35,13 @@ def args_usage():
 def check_file_type_version(f):
     """Checks if it is the correct file by reading app_id, file_type and version.
 
-    Sets FILE_TYPE (int 2-4) and OLDNST/OLDNST_ROUTE/NST (bool) in nst.py.
+    Sets FILE_TYPE(int 2-4) and NEW_FMT_TP(bool, new trackpt format) in nst.py.
 
     Args:
         f: a file object to be read.
+
+    Returns:
+        version: int 0, 1, 2
     """
     #f.seek(0x00000, 0)
     # 8 (4+4) bytes, little endian U32+U32.
@@ -48,18 +51,28 @@ def check_file_type_version(f):
         sys.exit(1)
 
     #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
-    (version, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
-    #print(f'Version: {version}')
-    (nst.OLDNST, nst.OLDNST_ROUTE, nst.NST) = (
-        version < 10000, 10000 <= version < 20000, 20000 <= version)
+    (ver, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
+    #print(f'Version: {ver}')
+    (ver0, ver1, ver2) = (ver < 10000, 10000 <= ver < 20000, 20000 <= ver)
+    # NEW_FMT_TP indicates trackpoint format: True/False = New/Old format.
+    if ver0:
+        (nst.NEW_FMT_TP, version) = (False, 0)
+    elif ver1 and nst.FILE_TYPE == ROUTE:
+        (nst.NEW_FMT_TP, version) = (False, 1)
+    elif ver1 and nst.FILE_TYPE == TRACK:
+        (nst.NEW_FMT_TP, version) = (True, 1)
+    else: # if ver2
+        (nst.NEW_FMT_TP, version) = (True, 2)
+    return version
 
-def parse_track_informations(f):
+def parse_track_informations(f, ver=1):
     """Reads and processes the track information.
 
     START_LOCALTIME, START_TIME and TZ_HOURS are stored in the nst.py module.
 
     Args:
         f: the file object.
+        ver: file version (int 0, 1 or 2)
     """
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
@@ -72,7 +85,7 @@ def parse_track_informations(f):
     #print(f'Total time: {nst.format_timedelta(nst.total_time)}')
 
     # Total Distance.
-    if nst.NST: f.seek(0x00004, 1) # Skip.  4-byte offset to OLDNST.
+    if ver != 0: f.seek(0x00004, 1) # Skip.  4-byte offset to oldNST.
     (total_distance, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     nst.total_distance = total_distance / 1e5 # Total distance in km.
     #print(f'Total distance: {round(nst.total_distance, 3)} km')
@@ -117,14 +130,14 @@ def parse_track_informations(f):
     # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
     # principle because they can be SCSU-encoded non-ASCII characters.
     track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
-    if nst.NST: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
+    if ver != 0: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
     if nst.FILE_TYPE == TMP: track_name_addr += 0x04 # 4-byte blank (-> 0x4e).
     nst.track_name = nst.scsu_reader(f, track_name_addr)
     #print(f'Track name: {nst.track_name}')
 
     # Starttime & Stoptime in UTC.
     start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
-    if nst.NST: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
+    if ver != 0: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
     if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
     f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = nst.read_unpack('<2q', f)
@@ -140,7 +153,7 @@ def parse_track_informations(f):
     real_time = nst.stop_time - nst.START_TIME # Realtime in seconds.
     #print(f'Realtime Z: {nst.format_timedelta(real_time)}')
 
-    if nst.NST:
+    if ver == 2:
         # Read SCSU encoded user comment of variable length.
         comment_addr = 0x00222 # Fixed address of NST tracks.
         if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
@@ -149,11 +162,12 @@ def parse_track_informations(f):
 
     del track_id, net_speed, gross_speed # Not in use.
 
-def parse_route_informations(f):
+def parse_route_informations(f, ver=1):
     """Reads and processes the route information.  No START_*TIMEs in routes.
 
     Args:
         f: the file object.
+        ver: file version (int 0, 1 or 2)
     """
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
@@ -171,7 +185,7 @@ def parse_route_informations(f):
     (total_distance, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     nst.total_distance = total_distance / 1e5 # Total distance in km.
     #print(f'Total distance: {round(nst.total_distance, 3)} km')
-    del route_id # Not in use.
+    del ver, route_id # Not in use.
 
 PRINT_PAUSE_LIST = False
 def read_pause_and_track(f, start_address):
@@ -204,7 +218,7 @@ def main():
 
     with in_file.open(mode='rb') as f:
 
-        check_file_type_version(f) # FILE_TYPE, OLDNST, OLDNST_ROUTE, NST.
+        ver = check_file_type_version(f) # FILE_TYPE(int), NEW_FMT_TP(bool).
         gpx, nst.gpx_target = nst.initialize_gpx()
 
         # Start address of the main part (a pause data and a trackpt block).
@@ -220,9 +234,9 @@ def main():
 
         # Read information part of track/route files.
         if nst.FILE_TYPE == TRACK:
-            parse_track_informations(f) # START_LOCALTIME, START_TIME, TZ_HOURS.
+            parse_track_informations(f, ver) # START_*TIME, TZ_HOURS.
         else: # if nst.FILE_TYPE == ROUTE:
-            parse_route_informations(f)
+            parse_route_informations(f, ver)
 
         # Read the main part consisting a pause- and a trackpoint-data blocks.
         trackpt_store = read_pause_and_track(f, start_address)
