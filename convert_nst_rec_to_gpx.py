@@ -34,7 +34,7 @@ def args_usage():
 def check_file_type_version(f):
     """Checks if it is the correct file by reading app_id, file_type & version.
 
-    Sets FILE_TYPE(int 2-4) and NEW_FMT_TP(bool, new trackpt format) in nst.py.
+    Sets FILE_TYPE(int 2-4) and NEW_FORMAT(bool, new trackpt format) in nst.py.
 
     Args:
         f: a file object to be read.
@@ -55,15 +55,15 @@ def check_file_type_version(f):
     (ver, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     print(f'Version: {ver}')
     (ver0, ver1, ver2) = (ver < 10000, 10000 <= ver < 20000, 20000 <= ver)
-    # NEW_FMT_TP indicates trackpoint format: True/False = New/Old format.
+    # NEW_FORMAT indicates trackpoint format: True/False = New/Old format.
     if ver0:
-        (nst.NEW_FMT_TP, version) = (False, 0)
+        (nst.NEW_FORMAT, version) = (False, 0)
     elif ver1 and nst.FILE_TYPE == ROUTE:
-        (nst.NEW_FMT_TP, version) = (False, 1)
+        (nst.NEW_FORMAT, version) = (False, 1)
     elif ver1 and nst.FILE_TYPE == TRACK:
-        (nst.NEW_FMT_TP, version) = (True, 1)
+        (nst.NEW_FORMAT, version) = (True, 1)
     else: # if ver2
-        (nst.NEW_FMT_TP, version) = (True, 2)
+        (nst.NEW_FORMAT, version) = (True, 2)
 
     if not (ver1 or ver2): # Preliminary version check.
         print(f'Unexpected version number: {ver}')
@@ -181,7 +181,7 @@ def read_pause_and_track(f, start_address):
     def print_raw():
         times = f'{t_time} {nst.format_datetime(unix_time)}Z'
         # Remove symbiantime from trackpt if new NST and header0x07.
-        trackpt_ = (trackpt[1:-1] if nst.NEW_FMT_TP and header == 0x07 
+        trackpt_ = (trackpt[1:-1] if nst.NEW_FORMAT and header == 0x07 
                     else trackpt[1:])
         print(hex(f.tell()), hex(header), times, *trackpt_)
 
@@ -339,7 +339,7 @@ def main():
 
     with in_file.open(mode='rb') as f:
 
-        ver = check_file_type_version(f) # FILE_TYPE(int), NEW_FMT_TP(bool).
+        ver = check_file_type_version(f) # FILE_TYPE(int), NEW_FORMAT(bool).
         gpx, nst.gpx_target = nst.initialize_gpx()
 
         # Start address of the main part (mixed pause and trackpoint data).
