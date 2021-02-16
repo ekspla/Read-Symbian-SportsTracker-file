@@ -33,7 +33,7 @@ def args_usage():
     return in_file
 
 def check_file_type_version(f):
-    """Checks if it is the correct file by reading app_id, file_type and version.
+    """Checks if it is the correct file by reading app_id, file_type & version.
 
     Sets FILE_TYPE(int 2-4) and NEW_FMT_TP(bool, new trackpt format) in nst.py.
 
@@ -63,6 +63,7 @@ def check_file_type_version(f):
         (nst.NEW_FMT_TP, version) = (True, 1)
     else: # if ver2
         (nst.NEW_FMT_TP, version) = (True, 2)
+    del ver2 # Not in use.
     return version
 
 def parse_track_informations(f, ver=1):
@@ -72,7 +73,7 @@ def parse_track_informations(f, ver=1):
 
     Args:
         f: the file object.
-        ver: file version (int 0, 1 or 2)
+        ver (optional): file version (int 0, 1 or 2)
     """
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
@@ -167,7 +168,7 @@ def parse_route_informations(f, ver=1):
 
     Args:
         f: the file object.
-        ver: file version (int 0, 1 or 2)
+        ver (optional): file version (int 0, 1 or 2)
     """
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.

@@ -283,7 +283,8 @@ def read_pause_data(file_obj, new_fmt_tp=None):
 
     Args:
         file_object: the pointer should be at start_address prior to read.
-        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.
+            Defaults to global NEW_FMT_TP.
 
     Returns:
         pause_list: the list of t_time, pause_time and unix_time.
@@ -291,7 +292,7 @@ def read_pause_data(file_obj, new_fmt_tp=None):
     """
     if new_fmt_tp is None: new_fmt_tp = NEW_FMT_TP
     (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
-    if DEBUG_READ_PAUSE: 
+    if DEBUG_READ_PAUSE:
         print(f'Number of pause data: {num_pause}')
         pause_address = file_obj.tell() # START_ADDRESS + 4
         print(f'Pause address: {hex(pause_address)}')
@@ -360,7 +361,8 @@ def prepare_namedtuples(new_fmt_tp=None):
     """Factory functions of namedtuples used in reading/processing trackpoints.
 
     Args:
-        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.
+            Defaults to global NEW_FMT_TP.
 
     Returns:
         TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
@@ -389,7 +391,8 @@ def process_trackpt_type00(tp, tp_store, new_fmt_tp=None):
     Args:
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.
+            Defaults to global NEW_FMT_TP.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
@@ -398,8 +401,8 @@ def process_trackpt_type00(tp, tp_store, new_fmt_tp=None):
     t_time = tp.t_time / 100 # Totaltime / second.
     # In contrast to the new NST, we have to calculate the timestamps in 
     # all of the trackpts because of no symbiantimes given in the OLDNSTs.
-    unix_time = (tp_store.unix_time + (t_time - tp_store.t_time) if not new_fmt_tp
-                else symbian_to_unix_time(tp.symbian_time))
+    unix_time = (symbian_to_unix_time(tp.symbian_time) if new_fmt_tp
+                 else tp_store.unix_time + (t_time - tp_store.t_time))
 
     # The lat. and lon. in I32s (DDDmm mmmm format), converted to dec. degrees.
     (y, x) = (dmm_to_decdeg(tp.y_ax), dmm_to_decdeg(tp.x_ax))
@@ -416,7 +419,8 @@ def process_trackpt_type80(tp, tp_store, new_fmt_tp=None):
     Args:
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        new_fmt_tp (optional):  True/False = new/old format trackpoint.  Defaults to global NEW_FMT_TP.
+        new_fmt_tp (optional):  True/False = new/old format trackpoint.
+            Defaults to global NEW_FMT_TP.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
@@ -610,7 +614,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         prepare_namedtuples())
 
-    # For ROUTE, use mtime as starttime because the start/stop times 
+    # For ROUTE, use mtime as starttime because the start/stop symbian_times 
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
                  else START_TIME)
