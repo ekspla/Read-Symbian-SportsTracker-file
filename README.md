@@ -17,8 +17,8 @@ The version number of the file is stored as WORD at 0x0008.
 - Track/Route files of the old Nokia SportsTracker (ver1):     10000 <= version < 20000.
 - Track log files of Symbian SportsTracker (ver2):             20000 <= version.
 
-The track reading script was tested for the old and the new NST versions of 9991-9998, 10102 and 20001-20002.
-The route reading one was tested for version of 11400.
+The track reading script was tested for the old and the new NST versions of 9991-9998, 10102 and 20001-20002, while 
+the route reading one was tested for version of 11400.
 
  The file formats of symbian are completely different from those of Android and iOS.
 
@@ -36,7 +36,7 @@ There are files as followings in the directory named **_drive_name_:\SportsTrack
 - `config.dat`: contains a lot of **personal data**, including _id--name_ lookup tables of user and activity, etc. 
 - `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other as
 mentioned before.  [A fetched sample file](https://www.elektroda.pl/rtvforum/topic1416097.html), 
-[another one](https://sourceforge.net/p/gpsbabel/mailman/message/26219411/) and the converted gpx are in `references/`.
+[another one](https://sourceforge.net/p/gpsbabel/mailman/message/26219411/) and the converted gpx files are in `references/`.
 - `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks for timestamps, is very similar to that of 
 track log of the old version NST.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
