@@ -41,7 +41,7 @@ def check_file_type_version(f):
         f: a file object to be read.
 
     Returns:
-        version: int 0, 1, 2
+        version: int 0, 1, 2.  To be used in parse_track_informations().
     """
     #f.seek(0x00000, 0)
     # 8 (4+4) bytes, little endian U32+U32.

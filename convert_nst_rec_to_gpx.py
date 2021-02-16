@@ -40,7 +40,7 @@ def check_file_type_version(f):
         f: a file object to be read.
 
     Returns:
-        version: int 0, 1, 2
+        version: int 0, 1, 2.  To be used in parse_track_informations().
     """
     # Chunks in the temporal file always start with b'\x00\x00\x00\x00' blank.
     # Due to this blank, there is a 4-byte offset to the addresses shown below.
