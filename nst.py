@@ -15,7 +15,7 @@ VER2 TRACK:            1,         2,        required.
 VER2 TMP:              1,         4,        required.
 
 A track (or route) is parsed as follows:
-1) Read and store START_LOCALTIME and START_TIME (UTC) (None in route files).
+1) Read and store START_LOCALTIME and START_TIME (in UTC); None in route files.
    Store TZ_HOURS, which means timezone as a difference in hours from UTC.
 2) Move the pointer of file_obj to start_address of the main part that contain
    pause (not in route) and track.  Use read_pause_data() to make a pause_list.
@@ -283,11 +283,11 @@ def read_pause_data(file_obj, new_format=None):
 
     Args:
         file_object: the pointer should be at start_address prior to read.
-        new_format (optional):  True/False = new/old format trackpoint.
+        new_format (optional, bool):  True/False = new/old format trackpoint.
             Defaults to global NEW_FORMAT.
 
     Returns:
-        pause_list: the list of t_time, pause_time and unix_time.
+        pause_list: the list of tuples of (t_time, pause_time, unix_time).
         pause_count: number of pause data read.
     """
     if new_format is None: new_format = NEW_FORMAT
@@ -361,7 +361,7 @@ def prepare_namedtuples(new_format=None):
     """Factory functions of namedtuples used in reading/processing trackpoints.
 
     Args:
-        new_format (optional):  True/False = new/old format trackpoint.
+        new_format (optional, bool):  True/False = new/old format trackpoint.
             Defaults to global NEW_FORMAT.
 
     Returns:
@@ -391,7 +391,7 @@ def process_trackpt_type00(tp, tp_store, new_format=None):
     Args:
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        new_format (optional):  True/False = new/old format trackpoint.
+        new_format (optional, bool):  True/False = new/old format trackpoint.
             Defaults to global NEW_FORMAT.
 
     Returns:
@@ -419,7 +419,7 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
     Args:
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
-        new_format (optional):  True/False = new/old format trackpoint.
+        new_format (optional, bool):  True/False = new/old format trackpoint.
             Defaults to global NEW_FORMAT.
 
     Returns:
@@ -444,7 +444,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     """Read/process/store trackpoints.  Uses a few global constant (see below).
 
     Args:
-        file_obj: the pointer must be at appropriate position prior to read.
+        file_obj: the pointer must be at an appropriate position prior to read.
         pause_list (optional): a list obtained from read_pause_data().
 
     Returns:

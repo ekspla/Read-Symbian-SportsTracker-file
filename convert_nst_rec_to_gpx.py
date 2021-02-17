@@ -82,7 +82,7 @@ def parse_track_informations(f, ver=1):
         ver (optional): file version (int 0, 1 or 2)
     """
     # Track ID and Totaltime.
-    track_id_addr = 0x00014 # Fixed addresses of oldNST and the new NST tracks.
+    track_id_addr = 0x00014 # Fixed addresses of the old and the new NST tracks.
     if nst.FILE_TYPE == TMP: track_id_addr += 0x04 # The 4-byte blank (0x18).
     f.seek(track_id_addr, 0) # 8 (4+4) bytes, little endian U32+U32.
     (track_id, total_time) = nst.read_unpack('<2I', f)
@@ -92,7 +92,7 @@ def parse_track_informations(f, ver=1):
     print(f'Total time: {nst.format_timedelta(nst.total_time)}')
 
     # Total Distance.
-    if ver != 0: f.seek(0x00004, 1) # Skip.  4-byte offset to oldNST.
+    if ver != 0: f.seek(0x00004, 1) # Skip.  4-byte offset to the old NST.
     (total_distance, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     nst.total_distance = total_distance / 1e5 # Total distance in km.
     print(f'Total distance: {round(nst.total_distance, 3)} km')
@@ -136,14 +136,14 @@ def parse_track_informations(f, ver=1):
     # In most cases the name consists of 16-byte ASCII characters, e.g. 
     # '24/12/2019 12:34'.  They are not fully compatible with utf-8 in 
     # principle because they can be SCSU-encoded non-ASCII characters.
-    track_name_addr = 0x00046 # This is the fixed address of the oldNST track.
+    track_name_addr = 0x00046 # This is the fixed address of the old NST track.
     if ver != 0: track_name_addr += 0x04 # Offset at total_distance (-> 0x4a).
     if nst.FILE_TYPE == TMP: track_name_addr += 0x04 # 4-byte blank (-> 0x4e).
     nst.track_name = nst.scsu_reader(f, track_name_addr)
     print(f'Track name: {nst.track_name}')
 
     # Starttime & Stoptime in UTC.
-    start_stop_z_addr = 0x0018e # This is the fixed address of oldNST track.
+    start_stop_z_addr = 0x0018e # This is the fixed address of old NST track.
     if ver != 0: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
     if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
     f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
@@ -164,7 +164,7 @@ def parse_track_informations(f, ver=1):
         # Read SCSU encoded user comment of variable length.
         comment_addr = 0x00222 # Fixed address of NST tracks.
         if nst.FILE_TYPE == TMP: comment_addr += 0x4 # The 4-byte blank (0x226).
-        nst.comment = nst.scsu_reader(f, comment_addr) # This address is fixed.
+        nst.comment = nst.scsu_reader(f, comment_addr)
         if nst.comment: print(f'Comment: {nst.comment}')
 
 PRINT_PAUSE_LIST = False
