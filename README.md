@@ -35,8 +35,8 @@ There are files as followings in the directory named **_drive_name_:\SportsTrack
 
 - `config.dat`: contains a lot of **personal data**, including _id--name_ lookup tables of user and activity, etc. 
 - `W*.dat`: **track log** files in binary format.  The file formats of **the new and the old versions** are slightly different each other as
-mentioned before.  [A fetched sample file](https://www.elektroda.pl/rtvforum/topic1416097.html), 
-[another one](https://sourceforge.net/p/gpsbabel/mailman/message/26219411/) and the converted gpx files are in `references/`.
+mentioned before.  [A fetched sample file (the old format)](https://www.elektroda.pl/rtvforum/topic1416097.html), 
+[another one (the new format)](https://sourceforge.net/p/gpsbabel/mailman/message/26219411/) and the converted gpx files are in `references/`.
 - `R*.dat`: **route** files of **the old version** in binary format.  The file format, though it lacks for timestamps, is very similar to that of 
 track log of the old version NST.
 - `Rec*.tmp`: **temporal track log files** we see on application crash.  More example is needed, yet [a file useful to test was obtained from 
