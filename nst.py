@@ -106,7 +106,7 @@ def scsu_reader(file_object, address=None):
     """Reads variable-length SCSU bytes and returns UTF-8 using scsu.py.
 
     Args:
-        file_object: file object to be read.
+        file_object: the file object to be read.
         address (optional): start address of the SCSU encoded part.  The data 
             is preceded by one/two byte integer which indicates the character 
             length multiplied by four/eight.
@@ -351,8 +351,7 @@ def print_pause_list(pause_list, new_format=None):
     if new_format is None: new_format = NEW_FORMAT
     d_t = 'Datetime Z' if new_format else 'Datetime local'
     print('Total time', '\t', 'Pause time', '\t', d_t, sep ='')
-    for p in pause_list:
-        t_time, pause_time, unix_time = p
+    for (t_time, pause_time, unix_time) in pause_list:
         print(f'{format_timedelta(t_time)}\t{format_timedelta(pause_time)}\t'
               f'{format_datetime(unix_time)}')
     print()
@@ -399,8 +398,8 @@ def process_trackpt_type00(tp, tp_store, new_format=None):
     """
     if new_format is None: new_format = NEW_FORMAT
     t_time = tp.t_time / 100 # Totaltime / second.
-    # In contrast to the new NST, we have to calculate the timestamps in 
-    # all of the trackpts because of no symbiantimes given in the OLDNSTs.
+    # In contrast to the new format, we have to calculate the timestamps in 
+    # all of the trackpts because of no symbiantimes given in the old format.
     unix_time = (symbian_to_unix_time(tp.symbian_time) if new_format
                  else tp_store.unix_time + (t_time - tp_store.t_time))
 
