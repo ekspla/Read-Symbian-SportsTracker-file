@@ -375,7 +375,7 @@ def prepare_namedtuples(new_format=None):
     typec0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
     if new_format: # The fields shown below are added in the new version format.
         type00 += ', symbian_time'
-        type80, typec0 = (t + ', unknown1, unknown2' for t in (type80, typec0))
+        type80, typec0 = (t + ', dunix_time' for t in (type80, typec0))
     type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
                   'dist, track_count, file_type')
     TrackptType00_ = namedtuple('TrackptType00', type00)
@@ -427,7 +427,8 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
     """
     if new_format is None: new_format = NEW_FORMAT
     t_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
-    unix_time = tp_store.unix_time + tp.dt_time / 100
+    unix_time = (tp_store.unix_time + tp.dunix_time / 100 if new_format 
+                 else tp_store.unix_time + tp.dt_time / 100)
 
     y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
     x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
@@ -436,7 +437,6 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
     d_dist = tp.d_dist / 1e5 # Delta distance/km.
     dist = tp_store.dist + d_dist # Distance / km.
 
-    del new_format # Not in use.
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
 DEBUG_READ_TRACK = False
@@ -561,19 +561,18 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
             if header in {0x87, 0x97}: # Typically 8783, 8782, 9783, 9782.
                 Trackpt = TrackptType80
-                # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, unknown1, unknown2)
-                # Unknown1 & 2 might be related to heart rate sensor.
-                fmt = '<B3hbH2B' if header == 0x87 else '<B4hH2B' # 0x97
-                # 0x87: 12 bytes (1+2+2+2+1+2+1+1).  1-byte dv.
-                # 0x97: 13 bytes (1+2+2+2+2+2+1+1).  2-byte dv.
+                # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, dunix_time)
+                fmt = '<B3hb2H' if header == 0x87 else '<B4h2H' # 0x97
+                # 0x87: 12 bytes (1+2+2+2+1+2+2).  1-byte dv.
+                # 0x97: 13 bytes (1+2+2+2+2+2+2).  2-byte dv.
 
             else: # Header in {0xC7, 0xD7}. C783, C782, D783, D782: Rare cases.
                 Trackpt = TrackptTypeC0
                 # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist,
-                # unknown1, unknown2); Unknown3 & 4 show up in distant jumps.
-                fmt = '<B5hbH2B' if header == 0xC7 else '<B6hH2B' # 0xD7
-                # 0xC7: 16 bytes (1+2+2+2+2+2+1+2+1+1).  1-byte dv.
-                # 0xD7: 17 bytes (1+2+2+2+2+2+2+2+1+1).  2-byte dv.
+                # dunix_time); Unknown3 & 4 show up in distant jumps.
+                fmt = '<B5hb2H' if header == 0xC7 else '<B6h2H' # 0xD7
+                # 0xC7: 16 bytes (1+2+2+2+2+2+1+2+2).  1-byte dv.
+                # 0xD7: 17 bytes (1+2+2+2+2+2+2+2+2).  2-byte dv.
 
         else: # Other headers which I don't know.
             print_other_header_error(pointer, header)
@@ -592,7 +591,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
                 del pause_list[0]
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
 
-                if header != 0x07: # The trackpoint lacks for symbiantime.
+                if header != 0x07 and unix_time < resume_time: # No symbiantime.
                     # There might be few second of error, which I don't care.
                     unix_time = (t_time - t4_time) + resume_time
 
