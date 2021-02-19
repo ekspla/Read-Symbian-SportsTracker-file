@@ -219,7 +219,7 @@ def main():
 
     with in_file.open(mode='rb') as f:
 
-        ver = check_file_type_version(f) # FILE_TYPE(int), NEW_FORMAT(bool).
+        version = check_file_type_version(f) # FILE_TYPE(int), NEW_FORMAT(bool).
         gpx, nst.gpx_target = nst.initialize_gpx()
 
         # Start address of the main part (a pause data and a trackpt block).
@@ -235,9 +235,9 @@ def main():
 
         # Read information part of track/route files.
         if nst.FILE_TYPE == TRACK:
-            parse_track_informations(f, ver) # START_*TIME, TZ_HOURS.
+            parse_track_informations(f, version) # START_*TIME, TZ_HOURS.
         else: # if nst.FILE_TYPE == ROUTE:
-            parse_route_informations(f, ver)
+            parse_route_informations(f, version)
 
         # Read the main part consisting a pause- and a trackpoint-data blocks.
         trackpt_store = read_pause_and_track(f, start_address)

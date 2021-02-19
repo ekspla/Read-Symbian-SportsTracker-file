@@ -87,14 +87,13 @@ def dt_from_timestamp(timestamp, tz_info=None):
             else d_t.astimezone(tz_info))
 
 def format_datetime(timestamp):
-    """Returns ISO-8601 string of millisecond precision from unixtime (sec)."""
+    """Returns ISO-8601 strings of millisec. precision from unixtime (sec)."""
     d_t = dt_from_timestamp(round(timestamp, 3))
     return (d_t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] if d_t is not None 
             else f'INVALID({timestamp})')
 
 def format_timedelta(t_delta):
-    """Returns formatted string of millisecond precision from timedelta (sec).
-    """
+    """Returns formatted strings of millisec. precision from timedelta (sec)."""
     return str(dt.timedelta(seconds=round(t_delta, 3)))[:-3]
 
 def read_unpack(struct_fmt, file_object):
@@ -302,9 +301,7 @@ def read_pause_data(file_obj, new_format=None):
         if new_format: utctime += 'Z' # The new version NST in UTC (Z).
         print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utctime}')
 
-    pause_count = 0
-    pause_list = []
-
+    (pause_list, pause_count) = ([], 0)
     (start, stop, manual_suspend, automatic_suspend, resume, flag_8) = (
         1, 2, 3, 4, 5, 8)
 
@@ -368,7 +365,6 @@ def prepare_namedtuples(new_format=None):
         TrackptStore: used to wrap a trackpoint after processing.
     """
     if new_format is None: new_format = NEW_FORMAT
-    # Factory functions for creating named tuples.
     type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
     typec0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
@@ -438,7 +434,7 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
 
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
-DEBUG_READ_TRACK = False
+(DEBUG_READ_TRACK, PRINT_NUM_TRACKPT_ADDRESS) = (False, False)
 def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     """Read/process/store trackpoints.  Uses a few global constant (see below).
 
@@ -456,7 +452,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
-        # Remove symbiantime from trackpt if new format and header0x07.
+        # Remove symbiantime from trackpt if new format and header == 0x07.
         trackpt_ = tp[1:-1] if NEW_FORMAT and hdr == 0x07 else tp[1:]
         print(hex(file_obj.tell()), hex(hdr), times, *trackpt_)
 
@@ -464,7 +460,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         print(f'{hdr:#x} Error in the track point header: {track_count}, '
               f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
 
-    def read_oldnst_trackpt():
+    def read_old_fmt_trackpt():
         """Read/process/time-adjust old-format trackpt, store in trackpt_store.
 
         Returns:
@@ -537,7 +533,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
         return 0
 
-    def read_nst_trackpt():
+    def read_new_fmt_trackpt():
         """Read/process/time-adjust new-format trackpt, store in trackpt_store.
 
         Returns:
@@ -604,9 +600,10 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # Number of track points.
     (num_trackpt, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
-    #print(f'Number of track/route pts: {num_trackpt}')
-    #track_address = file_obj.tell()
-    #print(f'Track address: {hex(track_address)}')
+    if PRINT_NUM_TRACKPT_ADDRESS:
+        print(f'Number of track/route pts: {num_trackpt}')
+        track_address = file_obj.tell()
+        print(f'Track address: {hex(track_address)}')
 
     # Factory functions for creating named tuples.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
@@ -622,7 +619,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # This is the main loop.
     track_count = 0
-    read_trackpt = read_nst_trackpt if NEW_FORMAT else read_oldnst_trackpt
+    read_trackpt = read_new_fmt_trackpt if NEW_FORMAT else read_old_fmt_trackpt
     while track_count < num_trackpt:
 
         exit_code = read_trackpt() # In trackpt_store, after processing.
