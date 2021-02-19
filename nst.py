@@ -399,7 +399,7 @@ def process_trackpt_type00(tp, tp_store, new_format=None):
     unix_time = (symbian_to_unix_time(tp.symbian_time) if new_format
                  else tp_store.unix_time + (t_time - tp_store.t_time))
 
-    # The lat. and lon. in I32s (DDDmm mmmm format), converted to dec. degrees.
+    # The lat. and lon. (DDDmm mmmm format, I32) are converted to dec. degrees.
     (y, x) = (dmm_to_decdeg(tp.y_ax), dmm_to_decdeg(tp.x_ax))
     z = tp.z_ax / 10 # Altitude / meter.
     v = tp.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
@@ -613,9 +613,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     # stored are always 0 which means January 1st 0 AD 00:00:00.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
                  else START_TIME)
-    trackpt_store = TrackptStore() # A temporal storage for processed trackpt.
-    trackpt_store = trackpt_store._replace(
-        unix_time=starttime, t_time=0, dist=0)
+    # A temporal storage for the processed trackpt.
+    trackpt_store = TrackptStore(unix_time=starttime, t_time=0, dist=0)
 
     # This is the main loop.
     track_count = 0
