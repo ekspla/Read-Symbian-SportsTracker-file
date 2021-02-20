@@ -367,7 +367,7 @@ def prepare_namedtuples(new_format=None):
     if new_format is None: new_format = NEW_FORMAT
     type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
-    typec0 = 'dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist'
+    typec0 = 'dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist'
     if new_format: # The fields shown below are added in the new version format.
         type00 += ', symbian_time'
         type80, typec0 = (t + ', dunix_time' for t in (type80, typec0))
@@ -494,8 +494,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
             else: # Header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: Rare cases.
                 Trackpt = TrackptTypeC0
-                # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist)
-                # Unknown3 & 4 show up in distant jumps.
+                # (dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist)
+                # Unknown1 & 2 show up in distant jumps.
 
                 if header in {0xC2, 0xC3}: # 1-byte dv.
                     fmt = '<B5hbH' # 14 bytes (1+2+2+2+2+2+1+2).
@@ -563,8 +563,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
             else: # Header in {0xC7, 0xD7}. C783, C782, D783, D782: Rare cases.
                 Trackpt = TrackptTypeC0
-                # (dt_time, unknown3, dy_ax, dx_ax, unknown4, dz_ax, dv, d_dist,
-                # dunix_time); Unknown3 & 4 show up in distant jumps.
+                # (dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist,
+                # dunix_time); Unknown1 & 2 show up in distant jumps.
                 fmt = '<B5hb2H' if header == 0xC7 else '<B6h2H' # 0xD7
                 # 0xC7: 16 bytes (1+2+2+2+2+2+1+2+2).  1-byte dv.
                 # 0xD7: 17 bytes (1+2+2+2+2+2+2+2+2).  2-byte dv.
