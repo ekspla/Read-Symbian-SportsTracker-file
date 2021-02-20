@@ -157,7 +157,7 @@ def store_trackpt(tp, target=None):
     # Print delimited text.
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
     #print(f'{times}\t{round(tp.d_dist, 3)}\t{round(tp.dist, 3)}\t'
-    #      f'{round(tp.y_degree, 10)}\t{round(tp.x_degree, 10)}\t'
+    #      f'{round(tp.y_degree, 6)}\t{round(tp.x_degree, 6)}\t'
     #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
 
     if target is None: target = gpx_target
@@ -165,8 +165,8 @@ def store_trackpt(tp, target=None):
     gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == ROUTE 
                      else gpxpy.gpx.GPXTrackPoint)
     gpx_point = gpx_point_def(
-        latitude=round(tp.y_degree, 10), 
-        longitude=round(tp.x_degree, 10), 
+        latitude=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
+        longitude=round(tp.x_degree, 6), 
         elevation=round(tp.z_ax, 1), 
         time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name=str(tp.track_count + 1))
