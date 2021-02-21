@@ -211,9 +211,8 @@ def read_pause_and_track(f, start_address):
         nst.prepare_namedtuples())
     del TrackptType80, TrackptTypeC0 # Not in use.
 
-    trackpt_store = TrackptStore() # A temporal storage of processed trackpt.
-    trackpt_store = trackpt_store._replace(
-        unix_time=nst.START_TIME, t_time=0, dist=0)
+    # A temporal storage for the processed trackpt.
+    trackpt_store = TrackptStore(unix_time=nst.START_TIME, t_time=0, dist=0)
 
     # For removing spikes.
     suspect_pause = None # A flag to handle the trackpoints after a pause.
