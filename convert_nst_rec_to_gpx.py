@@ -51,7 +51,7 @@ def check_file_type_version(f):
         print(f'Unexpected file type: {nst.FILE_TYPE}')
         sys.exit(1)
 
-    #f.seek(0x00008, 0) # Go to 0x00008, this address is fixed.
+    #f.seek(0x00008 + 0x04, 0) # Go to 0x0000C, this address is fixed.
     (ver, ) = nst.read_unpack('<I', f) # 4 bytes, little endian U32.
     print(f'Version: {ver}')
     (ver0, ver1, ver2) = (ver < 10000, 10000 <= ver < 20000, 20000 <= ver)
@@ -69,7 +69,6 @@ def check_file_type_version(f):
         print(f'Unexpected version number: {ver}')
         sys.exit(1)
 
-    del ver2 # Not in use.
     return version
 
 def parse_track_informations(f, ver=1):

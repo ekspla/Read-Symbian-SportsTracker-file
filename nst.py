@@ -6,13 +6,13 @@
 """A module for reading Symbian (Nokia) SportsTracker files.
 
 Constants depend on versions and file types (see scripts how to determine):
-              NEW_FORMAT, FILE_TYPE, TZ_HOURS and START_*TIMEs
+              NEW_FORMAT  FILE_TYPE     START_LOCALTIME, START_TIME and TZ_HOURS
 --------------------------------------------------------------------------------
-VER0 TRACK:            0,         2,        required.
-VER1 ROUTE:            0,         3,        None (not available).
-VER1 TRACK:            1,         2,        required.
-VER2 TRACK:            1,         2,        required.
-VER2 TMP:              1,         4,        required.
+Ver0 TRACK:            0          2         required.
+Ver1 ROUTE:            0          3         None (not available).
+Ver1 TRACK:            1          2         required.
+Ver2 TRACK:            1          2         required.
+Ver2 TMP:              1          4         required.
 
 A track (or route) is parsed as follows:
 1) Read and store START_LOCALTIME and START_TIME (in UTC); None in route files.
