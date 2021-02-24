@@ -345,6 +345,10 @@ def read_pause_data(file_obj, new_format=None):
             pause_time = 0
             pause_list.append((t_time, pause_time, unix_time))
 
+        else: # Other flags which I don't know.
+            print(f'Unknown flag in pause: {flag:#x}')
+            sys.exit(1)
+
         pause_count += 1
 
     del unknown, starttime, start_t_time, stoptime, stop_t_time
