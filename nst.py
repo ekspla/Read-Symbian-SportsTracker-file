@@ -93,8 +93,15 @@ def format_datetime(timestamp):
             else f'INVALID({timestamp})')
 
 def format_timedelta(t_delta):
-    """Returns formatted strings of millisec. precision from timedelta (sec)."""
-    return str(dt.timedelta(seconds=round(t_delta, 3)))[:-3]
+    """Returns formatted strings of ms precision from positive timedelta (sec).
+
+    >>> format_timedelta(93825.6789)
+    '1 day, 2:03:45.679'
+    >>> format_timedelta(3723)
+    '1:02:03.000'
+    """
+    (int_td, frac_td) = divmod(round(t_delta, 3), 1)
+    return f'{dt.timedelta(seconds=int_td)}.' + f'{frac_td:.3f}'.split('.')[1]
 
 def read_unpack(struct_fmt, file_object):
     """A helper function comprising file_object.read() and struct.unpack()."""
