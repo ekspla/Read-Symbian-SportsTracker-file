@@ -165,7 +165,7 @@ def store_trackpt(tp, target=None):
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
     #print(f'{times}\t{round(tp.d_dist, 3)}\t{round(tp.dist, 3)}\t'
     #      f'{round(tp.y_degree, 6)}\t{round(tp.x_degree, 6)}\t'
-    #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 2)}')
+    #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 3)}')
 
     if target is None: target = gpx_target
     # Print gpx xml.
@@ -196,7 +196,7 @@ def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
 
     Args:
-        file_type (optional): int. 2, 3 or 4.  See module-level docstring.
+        file_type (optional): int. 2, 3 or 4.  Defaults to FILE_TYPE.
 
     Returns:
         gpx
@@ -620,8 +620,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         prepare_namedtuples())
 
-    # For ROUTE, use mtime as starttime because the start/stop symbian_times 
-    # stored are always 0 which means January 1st 0 AD 00:00:00.
+    # For ROUTE, use mtime as starttime because no start/stop times are stored.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
                  else START_TIME)
     # A temporal storage for the processed trackpt.
