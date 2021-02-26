@@ -73,7 +73,7 @@ def parse_track_informations(f, ver=1):
 
     Args:
         f: the file object.
-        ver (optional): file version (int 0, 1 or 2)
+        ver (optional): file version (int 0, 1 or 2).  Defaults to 1.
     """
     # Track ID and Totaltime.
     track_id_addr = 0x00014 # Fixed addresses of the old and the new NST tracks.
@@ -168,7 +168,7 @@ def parse_route_informations(f, ver=1):
 
     Args:
         f: the file object.
-        ver (optional): file version (int 0, 1 or 2)
+        ver (optional): file version (int 0, 1 or 2).  Defaults to 1.
     """
     # Route ID.
     f.seek(0x00014, 0) # Go to 0x00014, this address is fixed.
