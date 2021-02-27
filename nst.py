@@ -459,7 +459,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     Requires:
         FILE_TYPE (int), NEW_FORMAT (bool), TZ_HOURS (old tracks),
-        START_TIME (tracks).  See module-level docstring for details.
+        START_TIME (tracks).  See module-level docstrings for details.
     """
     def print_raw(t_time, unix_time, hdr, tp):
         times = f'{t_time} {format_datetime(unix_time)}Z'
@@ -620,7 +620,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
         prepare_namedtuples())
 
-    # For ROUTE, use mtime as starttime because no start/stop times are stored.
+    # For ROUTE, use mtime as starttime because no start/stop times are given.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
                  else START_TIME)
     # A temporal storage for the processed trackpt.
