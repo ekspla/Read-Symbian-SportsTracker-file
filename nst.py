@@ -277,9 +277,8 @@ def finalize_gpx(gpx, outfile_path=None):
     """
     if outfile_path is not None:
         result = gpx.to_xml('1.1')
-        result_file = open(outfile_path, 'w')
-        result_file.write(result)
-        result_file.close()
+        with outfile_path.open(mode='w') as f:
+            f.write(result)
     else:
         print(gpx.to_xml('1.1'))
 
@@ -290,7 +289,7 @@ def read_pause_data(file_obj, new_format=None):
     Args:
         file_object: the pointer should be at start_address prior to read.
         new_format (optional, bool):  True/False = new/old format trackpoint.
-            Defaults to global NEW_FORMAT.
+            Defaults to module-level NEW_FORMAT.
 
     Returns:
         pause_list: the list of tuples of (t_time, pause_time, unix_time).
@@ -300,8 +299,7 @@ def read_pause_data(file_obj, new_format=None):
     (num_pause, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
     if DEBUG_READ_PAUSE:
         print(f'Number of pause data: {num_pause}')
-        pause_address = file_obj.tell() # START_ADDRESS + 4
-        print(f'Pause address: {hex(pause_address)}')
+        print(f'Pause address: {hex(file_obj.tell())}') # START_ADDRESS + 4
 
     def print_raw_data(): # For debugging purposes.
         utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
@@ -369,7 +367,7 @@ def prepare_namedtuples(new_format=None):
 
     Args:
         new_format (optional, bool):  True/False = new/old format trackpoint.
-            Defaults to global NEW_FORMAT.
+            Defaults to module-level NEW_FORMAT.
 
     Returns:
         TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
@@ -398,7 +396,7 @@ def process_trackpt_type00(tp, tp_store, new_format=None):
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
         new_format (optional, bool):  True/False = new/old format trackpoint.
-            Defaults to global NEW_FORMAT.
+            Defaults to module-level NEW_FORMAT.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
@@ -426,7 +424,7 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
         tp: namedtuple of a trackpoint data after read, to be processed.
         tp_store: namedtuple of a processed data of the previous trackpoint.
         new_format (optional, bool):  True/False = new/old format trackpoint.
-            Defaults to global NEW_FORMAT.
+            Defaults to module-level NEW_FORMAT.
 
     Returns:
         unix_time, t_time, y, x, z, v, d_dist, dist
@@ -613,8 +611,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
     (num_trackpt, ) = read_unpack('<I', file_obj) # 4 bytes, little endian U32.
     if PRINT_NUM_TRACKPT_ADDRESS:
         print(f'Number of track/route pts: {num_trackpt}')
-        track_address = file_obj.tell()
-        print(f'Track address: {hex(track_address)}')
+        print(f'Track address: {hex(file_obj.tell())}')
 
     # Factory functions for creating named tuples.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
