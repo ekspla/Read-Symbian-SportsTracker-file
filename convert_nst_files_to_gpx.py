@@ -201,16 +201,14 @@ def read_pause_and_track(f, start_address):
     """
     f.seek(start_address, 0) # Go to the start address of the main part.
     # Read pause data.  There is no pause data in route file.
-    (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
-        ([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
-        else nst.read_pause_data(f))
-    del pause_count # Not in use.
+    (pause_list, pause_count) = (([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
+                                  else nst.read_pause_data(f))
     if PRINT_PAUSE_LIST and pause_list: nst.print_pause_list(pause_list)
     #sys.exit(0)
 
     # Read trackpoint data.  The last trackpt_store is necessary in summarizing.
     (track_count, trackpt_store) = nst.read_trackpoints(f, pause_list)
-    del track_count # Not in use.
+    del pause_count, track_count # Not in use.
     return trackpt_store
 
 WRITE_FILE = False
@@ -218,17 +216,15 @@ def main():
     in_file = args_usage() # Arguments and help.
 
     with in_file.open(mode='rb') as f:
-
         version = check_file_type_version(f) # FILE_TYPE(int), NEW_FORMAT(bool).
         gpx, nst.gpx_target = nst.initialize_gpx()
 
-        # Start address of the main part (a pause data and a trackpt block).
         #f.seek(0x0000C, 0) # Go to 0x0000C, this address is fixed.
-        # Usually the numbers (4 bytes, little endian U32) are for 
-        #     the new track 0x0800 = 0x07ff + 0x1, 
-        #     the old track 0x0400 = 0x03ff + 0x1 and 
-        #     the old route 0x0100 = 0x00ff + 0x1
-        # but can be changed in a very rare case.
+        # Usually, start address (4 bytes, little endian U32) of the main part 
+        # which consists of a pause- and a trackpoint-data blocks are:
+        #     in the new track 0x0800 = 0x07ff + 0x1, 
+        #        the old track 0x0400 = 0x03ff + 0x1 and 
+        #        the old route 0x0100 = 0x00ff + 0x1 but can be changed.
         (start_address, ) = nst.read_unpack('<I', f)
         start_address -= 1
         #print(f'Main part address: {hex(start_address)}')

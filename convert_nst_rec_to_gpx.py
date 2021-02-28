@@ -192,18 +192,14 @@ def read_pause_and_track(f, start_address):
 
     f.seek(start_address, 0) # Go to the start address of the main part.
     # Read pause data.  There is no pause data in route file.
-    (pause_list, pause_count) = ( # Do not read pause data if ROUTE or TMP.
-        ([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
-        else nst.read_pause_data(f))
-    del pause_count # Not in use.
+    (pause_list, pause_count) = (([], None) if nst.FILE_TYPE in {ROUTE, TMP} 
+                                  else nst.read_pause_data(f))
     if PRINT_PAUSE_LIST and pause_list: nst.print_pause_list(pause_list)
+    del pause_count # Not in use.
     #sys.exit(0)
 
     # Number of track points.
     num_trackpt = None # The number in the Rec*.tmp file is useless.
-    # Go to the first data.
-
-    track_count = 0
 
     # Factory functions for creating named tuples.
     TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
@@ -224,6 +220,7 @@ def read_pause_and_track(f, start_address):
     del pause_label # Not in use.
 
     # The main loop to read the trackpoints.
+    track_count = 0
     while True: # We don't know how many trackpoints exist in the temporal file.
         num_bytes = len(track_label)
         preceding_label = f.read(num_bytes)
