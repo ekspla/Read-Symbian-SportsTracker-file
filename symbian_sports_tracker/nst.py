@@ -42,7 +42,7 @@ except ImportError:
     except ImportError:
         import xml.etree.ElementTree as mod_etree # type: ignore
 
-import scsu
+from symbian_sports_tracker import scsu
 
 
 # Initialize variables.
