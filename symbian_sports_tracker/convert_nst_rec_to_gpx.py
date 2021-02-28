@@ -12,7 +12,7 @@ import sys
 import struct
 from pathlib import Path
 
-import nst
+from symbian_sports_tracker import nst
 (CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
 def args_usage():
