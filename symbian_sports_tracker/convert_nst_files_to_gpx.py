@@ -11,7 +11,7 @@ For temporal track files (Rec*.tmp), use convert_nst_rec_to_gpx.py.
 import sys
 from pathlib import Path
 
-import nst
+from symbian_sports_tracker import nst
 (CONFIG, TRACK, ROUTE, TMP) = (nst.CONFIG, nst.TRACK, nst.ROUTE, nst.TMP)
 
 def args_usage():
