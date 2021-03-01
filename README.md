@@ -61,6 +61,9 @@ the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The f
 - A test for a file in the West or South hemisphere, supposed to work though.  The codes were only tested for the real files in the North-East 
 (both the latitudes and the longitudes of positive values).
 
+## License
+This software is released under the LGPL v2.1 License.
+
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
 - [Standard Compression Scheme for Unicode - Wikipedia](https://en.wikipedia.org/wiki/Standard_Compression_Scheme_for_Unicode)
