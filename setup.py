@@ -13,6 +13,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/ekspla/Read-Symbian-SportsTracker-file',
     packages=find_packages(),
+    include_package_data=True,
     license='LGPL',
     classifiers=[
         'Programming Language :: Python',
