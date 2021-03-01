@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-with open('README.md', 'r') as f:
-    long_description = f.read()
+with open('README.md', encoding='utf-8') as f:
+    long_description = '\n' + f.read()
 
 setup(
     name='symbian_sports_tracker',
@@ -13,6 +13,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/ekspla/Read-Symbian-SportsTracker-file',
     packages=find_packages(),
+    license='LGPL',
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
