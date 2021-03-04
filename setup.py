@@ -5,7 +5,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='symbian_sports_tracker',
-    version='0.9.0',
+    version='0.9.1',
     install_requires=['gpxpy'],
     author='ekspla',
     description='Read-Symbian-SportsTracker-file',
