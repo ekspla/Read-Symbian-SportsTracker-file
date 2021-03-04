@@ -23,7 +23,7 @@ Now you can run
 ```Shell
 convert_nst_files_to_gpx input_filename.dat > output_filename.gpx
 ```
-where input_filename.dat is the name of the track or route file.
+where *input_filename.dat* is the name of the track or route file.
 
 ## Detailed explanation
 This package consists of four \*.py files.  `nst.py` and `scsu.py` are pure library modules while `convert_nst_files_to_gpx.py` and 
