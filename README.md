@@ -6,7 +6,7 @@
  The code was tested with > 1000 of track log files copied from my Nokia phone equipped with GPS receiver, never tested with heart-rate 
  sensor, though...
 
- There is still a few unknown part in the track logs.  So, your feedback is welcomed.
+ There is still a few unknown part in the track logs.  So, your [feedback](https://github.com/ekspla/Read-Symbian-SportsTracker-file/issues) is welcomed.
 
 ## How to use
 Simply download the \*.py files to an appropriate directory, or alternatively use pip:
