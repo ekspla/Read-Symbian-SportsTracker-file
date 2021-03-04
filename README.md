@@ -13,7 +13,8 @@ Simply download the \*.py files to an appropriate directory, or alternatively us
 
 `pip install "git+https://github.com/ekspla/Read-Symbian-SportsTracker-file.git@pip_install"`
 
-Now you can run `convert_nst_files_to_gpx W/Rxxxxxxxx.dat > output_filename.gpx`, where W/Rxxxxxxxx.dat is the name of the track or route.
+Now you can run `convert_nst_files_to_gpx input_filename.dat > output_filename.gpx` where input_filename.dat is the name of the track or route 
+file.
 
 ## Detailed explanation
 This code works also for track/route files created by **the old Nokia Sports Tracker**, whose format is a bit different from the new 
