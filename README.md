@@ -18,7 +18,7 @@ Now you can run `convert_nst_files_to_gpx input_filename.dat > output_filename.g
 file.
 
 ## Detailed explanation
-This package consists of four \*.py files.  `nst.py` and `scsu.py` are pure librally modules while `convert_nst_files_to_gpx.py` and 
+This package consists of four \*.py files.  `nst.py` and `scsu.py` are pure library modules while `convert_nst_files_to_gpx.py` and 
 `convert_nst_rec_to_gpx.py` are scripts using the modules.
 
 `convert_nst_files_to_gpx.py` works also for track/route files created by **the old Nokia Sports Tracker**, whose format is a bit different from the new 
