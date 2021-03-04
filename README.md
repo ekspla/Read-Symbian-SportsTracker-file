@@ -9,10 +9,15 @@
  There is still a few unknown part in the track logs.  So, your [feedback](https://github.com/ekspla/Read-Symbian-SportsTracker-file/issues) is welcomed.
 
 ## How to use
-Install from [PyPI](https://pypi.org/project/symbian-sports-tracker/) `pip install symbian-sports-tracker`, 
+Install from [PyPI](https://pypi.org/project/symbian-sports-tracker/)
+```Shell
+pip install symbian-sports-tracker
+```
 
 alternatively from github as follows:
-`pip install "git+https://github.com/ekspla/Read-Symbian-SportsTracker-file.git@pip_install"`
+```Shell
+pip install "git+https://github.com/ekspla/Read-Symbian-SportsTracker-file.git@pip_install"
+```
 
 Now you can run `convert_nst_files_to_gpx input_filename.dat > output_filename.gpx` where input_filename.dat is the name of the track or route 
 file.
