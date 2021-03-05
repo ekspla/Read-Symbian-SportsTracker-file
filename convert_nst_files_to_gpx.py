@@ -98,6 +98,7 @@ def parse_track_informations(f, ver=1):
     # Starttime and Stoptime in localtime.
     # 16 (8+8) bytes, little endian I64+I64.
     (start_localtime, stop_localtime) = nst.read_unpack('<2q', f)
+    if stop_localtime == start_localtime: stop_localtime = 0 # Avoid error.
     nst.START_LOCALTIME = nst.symbian_to_unix_time(start_localtime)
     nst.stop_localtime = nst.symbian_to_unix_time(stop_localtime)
 
