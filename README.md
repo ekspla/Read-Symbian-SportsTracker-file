@@ -87,7 +87,7 @@ This software is released under the LGPL v2.1 License.
 
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
-- [gpxpy](https://github.com/tkrajina/gpxpy)
+- [gpxpy](https://github.com/tkrajina/gpxpy) - GitHub
 - [Standard Compression Scheme for Unicode - Wikipedia](https://en.wikipedia.org/wiki/Standard_Compression_Scheme_for_Unicode)
 - [A Standard Compression Scheme for Unicode - Unicode Technical Standard #6](https://www.unicode.org/reports/tr6/tr6-4.html)
 - [The SCSU charset -- Roman Czyborra's decoder](http://czyborra.com/scsu/)
