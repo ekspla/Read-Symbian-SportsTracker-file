@@ -6,25 +6,39 @@
  The code was tested with > 1000 of track log files copied from my Nokia phone equipped with GPS receiver, never tested with heart-rate 
  sensor, though...
 
- There is still a few unknown part in the track logs.  So, your [feedback](https://github.com/ekspla/Read-Symbian-SportsTracker-file/issues) is welcomed.
+ There is still a few unknown part in the track logs.  So, your [feedback](https://github.com/ekspla/Read-Symbian-SportsTracker-file/issues) 
+is welcomed.
 
 ## How to use
-Simply download/copy the \*.py files to an appropriate directory, or alternatively use pip:
+Install from [PyPI](https://pypi.org/project/symbian-sports-tracker/)
+```Shell
+pip install symbian-sports-tracker
+```
 
+alternatively from github as follows:
 ```Shell
 pip install "git+https://github.com/ekspla/Read-Symbian-SportsTracker-file.git@pip_install"
 ```
 
-Now you can run 
+or simply download/copy the \*.py files to an appropriate directory from the 
+[master branch](https://github.com/ekspla/Read-Symbian-SportsTracker-file) in github. 
+
+Now you can run
 ```Shell
 convert_nst_files_to_gpx input_filename.dat > output_filename.gpx
 ```
 where *input_filename.dat* is the name of the track or route file.
 
+The reference and test files (see below), that are not included in the package of PyPI, can be obtained from 
+[github](https://github.com/ekspla/Read-Symbian-SportsTracker-file).
+
 ## Detailed explanation
-This code works also for track/route files created by **the old Nokia Sports Tracker**, whose format is a bit different from the new 
-version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  For details, please see the codes.  (1-byte instead 
-of 2-byte long header, start address of trackpoint is different, etc.)
+This package consists of four \*.py files.  `nst.py` and `scsu.py` are pure library modules while `convert_nst_files_to_gpx.py` and 
+`convert_nst_rec_to_gpx.py` are scripts using the modules.
+
+`convert_nst_files_to_gpx.py` works also for track/route files created by **the old Nokia Sports Tracker**, whose format is 
+a bit different from the new version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  
+For details, please see the codes.  (1-byte instead of 2-byte long header, start address of trackpoint is different, etc.)
 
 The version number of the file is stored as WORD at 0x0008.
 - Track log files of the old Nokia SportsTracker (ver0):                version < 10000.
@@ -38,9 +52,10 @@ the route reading one was tested for version of 11400.
 
  These codes are **not based on reverse engineering of the app** itself, but on careful analysis of the track log files.
  
- **Non ASCII** (non-alphanumeric) **characters** contained in the track log files that are encoded by [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) 
- are read by using an external module, `scsu.py`.  This is a ported version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), 
- `references/scsu.c`.  (Characters of Arabic, Bengali, Chinese, German, Hindi, Japanese, Portuguese, Punjabi, Russian, Spanish and surrogate pairs 
+ **Non ASCII** (non-alphanumeric) **characters** contained in the track log files that are encoded by 
+ [SCSU](https://www.unicode.org/reports/tr6/tr6-4.html) are read by using an external module, `scsu.py`.  
+ This is a ported version of [Czyborra's decoder written in C](http://czyborra.com/scsu/), `references/scsu.c`.  
+ (Characters of Arabic, Bengali, Chinese, German, Hindi, Japanese, Portuguese, Punjabi, Russian, Spanish and surrogate pairs 
  were tested, see `test_scsu/`.)
 
 ## Files in the phone
