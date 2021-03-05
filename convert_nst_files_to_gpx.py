@@ -143,6 +143,7 @@ def parse_track_informations(f, ver=1):
     if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
     f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = nst.read_unpack('<2q', f)
+    if stop_time == start_time: stop_time = 0 # Avoid error.
     nst.START_TIME = nst.symbian_to_unix_time(start_time)
     nst.stop_time = nst.symbian_to_unix_time(stop_time)
     #print(f'Start Z: {nst.format_datetime(nst.START_TIME)}Z')
