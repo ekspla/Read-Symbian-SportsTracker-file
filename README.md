@@ -20,6 +20,9 @@ alternatively from github as follows:
 pip install "git+https://github.com/ekspla/Read-Symbian-SportsTracker-file.git@pip_install"
 ```
 
+or simply download/copy the \*.py files to an appropriate directory from the 
+[master branch](https://github.com/ekspla/Read-Symbian-SportsTracker-file) in github. 
+
 Now you can run
 ```Shell
 convert_nst_files_to_gpx input_filename.dat > output_filename.gpx
