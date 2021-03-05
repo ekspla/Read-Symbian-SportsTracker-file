@@ -349,7 +349,8 @@ def read_pause_data(file_obj, new_format=None):
 
         pause_count += 1
 
-    del unknown, starttime, start_t_time, stoptime, stop_t_time
+    del unknown, starttime, start_t_time
+    if 'stoptime' in locals(): del stoptime, stop_t_time # For files w/o stop.
     return pause_list, pause_count
 
 def print_pause_list(pause_list, new_format=None):
