@@ -252,7 +252,7 @@ def add_gpx_summary(gpx, tp_store):
     else: # Track files.
         (gpx.name, gpx.tracks[0].name) = (f'[{track_name}]', ) * 2
         stop_localtime_ = (
-            stop_localtime if stop_localtime != symbian_to_unix_time(0) 
+            stop_localtime if stop_localtime > START_LOCALTIME
             else tp_store.unix_time + TZ_HOURS * 3600)
         real_time = stop_localtime_ - START_LOCALTIME
         gross_speed = total_distance_ / (real_time / 3600) # km/h.
