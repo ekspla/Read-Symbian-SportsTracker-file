@@ -561,28 +561,29 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
             # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
             # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
 
-        elif header in {0x87, 0x97, 0x8F, 0x9F, 0xC7, 0xD7}:
+        elif header in {0x87, 0x97, 0x9F, 0xC7, 0xD7, 0xDF}:
             process_trackpt = process_trackpt_type80
 
-            if header in {0x87, 0x97, 0x8F, 0x9F}: # Typically 8783, 8782, 9783, 9782.
+            if header in {0x87, 0x97, 0x9F}: # Typically 8783, 8782, 9783, 9782.
                 Trackpt = TrackptType80
                 # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, dunix_time)
                 if header == 0x87: # 1-byte dv.
                     fmt = '<B3hb2H' # 12 bytes (1+2+2+2+1+2+2).
                 elif header == 0x97: # 2-byte dv.
                     fmt = '<B4h2H' # 13 bytes (1+2+2+2+2+2+2).
-                elif header == 0x8F: # 1-byte dv, 4-byte d_dist.
-                    fmt = '<B3hbiH' # 14 bytes (1+2+2+2+1+4+2).
                 else: # header == 0x9F # 2-byte dv, 4-byte d_dist.
                     fmt = '<B4hiH' # 15 bytes (1+2+2+2+2+4+2).
 
-            else: # Header in {0xC7, 0xD7}. C783, C782, D783, D782: Rare cases.
+            else: # Header in {0xC7, 0xD7, 0xDF}. C783, C782, D783, D782: Rare cases.
                 Trackpt = TrackptTypeC0
                 # (dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist,
                 # dunix_time); Unknown1 & 2 show up in distant jumps.
-                fmt = '<B5hb2H' if header == 0xC7 else '<B6h2H' # 0xD7
-                # 0xC7: 16 bytes (1+2+2+2+2+2+1+2+2).  1-byte dv.
-                # 0xD7: 17 bytes (1+2+2+2+2+2+2+2+2).  2-byte dv.
+                if header == 0xC7: # 1-byte dv.
+                    fmt = '<B5hb2H' # 16 bytes (1+2+2+2+2+2+1+2+2).
+                elif header == 0xD7: # 2-byte dv.
+                    fmt = '<B6h2H' # 17 bytes (1+2+2+2+2+2+2+2+2).
+                else: # 0xDF # 2-byte dv, 4-byte d_dist.
+                    fmt = '<B6hiH' # 19 bytes (1+2+2+2+2+2+2+4+2).
 
         else: # Other headers which I don't know.
             print_other_header_error(pointer, header)
