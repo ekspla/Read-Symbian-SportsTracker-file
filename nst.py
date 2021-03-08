@@ -64,7 +64,7 @@ def symbian_to_unix_time(symbiantime):
     Symbiantimes are 64-bit values that represent microsecs since 1 Jan. 0 AD
     00:00:00 localtime, nominal Gregorian.  Negative values represent BC dates.
     """
-    return symbiantime / 1e6 - 62168256000
+    return (symbiantime - 62168256000 * 10**6) / 10**6 # Integer in parentheses.
 
 stop_localtime = symbian_to_unix_time(0)
 
@@ -157,15 +157,15 @@ def store_trackpt(tp, target=None):
 
     Args:
         tp (a namedtuple of trackpt_store):
-            (unix_time(s), t_time(s), y_degree, x_degree, z_ax(m), v(km/h), 
-             d_dist(km), dist(km), track_count(int), file_type(int: 2, 3 or 4))
+            (unix_time(s), t_time(s), y_degree, x_degree, z_ax(m), v(cm/s), 
+             d_dist(cm), dist(cm), track_count(int), file_type(int: 2, 3 or 4))
         target (optional): gpx_route or gpx_segment. Defaults to gpx_target.
     """
     # Print delimited text.
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
-    #print(f'{times}\t{round(tp.d_dist, 3)}\t{round(tp.dist, 3)}\t'
-    #      f'{round(tp.y_degree, 6)}\t{round(tp.x_degree, 6)}\t'
-    #      f'{round(tp.z_ax, 1)}\t{round(tp.v, 3)}')
+    #print(f'{times}\t{round(tp.d_dist / 10**5, 3)}\t{round(tp.dist / 10**5, 3)}\t'
+    #    f'{round(tp.y_degree, 6)}\t{round(tp.x_degree, 6)}\t{round(tp.z_ax, 1)}\t'
+    #    f'{round(tp.v / 100 * 3.6, 3)}')
 
     if target is None: target = gpx_target
     # Print gpx xml.
@@ -180,12 +180,12 @@ def store_trackpt(tp, target=None):
     target.points.append(gpx_point)
 
     # This part may be informative.  Comment it out, if not necessary.
-    gpx_point.description = (
-        f'Speed {round(tp.v, 3)} km/h Distance {round(tp.dist, 3)} km')
+    gpx_point.description = (f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
+                             f'Distance {round(tp.dist / 10**5, 3)} km')
 
     # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
     # Not quite sure if the <gpxtpx:TrackPointExtension> tag is valid in rtept.
-    speed = round(tp.v / 3.6, 3) # velocity in m/s
+    speed = round(tp.v / 100, 3) # velocity in m/s
     gpx_extension_speed = mod_etree.fromstring(
         '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
         f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
@@ -239,7 +239,8 @@ def add_gpx_summary(gpx, tp_store):
         START_LOCALTIME, START_TIME, TZ_HOURS.  See module-level docstring.
     """
     total_time_ = tp_store.t_time if total_time == 0 else total_time
-    total_distance_ = tp_store.dist if total_distance == 0 else total_distance
+    total_distance_ = (total_distance if total_distance != 0 
+                       else tp_store.dist / 10**5)
     net_speed = total_distance_ / (total_time_ / 3600) # km/h.
     description = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
                    f'Total distance: {round(total_distance_, 3)} km' '; '
@@ -411,10 +412,10 @@ def process_trackpt_type00(tp, tp_store, new_format=None):
 
     # The lat. and lon. (DDDmm mmmm format, I32) are converted to dec. degrees.
     (y, x) = (dmm_to_decdeg(tp.y_ax), dmm_to_decdeg(tp.x_ax))
-    z = tp.z_ax / 10 # Altitude / meter.
-    v = tp.v / 100 * 3.6 # Velocity: v (m/s) * 3.6 = v (km/h).
-    d_dist = tp.d_dist / 1e5 # Delta distance/km.
-    dist = tp_store.dist + d_dist # Distance/km.
+    z = tp.z_ax / 10 # Altitude (meter).
+    v = tp.v # Int. velocity (cm/s).
+    d_dist = tp.d_dist # Int. delta distance (cm).
+    dist = tp_store.dist + d_dist # Int. distance (cm).
 
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
@@ -437,10 +438,10 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
 
     y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
     x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
-    z = tp_store.z_ax + tp.dz_ax / 10 # Altitude / m.
-    v = tp_store.v + tp.dv / 100 * 3.6 # Velocity / km/h.
-    d_dist = tp.d_dist / 1e5 # Delta distance/km.
-    dist = tp_store.dist + d_dist # Distance / km.
+    z = tp_store.z_ax + tp.dz_ax / 10 # Altitude (m).
+    v = tp_store.v + tp.dv # Int. velocity (cm/s).
+    d_dist = tp.d_dist # Int. delta distance (cm).
+    dist = tp_store.dist + d_dist # Int. distance (cm).
 
     return unix_time, t_time, y, x, z, v, d_dist, dist
 
