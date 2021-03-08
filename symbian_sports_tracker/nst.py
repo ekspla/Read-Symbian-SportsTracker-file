@@ -561,15 +561,20 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
             # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
             # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
 
-        elif header in {0x87, 0x97, 0xC7, 0xD7}:
+        elif header in {0x87, 0x97, 0x8F, 0x9F, 0xC7, 0xD7}:
             process_trackpt = process_trackpt_type80
 
-            if header in {0x87, 0x97}: # Typically 8783, 8782, 9783, 9782.
+            if header in {0x87, 0x97, 0x8F, 0x9F}: # Typically 8783, 8782, 9783, 9782.
                 Trackpt = TrackptType80
                 # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, dunix_time)
-                fmt = '<B3hb2H' if header == 0x87 else '<B4h2H' # 0x97
-                # 0x87: 12 bytes (1+2+2+2+1+2+2).  1-byte dv.
-                # 0x97: 13 bytes (1+2+2+2+2+2+2).  2-byte dv.
+                if header == 0x87: # 1-byte dv.
+                    fmt = '<B3hb2H' # 12 bytes (1+2+2+2+1+2+2).
+                elif header == 0x97: # 2-byte dv.
+                    fmt = '<B4h2H' # 13 bytes (1+2+2+2+2+2+2).
+                elif header == 0x8F: # 1-byte dv, 4-byte d_dist.
+                    fmt = '<B3hbiH' # 14 bytes (1+2+2+2+1+4+2).
+                else: # header == 0x9F # 2-byte dv, 4-byte d_dist.
+                    fmt = '<B4hiH' # 15 bytes (1+2+2+2+2+4+2).
 
             else: # Header in {0xC7, 0xD7}. C783, C782, D783, D782: Rare cases.
                 Trackpt = TrackptTypeC0
