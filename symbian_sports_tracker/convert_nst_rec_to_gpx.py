@@ -315,7 +315,7 @@ def read_pause_and_track(f, start_address):
                 print(f'Bad x at: {hex(pointer)}')
             if abs(trackpt_store.z_ax - z_ax) >= 500: # meter.
                 z_ax = trackpt_store.z_ax
-        if not 0 <= d_dist < 1: # km.
+        if not 0 <= d_dist < 10**5: # 1 cm * 10**5 = 1 km.
             d_dist = 0
             dist = trackpt_store.dist
 
