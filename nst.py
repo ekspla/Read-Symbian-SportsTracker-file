@@ -163,9 +163,9 @@ def store_trackpt(tp, target=None):
     """
     # Print delimited text.
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
-    #print(f'{times}\t{round(tp.d_dist / 10**5, 3)}\t{round(tp.dist / 10**5, 3)}\t'
-    #    f'{round(tp.y_degree, 6)}\t{round(tp.x_degree, 6)}\t{round(tp.z_ax, 1)}\t'
-    #    f'{round(tp.v / 100 * 3.6, 3)}')
+    #print(f'{times}\t{tp.d_dist / 10**5:.3f}\t{tp.dist / 10**5:.3f}\t'
+    #      f'{tp.y_degree:.6f}\t{tp.x_degree:.6f}\t{tp.z_ax:.1f}\t'
+    #      f'{tp.v / 100 * 3.6:.3f}')
 
     if target is None: target = gpx_target
     # Print gpx xml.
@@ -238,9 +238,8 @@ def add_gpx_summary(gpx, tp_store):
     Requires (in tracks):
         START_LOCALTIME, START_TIME, TZ_HOURS.  See module-level docstring.
     """
-    total_time_ = tp_store.t_time if total_time == 0 else total_time
-    total_distance_ = (total_distance if total_distance != 0 
-                       else tp_store.dist / 10**5)
+    total_time_ = total_time or tp_store.t_time
+    total_distance_ = total_distance or tp_store.dist / 10**5
     net_speed = total_distance_ / (total_time_ / 3600) # km/h.
     description = ('[' f'Total time: {format_timedelta(total_time_)}' '; '
                    f'Total distance: {round(total_distance_, 3)} km' '; '
@@ -575,7 +574,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
                 else: # header == 0x9F # 2-byte dv, 4-byte d_dist.
                     fmt = '<B4hiH' # 15 bytes (1+2+2+2+2+4+2).
 
-            else: # Header in {0xC7, 0xD7, 0xDF}. C783, C782, D783, D782: Rare cases.
+            else: # {0xC7, 0xD7, 0xDF}. C783, C782, D783, D782: Rare cases.
                 Trackpt = TrackptTypeC0
                 # (dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist,
                 # dunix_time); Unknown1 & 2 show up in distant jumps.
