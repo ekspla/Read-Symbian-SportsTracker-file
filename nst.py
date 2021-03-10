@@ -412,6 +412,7 @@ def process_trackpt_type00(tp, tp_store, new_format=None):
     # The lat. and lon. (DDDmm mmmm format, I32) are converted to dec. degrees.
     (y, x) = (dmm_to_decdeg(tp.y_ax), dmm_to_decdeg(tp.x_ax))
     z = tp.z_ax / 10 # Altitude (meter).
+    # Don't change the units here. Resolutions never decrease by int. additions.
     v = tp.v # Int. velocity (cm/s).
     d_dist = tp.d_dist # Int. delta distance (cm).
     dist = tp_store.dist + d_dist # Int. distance (cm).
@@ -438,6 +439,7 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
     y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
     x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
     z = tp_store.z_ax + tp.dz_ax / 10 # Altitude (m).
+    # Don't change the units here. Resolutions never decrease by int. additions.
     v = tp_store.v + tp.dv # Int. velocity (cm/s).
     d_dist = tp.d_dist # Int. delta distance (cm).
     dist = tp_store.dist + d_dist # Int. distance (cm).
