@@ -12,6 +12,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/ekspla/Read-Symbian-SportsTracker-file',
+    keywords='sports-tracker symbian nokia gps gpx',
     packages=find_packages(),
     include_package_data=True,
     license='LGPL',
