@@ -278,7 +278,7 @@ def finalize_gpx(gpx, outfile_path=None):
     if outfile_path is not None:
         result = gpx.to_xml('1.1')
         with outfile_path.open(mode='w') as f:
-            f.write(result)
+            f.write(result + '\n')
     else:
         print(gpx.to_xml('1.1'))
 
