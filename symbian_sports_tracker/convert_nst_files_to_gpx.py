@@ -242,7 +242,7 @@ def main():
 
     nst.add_gpx_summary(gpx, trackpt_store)
 
-    gpx_path = Path(str(in_file)[:-3] + 'gpx') if WRITE_FILE else None
+    gpx_path = in_file.with_suffix('.gpx') if WRITE_FILE else None
     nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
 
 
