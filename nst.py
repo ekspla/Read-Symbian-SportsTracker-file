@@ -433,8 +433,8 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
     """
     if new_format is None: new_format = NEW_FORMAT
     t_time = tp_store.t_time + tp.dt_time / 100 # Totaltime/s.
-    unix_time = (tp_store.unix_time + tp.dunix_time / 100 if new_format 
-                 else tp_store.unix_time + tp.dt_time / 100)
+    unix_time = tp_store.unix_time + (tp.dunix_time if new_format 
+                                      else tp.dt_time) / 100
 
     y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
     x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
