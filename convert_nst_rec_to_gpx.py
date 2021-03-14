@@ -335,7 +335,6 @@ def main():
     in_file = args_usage() # Arguments and help.
 
     with in_file.open(mode='rb') as f:
-
         version = check_file_type_version(f) # FILE_TYPE(int), NEW_FORMAT(bool).
         gpx, nst.gpx_target = nst.initialize_gpx()
 
