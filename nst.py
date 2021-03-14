@@ -89,7 +89,7 @@ def dt_from_timestamp(timestamp, tz_info=None):
 def format_datetime(timestamp):
     """Returns ISO-8601 strings of millisec. precision from unixtime (sec)."""
     d_t = dt_from_timestamp(round(timestamp, 3))
-    return (d_t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] if d_t is not None 
+    return (d_t.isoformat(timespec='milliseconds') if d_t is not None 
             else f'INVALID({timestamp})')
 
 def format_timedelta(t_delta):
@@ -436,8 +436,8 @@ def process_trackpt_type80(tp, tp_store, new_format=None):
     unix_time = tp_store.unix_time + (tp.dunix_time if new_format 
                                       else tp.dt_time) / 100
 
-    y = tp_store.y_degree + tp.dy_ax / 1e4 / 60 # Lat.
-    x = tp_store.x_degree + tp.dx_ax / 1e4 / 60 # Lon.
+    y = tp_store.y_degree + tp.dy_ax / 10**4 / 60 # Lat.
+    x = tp_store.x_degree + tp.dx_ax / 10**4 / 60 # Lon.
     z = tp_store.z_ax + tp.dz_ax / 10 # Altitude (m).
     # Don't change the units here. Resolutions never decrease by int. additions.
     v = tp_store.v + tp.dv # Int. velocity (cm/s).
