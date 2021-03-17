@@ -186,11 +186,12 @@ def store_trackpt(tp, target=None):
     # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
     # Not quite sure if the <gpxtpx:TrackPointExtension> tag is valid in rtept.
     speed = round(tp.v / 100, 3) # velocity in m/s
-    gpx_extension_speed = mod_etree.fromstring(
-        '<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v2">'
-        f'<gpxtpx:speed>{speed}</gpxtpx:speed>'
-        '</gpxtpx:TrackPointExtension>')
-    gpx_point.extensions.append(gpx_extension_speed)
+    gpx_extension = mod_etree.Element('{gpxtpx}' + 'TrackPointExtension')
+    gpx_extension_speed = mod_etree.SubElement(gpx_extension, '{gpxtpx}' + 'speed')
+    gpx_extension_speed.text = f'{speed}'
+    #gpx_extension_hr = mod_etree.SubElement(gpx_extension, '{gpxtpx}' + 'hr')
+    #gpx_extension_hr.text = f'{tp.hr}'
+    gpx_point.extensions.append(gpx_extension)
 
 def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
