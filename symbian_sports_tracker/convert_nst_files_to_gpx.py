@@ -8,6 +8,7 @@
 External modules, nst.py and scsu.py, are used to parse data in the files.
 For temporal track files (Rec*.tmp), use convert_nst_rec_to_gpx.py.
 """
+from os import getenv
 import sys
 from pathlib import Path
 
@@ -242,7 +243,8 @@ def main():
 
     nst.add_gpx_summary(gpx, trackpt_store)
 
-    gpx_path = in_file.with_suffix('.gpx') if WRITE_FILE else None
+    write_file = getenv('GPX_WRITE_FILE') or WRITE_FILE
+    gpx_path = in_file.with_suffix('.gpx') if write_file else None
     nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
 
 
