@@ -1,7 +1,7 @@
 # Read-Symbian-SportsTracker-file -- How to read binary dat files.
  This python script, `convert_nst_files_to_gpx.py`, describes how you can read **symbian (Nokia) Sports Tracker files (W\*.dat and R\*.dat)** 
  stored in your phone as **binary format**.  You can use this code, as it is, to **convert from dat to gpx** by using 
-[gpxpy](https://pypi.org/project/gpxpy/).
+[lxml](https://pypi.org/project/lxml/).
 
  The code was tested with > 1000 of track log files copied from my Nokia phone equipped with GPS receiver, never tested with heart-rate 
  sensor, though...
@@ -87,7 +87,6 @@ This software is released under the LGPL v2.1 License.
 
 ## Reference
 - [Sports Tracker - Wikipedia](https://en.wikipedia.org/wiki/Sports_Tracker)
-- [gpxpy - GitHub](https://github.com/tkrajina/gpxpy)
 - [Standard Compression Scheme for Unicode - Wikipedia](https://en.wikipedia.org/wiki/Standard_Compression_Scheme_for_Unicode)
 - [A Standard Compression Scheme for Unicode - Unicode Technical Standard #6](https://www.unicode.org/reports/tr6/tr6-4.html)
 - [The SCSU charset -- Roman Czyborra's decoder](http://czyborra.com/scsu/)
