@@ -31,19 +31,8 @@ import datetime as dt
 from collections import namedtuple
 from pathlib import Path
 
-import gpxpy
-import gpxpy.gpx
-
-try: # Load LXML or fallback to cET or ET.
-    import lxml.etree as mod_etree  # type: ignore
-except ImportError:
-    try:
-        import xml.etree.cElementTree as mod_etree # type: ignore
-    except ImportError:
-        import xml.etree.ElementTree as mod_etree # type: ignore
-
 from symbian_sports_tracker import scsu
-
+from symbian_sports_tracker.mini_gpx import Gpx
 
 # Initialize variables.
 (total_time, total_distance) = (0, ) * 2
@@ -152,7 +141,7 @@ def dmm_to_decdeg(dddmm_mmmm):
     decimal_degree += mm_mmmm / 1e4 / 60
     return sign_dddmm_mmmm * decimal_degree
 
-def store_trackpt(tp, target=None):
+def store_trackpt(tp, file_type=None):
     """Do whatever with the trackpt data: print, gpx, store in a database, etc.
 
     Args:
@@ -166,32 +155,18 @@ def store_trackpt(tp, target=None):
     #print(f'{times}\t{tp.d_dist / 10**5:.3f}\t{tp.dist / 10**5:.3f}\t'
     #      f'{tp.y_degree:.6f}\t{tp.x_degree:.6f}\t{tp.z_ax:.1f}\t'
     #      f'{tp.v / 100 * 3.6:.3f}')
-
-    if target is None: target = gpx_target
-    # Print gpx xml.
-    gpx_point_def = (gpxpy.gpx.GPXRoutePoint if tp.file_type == ROUTE 
-                     else gpxpy.gpx.GPXTrackPoint)
-    gpx_point = gpx_point_def(
-        latitude=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
-        longitude=round(tp.x_degree, 6), 
-        elevation=round(tp.z_ax, 1), 
-        time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
-        name=str(tp.track_count + 1))
-    target.points.append(gpx_point)
-
-    # This part may be informative.  Comment it out, if not necessary.
-    gpx_point.description = (f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
-                             f'Distance {round(tp.dist / 10**5, 3)} km')
-
-    # In gpx 1.1, use trackpoint extensions to store speeds in m/s.
-    # Not quite sure if the <gpxtpx:TrackPointExtension> tag is valid in rtept.
+    if file_type is None: file_type = FILE_TYPE
+    append_pt = gpx.append_trkpt if file_type in {TRACK, TMP} else gpx.append_rtept
     speed = round(tp.v / 100, 3) # velocity in m/s
-    gpx_extension = mod_etree.Element('{gpxtpx}' + 'TrackPointExtension')
-    gpx_ext_speed = mod_etree.SubElement(gpx_extension, '{gpxtpx}' + 'speed')
-    gpx_ext_speed.text = f'{speed}'
-    #gpx_ext_hr = mod_etree.SubElement(gpx_extension, '{gpxtpx}' + 'hr')
-    #gpx_ext_hr.text = f'{tp.hr}'
-    gpx_point.extensions.append(gpx_extension)
+    append_pt(
+        lat=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
+        lon=round(tp.x_degree, 6), 
+        ele=round(tp.z_ax, 1), 
+        time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
+        name=str(tp.track_count + 1),
+        desc = (f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
+                f'Distance {round(tp.dist / 10**5, 3)} km'),
+        speed = f'{speed}')
 
 def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
@@ -204,30 +179,8 @@ def initialize_gpx(file_type=None):
         gpx_route/gpx_segment (name it as gpx_target).
     """
     if file_type is None: file_type = FILE_TYPE
-    gpx = gpxpy.gpx.GPX() # Create a new GPX.
-
-    # Add TrackPointExtension namespaces and schema locations.
-    gpx.nsmap['gpxtpx'] = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
-    gpx.nsmap['gpxx'] = 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'
-    gpx.schema_locations = [
-        'http://www.topografix.com/GPX/1/1',
-        'http://www.topografix.com/GPX/1/1/gpx.xsd',
-        'http://www.garmin.com/xmlschemas/GpxExtensions/v3',
-        'http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
-        'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
-        'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd']
-
-    if file_type == ROUTE: # Create the first route in the GPX.
-        gpx_route = gpxpy.gpx.GPXRoute()
-        gpx.routes.append(gpx_route)
-        return gpx, gpx_route
-    else: # Create the first track in the GPX.
-        gpx_track = gpxpy.gpx.GPXTrack()
-        gpx.tracks.append(gpx_track)
-        # Create the first segment in the GPX track.
-        gpx_segment = gpxpy.gpx.GPXTrackSegment()
-        gpx_track.segments.append(gpx_segment)
-        return gpx, gpx_segment
+    gpx = Gpx(is_track=False) if file_type == ROUTE else Gpx()
+    return gpx
 
 def add_gpx_summary(gpx, tp_store):
     """Add a short summary (time, distance, speed, etc.) to gpx route/track.
@@ -247,27 +200,30 @@ def add_gpx_summary(gpx, tp_store):
                    f'Net speed: {round(net_speed, 3)} km/h')
 
     if tp_store.file_type == ROUTE:
-        (gpx.name, gpx.routes[0].name) = (f'[{route_name}]', ) * 2
-        gpx.routes[0].description = (f'{description}' ']')
+        name = f'[{route_name}]'
+        description = f'{description}' ']'
+        (gpx_description, author, time) = (None, ) * 3
 
     else: # Track files.
-        (gpx.name, gpx.tracks[0].name) = (f'[{track_name}]', ) * 2
+        name = f'[{track_name}]'
         stop_localtime_ = (
             stop_localtime if stop_localtime > START_LOCALTIME
             else tp_store.unix_time + TZ_HOURS * 3600)
         real_time = stop_localtime_ - START_LOCALTIME
         gross_speed = total_distance_ / (real_time / 3600) # km/h.
-        gpx.tracks[0].description = (
+        description = (
             f'{description}' '; '
             f'Start localtime: {format_datetime(START_LOCALTIME)}' '; '
             f'Stop localtime: {format_datetime(stop_localtime_)}' '; '
             f'Real time: {format_timedelta(real_time)}' '; '
             f'Gross speed: {round(gross_speed, 3)} km/h' ']')
-        gpx.description = f'[{activity_type}]' # See ACTIVITIES.
-        gpx.author_name = str(USER_ID)
-        gpx.time = dt_from_timestamp(
+        gpx_description = f'[{activity_type}]' # See ACTIVITIES.
+        author = str(USER_ID)
+        time = dt_from_timestamp(
             START_TIME, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
-        if comment: gpx.tracks[0].comment = comment
+    gpx.add_metadata(name=name, description=gpx_description, author=author, time=time)
+    gpx.add_summary(name=name, comment=comment, description=description)
+
 
 def finalize_gpx(gpx, outfile_path=None):
     """Output gpx xml to the outfile_path (or print if not specified).
@@ -276,12 +232,12 @@ def finalize_gpx(gpx, outfile_path=None):
         gpx
         outfile_path (optional): write gpx xml to the file or print (if None).
     """
+    result = gpx.to_xml() # bytes
     if outfile_path is not None:
-        result = gpx.to_xml('1.1')
-        with outfile_path.open(mode='w') as f:
-            f.write(result + '\n')
+        with outfile_path.open(mode='wb') as f:
+            f.write(result)
     else:
-        print(gpx.to_xml('1.1'))
+        print(result.decode())
 
 DEBUG_READ_PAUSE = False
 def read_pause_data(file_obj, new_format=None):
