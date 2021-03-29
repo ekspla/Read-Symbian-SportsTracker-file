@@ -85,16 +85,16 @@ class Gpx(object):
             self.root, encoding="UTF-8", pretty_print=True, 
             doctype='<?xml version="1.0" encoding="UTF-8"?>')
 
-    def add_metadata(self, name=None, description=None, author=None, time=None):
+    def add_metadata(self, name='', description='', author='', time=None):
         if name or description or author or time:
             self.metadata = mod_etree.Element('metadata', nsmap=NSMAP)
-            if name is not None:
+            if name:
                 _name = mod_etree.SubElement(self.metadata, 'name')
                 _name.text = name
-            if description is not None:
+            if description:
                 _desc = mod_etree.SubElement(self.metadata, 'desc')
                 _desc.text = description
-            if author is not None:
+            if author:
                 _author = mod_etree.SubElement(self.metadata, 'author')
                 _author_name = mod_etree.SubElement(_author, 'name')
                 _author_name.text = author

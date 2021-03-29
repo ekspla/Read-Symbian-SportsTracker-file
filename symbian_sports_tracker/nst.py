@@ -201,7 +201,8 @@ def add_gpx_summary(gpx, tp_store):
     if tp_store.file_type == ROUTE:
         name = f'[{route_name}]'
         description = f'{description}' ']'
-        (gpx_description, author, time) = (None, ) * 3
+        (gpx_description, author) = ('', ) * 2
+        time = None
 
     else: # Track files.
         name = f'[{track_name}]'
