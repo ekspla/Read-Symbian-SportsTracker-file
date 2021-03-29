@@ -115,8 +115,8 @@ class Gpx(object):
                 _desc = mod_etree.SubElement(self.summary, 'desc')
                 _desc.text = description
 
-    def append_trkpt(self, *, lat, lon, ele=None, time=None, name=None, 
-                       desc=None, speed=None, hr=None):
+    def append_trkpt(self, *, lat, lon, ele=None, time=None, name='', 
+                       desc='', speed=None, hr=None):
 
         trkpt = mod_etree.Element(
             'trkpt', { 'lat':make_str(lat), 'lon':make_str(lon) })
@@ -126,10 +126,10 @@ class Gpx(object):
         if time is not None:
             trkpt_time = mod_etree.SubElement(trkpt, 'time')
             trkpt_time.text = format_time(time)
-        if name is not None:
+        if name:
             trkpt_name = mod_etree.SubElement(trkpt, 'name')
             trkpt_name.text = name
-        if desc is not None:
+        if desc:
             trkpt_desc = mod_etree.SubElement(trkpt, 'desc')
             trkpt_desc.text = desc
 
@@ -152,8 +152,8 @@ class Gpx(object):
             self.make_trkseg()
             self.trkseg.append(trkpt)
 
-    def append_rtept(self, *, lat, lon, ele=None, time=None, name=None, 
-                       desc=None, speed=None, hr=None):
+    def append_rtept(self, *, lat, lon, ele=None, time=None, name='', 
+                       desc='', speed=None, hr=None):
 
         rtept = mod_etree.Element(
             'rtept', { 'lat':make_str(lat), 'lon':make_str(lon) })
@@ -164,10 +164,10 @@ class Gpx(object):
         if time is not None:
             rtept_time = mod_etree.SubElement(rtept, 'time')
             rtept_time.text = format_time(time)
-        if name is not None:
+        if name:
             rtept_name = mod_etree.SubElement(rtept, 'name')
             rtept_name.text = name
-        if desc is not None:
+        if desc:
             rtept_desc = mod_etree.SubElement(rtept, 'desc')
             rtept_desc.text = desc
 
