@@ -176,7 +176,6 @@ def initialize_gpx(file_type=None):
 
     Returns:
         gpx
-        gpx_route/gpx_segment (name it as gpx_target).
     """
     if file_type is None: file_type = FILE_TYPE
     gpx = Gpx(is_track=False) if file_type == ROUTE else Gpx()
