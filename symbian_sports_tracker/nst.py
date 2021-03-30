@@ -164,9 +164,9 @@ def store_trackpt(tp, append_pt=None):
         ele=round(tp.z_ax, 1), 
         time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name=str(tp.track_count + 1),
-        desc = (f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
-                f'Distance {round(tp.dist / 10**5, 3)} km'),
-        speed = f'{speed}')
+        desc=(f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
+              f'Distance {round(tp.dist / 10**5, 3)} km'),
+        speed=f'{speed}')
 
 def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
@@ -176,16 +176,15 @@ def initialize_gpx(file_type=None):
 
     Returns:
         gpx: an object to append tp, see Gpx() class in mini_gpx.py.
-        append_target: gpx.append_rtept or gpx.append_trkpt.
+        gpx.append_rtept/gpx.append_trkpt: name it as gpx_target.
     """
     if file_type is None: file_type = FILE_TYPE
     if file_type == ROUTE:
         gpx = Gpx(is_track=False)
-        append_target = gpx.append_rtept
+        return gpx, gpx.append_rtept
     else: # file_type in {TRACK, TMP}
         gpx = Gpx()
-        append_target = gpx.append_trkpt
-    return gpx, append_target
+        return gpx, gpx.append_trkpt
 
 def add_gpx_summary(gpx, tp_store):
     """Add a short summary (time, distance, speed, etc.) to gpx route/track.
@@ -227,6 +226,7 @@ def add_gpx_summary(gpx, tp_store):
         author = str(USER_ID)
         time = dt_from_timestamp(
             START_TIME, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
+
     gpx.add_metadata(name=name, description=gpx_description, author=author, 
                      time=time)
     gpx.add_summary(name=name, comment=comment, description=description)
