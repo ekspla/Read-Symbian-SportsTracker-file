@@ -338,7 +338,7 @@ def main():
 
     with in_file.open(mode='rb') as f:
         version = check_file_type_version(f) # FILE_TYPE(int), NEW_FORMAT(bool).
-        nst.gpx = nst.initialize_gpx()
+        (gpx, nst.gpx_target) = nst.initialize_gpx()
 
         # Start address of the main part (mixed pause and trackpoint data).
         # We don't read the address from the file because it is useless.
@@ -350,11 +350,11 @@ def main():
         # Read the main part consisting a pause- and a trackpoint-data blocks.
         trackpt_store = read_pause_and_track(f, start_address)
 
-    nst.add_gpx_summary(nst.gpx, trackpt_store)
+    nst.add_gpx_summary(gpx, trackpt_store)
 
     write_file = getenv('GPX_WRITE_FILE') or WRITE_FILE
     gpx_path = in_file.with_suffix('.gpx') if write_file else None
-    nst.finalize_gpx(nst.gpx, gpx_path) # Gpx xml to a file or print (if None).
+    nst.finalize_gpx(gpx, gpx_path) # Gpx xml to a file or print (if None).
 
 
 if __name__ == '__main__':
