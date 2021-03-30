@@ -91,31 +91,25 @@ class Gpx(object):
         if name or description or author or time:
             self.metadata = mod_etree.Element('metadata', nsmap=NSMAP)
             if name:
-                name_ = mod_etree.SubElement(self.metadata, 'name')
-                name_.text = name
+                mod_etree.SubElement(self.metadata, 'name').text = name
             if description:
-                desc_ = mod_etree.SubElement(self.metadata, 'desc')
-                desc_.text = description
+                mod_etree.SubElement(self.metadata, 'desc').text = description
             if author:
                 author_ = mod_etree.SubElement(self.metadata, 'author')
-                author_name_ = mod_etree.SubElement(author_, 'name')
-                author_name_.text = author
+                mod_etree.SubElement(author_, 'name').text = author
             if time is not None:
-                time_ = mod_etree.SubElement(self.metadata, 'time')
-                time_.text = format_time(time)
+                mod_etree.SubElement(self.metadata, 
+                                     'time').text = format_time(time)
 
     def add_summary(self, name='', comment='', description=''):
         if name or comment or description:
             self.summary = mod_etree.Element('summary', nsmap=NSMAP)
             if name:
-                name_ = mod_etree.SubElement(self.summary, 'name')
-                name_.text = name
+                mod_etree.SubElement(self.summary, 'name').text = name
             if comment:
-                cmt_ = mod_etree.SubElement(self.summary, 'cmt')
-                cmt_.text = comment
+                mod_etree.SubElement(self.summary, 'cmt').text = comment
             if description:
-                desc_ = mod_etree.SubElement(self.summary, 'desc')
-                desc_.text = description
+                mod_etree.SubElement(self.summary, 'desc').text = description
 
     def append_trkpt(self, *, lat, lon, ele=None, time=None, name='', 
                        desc='', speed=None, hr=None):
@@ -123,30 +117,24 @@ class Gpx(object):
         trkpt = mod_etree.Element(
             'trkpt', { 'lat':make_str(lat), 'lon':make_str(lon) })
         if ele is not None:
-            trkpt_ele = mod_etree.SubElement(trkpt, 'ele')
-            trkpt_ele.text = make_str(ele)
+            mod_etree.SubElement(trkpt, 'ele').text = make_str(ele)
         if time is not None:
-            trkpt_time = mod_etree.SubElement(trkpt, 'time')
-            trkpt_time.text = format_time(time)
+            mod_etree.SubElement(trkpt, 'time').text = format_time(time)
         if name:
-            trkpt_name = mod_etree.SubElement(trkpt, 'name')
-            trkpt_name.text = name
+            mod_etree.SubElement(trkpt, 'name').text = name
         if desc:
-            trkpt_desc = mod_etree.SubElement(trkpt, 'desc')
-            trkpt_desc.text = desc
+            mod_etree.SubElement(trkpt, 'desc').text = desc
 
         if speed is not None or hr is not None:
             extensions = mod_etree.SubElement(trkpt, 'extensions')
             gpxtpx = mod_etree.SubElement(
                 extensions, '{' + f'{NS_GPXTPX}' +'}' + 'TrackPointExtension')
             if speed is not None:
-                speed_ = mod_etree.SubElement(
-                    gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed')
-                speed_.text = make_str(speed)
+                mod_etree.SubElement(gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed'
+                                     ).text = make_str(speed)
             if hr is not None:
-                hr_ = mod_etree.SubElement(
-                    gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr')
-                hr_.text = make_str(hr)
+                mod_etree.SubElement(gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr'
+                                     ).text = make_str(hr)
 
         if self.trkseg is not None:
             self.trkseg.append(trkpt)
@@ -154,37 +142,31 @@ class Gpx(object):
             self.make_trkseg()
             self.trkseg.append(trkpt)
 
-    def append_rtept(self, *, lat, lon, ele=None, time=None, name='', 
-                       desc='', speed=None, hr=None):
+    def append_rtept(self, *, lat, lon, ele=None, time=None, name='', desc='', 
+                       speed=None, hr=None):
 
         rtept = mod_etree.Element(
             'rtept', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
         if ele is not None:
-            rtept_ele = mod_etree.SubElement(rtept, 'ele')
-            rtept_ele.text = make_str(ele)
+            mod_etree.SubElement(rtept, 'ele').text = make_str(ele)
         if time is not None:
-            rtept_time = mod_etree.SubElement(rtept, 'time')
-            rtept_time.text = format_time(time)
+            mod_etree.SubElement(rtept, 'time').text = format_time(time)
         if name:
-            rtept_name = mod_etree.SubElement(rtept, 'name')
-            rtept_name.text = name
+            mod_etree.SubElement(rtept, 'name').text = name
         if desc:
-            rtept_desc = mod_etree.SubElement(rtept, 'desc')
-            rtept_desc.text = desc
+            mod_etree.SubElement(rtept, 'desc').text = desc
 
         if speed is not None or hr is not None:
             extensions = mod_etree.SubElement(rtept, 'extensions')
             gpxtpx = mod_etree.SubElement(
                 extensions, '{' + f'{NS_GPXTPX}' +'}' + 'TrackPointExtension')
             if speed is not None:
-                speed_ = mod_etree.SubElement(
-                    gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed')
-                speed_.text = make_str(speed)
+                mod_etree.SubElement(gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed'
+                                     ).text = make_str(speed)
             if hr is not None:
-                hr_ = mod_etree.SubElement(
-                    gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr')
-                hr_.text = make_str(hr)
+                mod_etree.SubElement(gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr'
+                                     ).text = make_str(hr)
 
         if self.rte is not None:
             self.rte.append(rtept)
