@@ -26,7 +26,7 @@ def make_str(s): # A function copied from https://github.com/tkrajina/gpxpy.
     """ Convert a str, unicode or float object into a str type. """
     if isinstance(s, float):
         result = str(s)
-        if not 'e' in result:
+        if 'e' not in result:
             return result
         # scientific notation is illegal in GPX 1/1
         return format(s, '.10f').rstrip('0.')
@@ -37,6 +37,8 @@ def format_time(datetime):
 
 
 class Gpx(object):
+    """GPX related stuff.
+    """
     def __init__(self, is_track=True):
         (self.root, self.trkseg, self.metadata, self.rte, self.summary) = (
             None, ) * 5
@@ -82,38 +84,38 @@ class Gpx(object):
                 rte.append(pt)
 
         return mod_etree.tostring(
-            self.root, encoding="UTF-8", pretty_print=True, 
+            self.root, encoding='UTF-8', pretty_print=True, 
             doctype='<?xml version="1.0" encoding="UTF-8"?>')
 
     def add_metadata(self, name='', description='', author='', time=None):
         if name or description or author or time:
             self.metadata = mod_etree.Element('metadata', nsmap=NSMAP)
             if name:
-                _name = mod_etree.SubElement(self.metadata, 'name')
-                _name.text = name
+                name_ = mod_etree.SubElement(self.metadata, 'name')
+                name_.text = name
             if description:
-                _desc = mod_etree.SubElement(self.metadata, 'desc')
-                _desc.text = description
+                desc_ = mod_etree.SubElement(self.metadata, 'desc')
+                desc_.text = description
             if author:
-                _author = mod_etree.SubElement(self.metadata, 'author')
-                _author_name = mod_etree.SubElement(_author, 'name')
-                _author_name.text = author
+                author_ = mod_etree.SubElement(self.metadata, 'author')
+                author_name_ = mod_etree.SubElement(author_, 'name')
+                author_name_.text = author
             if time is not None:
-                _name = mod_etree.SubElement(self.metadata, 'time')
-                _name.text = format_time(time)
+                time_ = mod_etree.SubElement(self.metadata, 'time')
+                time_.text = format_time(time)
 
     def add_summary(self, name='', comment='', description=''):
         if name or comment or description:
             self.summary = mod_etree.Element('summary', nsmap=NSMAP)
             if name:
-                _name = mod_etree.SubElement(self.summary, 'name')
-                _name.text = name
+                name_ = mod_etree.SubElement(self.summary, 'name')
+                name_.text = name
             if comment:
-                _cmt = mod_etree.SubElement(self.summary, 'cmt')
-                _cmt.text = comment
+                cmt_ = mod_etree.SubElement(self.summary, 'cmt')
+                cmt_.text = comment
             if description:
-                _desc = mod_etree.SubElement(self.summary, 'desc')
-                _desc.text = description
+                desc_ = mod_etree.SubElement(self.summary, 'desc')
+                desc_.text = description
 
     def append_trkpt(self, *, lat, lon, ele=None, time=None, name='', 
                        desc='', speed=None, hr=None):
@@ -138,13 +140,13 @@ class Gpx(object):
             gpxtpx = mod_etree.SubElement(
                 extensions, '{' + f'{NS_GPXTPX}' +'}' + 'TrackPointExtension')
             if speed is not None:
-                _speed = mod_etree.SubElement(
+                speed_ = mod_etree.SubElement(
                     gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed')
-                _speed.text = make_str(speed)
+                speed_.text = make_str(speed)
             if hr is not None:
-                _hr = mod_etree.SubElement(
+                hr_ = mod_etree.SubElement(
                     gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr')
-                _hr.text = make_str(hr)
+                hr_.text = make_str(hr)
 
         if self.trkseg is not None:
             self.trkseg.append(trkpt)
@@ -176,13 +178,13 @@ class Gpx(object):
             gpxtpx = mod_etree.SubElement(
                 extensions, '{' + f'{NS_GPXTPX}' +'}' + 'TrackPointExtension')
             if speed is not None:
-                _speed = mod_etree.SubElement(
+                speed_ = mod_etree.SubElement(
                     gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed')
-                _speed.text = make_str(speed)
+                speed_.text = make_str(speed)
             if hr is not None:
-                _hr = mod_etree.SubElement(
+                hr_ = mod_etree.SubElement(
                     gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr')
-                _hr.text = make_str(hr)
+                hr_.text = make_str(hr)
 
         if self.rte is not None:
             self.rte.append(rtept)

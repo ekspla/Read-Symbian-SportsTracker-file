@@ -37,7 +37,7 @@ from mini_gpx import Gpx
 # Initialize variables.
 (total_time, total_distance) = (0, ) * 2
 (comment, route_name, track_name, TZ_HOURS, START_LOCALTIME, activity_type, 
-    USER_ID, START_TIME, NEW_FORMAT, FILE_TYPE, gpx_target) = (None, ) * 11
+    USER_ID, START_TIME, NEW_FORMAT, FILE_TYPE) = (None, ) * 10
 
 # Constants.
 ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
@@ -148,7 +148,10 @@ def store_trackpt(tp, file_type=None):
         tp (a namedtuple of trackpt_store):
             (unix_time(s), t_time(s), y_degree, x_degree, z_ax(m), v(cm/s), 
              d_dist(cm), dist(cm), track_count(int), file_type(int: 2, 3 or 4))
-        target (optional): gpx_route or gpx_segment. Defaults to gpx_target.
+        file_type (optional): int. 2, 3 or 4.  Defaults to FILE_TYPE.
+
+    Requires:
+        gpx: an object to append tp, see Gpx() class in mini_gpx.py.
     """
     # Print delimited text.
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
@@ -156,7 +159,10 @@ def store_trackpt(tp, file_type=None):
     #      f'{tp.y_degree:.6f}\t{tp.x_degree:.6f}\t{tp.z_ax:.1f}\t'
     #      f'{tp.v / 100 * 3.6:.3f}')
     if file_type is None: file_type = FILE_TYPE
-    append_pt = gpx.append_trkpt if file_type in {TRACK, TMP} else gpx.append_rtept
+    if file_type in {TRACK, TMP}:
+        append_pt = gpx.append_trkpt
+    else:
+        append_pt = gpx.append_rtept
     speed = round(tp.v / 100, 3) # velocity in m/s
     append_pt(
         lat=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
@@ -221,7 +227,8 @@ def add_gpx_summary(gpx, tp_store):
         author = str(USER_ID)
         time = dt_from_timestamp(
             START_TIME, dt.timezone(dt.timedelta(hours=TZ_HOURS), ))
-    gpx.add_metadata(name=name, description=gpx_description, author=author, time=time)
+    gpx.add_metadata(name=name, description=gpx_description, author=author, 
+                     time=time)
     gpx.add_summary(name=name, comment=comment, description=description)
 
 
