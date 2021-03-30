@@ -37,7 +37,7 @@ from mini_gpx import Gpx
 # Initialize variables.
 (total_time, total_distance) = (0, ) * 2
 (comment, route_name, track_name, TZ_HOURS, START_LOCALTIME, activity_type, 
-    USER_ID, START_TIME, NEW_FORMAT, FILE_TYPE) = (None, ) * 10
+    USER_ID, START_TIME, NEW_FORMAT, FILE_TYPE, gpx_target) = (None, ) * 11
 
 # Constants.
 ACTIVITIES = ('Walking', 'Running', 'Cycling', 'Skiing', 'Other 1', 'Other 2', 
@@ -141,28 +141,22 @@ def dmm_to_decdeg(dddmm_mmmm):
     decimal_degree += mm_mmmm / 1e4 / 60
     return sign_dddmm_mmmm * decimal_degree
 
-def store_trackpt(tp, file_type=None):
+def store_trackpt(tp, append_pt=None):
     """Do whatever with the trackpt data: print, gpx, store in a database, etc.
 
     Args:
         tp (a namedtuple of trackpt_store):
             (unix_time(s), t_time(s), y_degree, x_degree, z_ax(m), v(cm/s), 
              d_dist(cm), dist(cm), track_count(int), file_type(int: 2, 3 or 4))
-        file_type (optional): int. 2, 3 or 4.  Defaults to FILE_TYPE.
-
-    Requires:
-        gpx: an object to append tp, see Gpx() class in mini_gpx.py.
+        append_pt (optional): gpx.append_trkpt or gpx.append_rtept.
+            Defaults to gpx_target.
     """
     # Print delimited text.
     #times = f'{format_timedelta(tp.t_time)}\t{format_datetime(tp.unix_time)}Z'
     #print(f'{times}\t{tp.d_dist / 10**5:.3f}\t{tp.dist / 10**5:.3f}\t'
     #      f'{tp.y_degree:.6f}\t{tp.x_degree:.6f}\t{tp.z_ax:.1f}\t'
     #      f'{tp.v / 100 * 3.6:.3f}')
-    if file_type is None: file_type = FILE_TYPE
-    if file_type in {TRACK, TMP}:
-        append_pt = gpx.append_trkpt
-    else:
-        append_pt = gpx.append_rtept
+    if append_pt is None: append_pt = gpx_target
     speed = round(tp.v / 100, 3) # velocity in m/s
     append_pt(
         lat=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
@@ -181,11 +175,17 @@ def initialize_gpx(file_type=None):
         file_type (optional): int. 2, 3 or 4.  Defaults to FILE_TYPE.
 
     Returns:
-        gpx
+        gpx: an object to append tp, see Gpx() class in mini_gpx.py.
+        append_target: gpx.append_rtept or gpx.append_trkpt.
     """
     if file_type is None: file_type = FILE_TYPE
-    gpx = Gpx(is_track=False) if file_type == ROUTE else Gpx()
-    return gpx
+    if file_type == ROUTE:
+        gpx = Gpx(is_track=False)
+        append_target = gpx.append_rtept
+    else: # file_type in {TRACK, TMP}
+        gpx = Gpx()
+        append_target = gpx.append_trkpt
+    return gpx, append_target
 
 def add_gpx_summary(gpx, tp_store):
     """Add a short summary (time, distance, speed, etc.) to gpx route/track.
