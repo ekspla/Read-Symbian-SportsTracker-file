@@ -161,7 +161,7 @@ def store_trackpt(tp, append_pt=None):
     append_pt(
         lat=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
         lon=round(tp.x_degree, 6), 
-        ele=round(tp.z_ax, 1), 
+        ele=round(tp.z_ax, 1), # Altitude (m).
         time=dt_from_timestamp(tp.unix_time, dt.timezone.utc), 
         name=str(tp.track_count + 1),
         desc=(f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
