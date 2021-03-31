@@ -33,8 +33,8 @@ The reference and test files (see below), that are not included in the package o
 [github](https://github.com/ekspla/Read-Symbian-SportsTracker-file).
 
 ## Detailed explanation
-This package consists of four \*.py files.  `nst.py` and `scsu.py` are pure library modules while `convert_nst_files_to_gpx.py` and 
-`convert_nst_rec_to_gpx.py` are scripts using the modules.
+This package consists of five \*.py files.  `nst.py`, `scsu.py` and `mini_gpx.py`are pure library modules while 
+`convert_nst_files_to_gpx.py` and `convert_nst_rec_to_gpx.py` are scripts using the modules.
 
 `convert_nst_files_to_gpx.py` works also for track/route files created by **the old Nokia Sports Tracker**, whose format is 
 a bit different from the new version released from [Sports Tracking Technologies Ltd](http://www.sports-tracker.com/).  
