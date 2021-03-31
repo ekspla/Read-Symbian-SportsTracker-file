@@ -67,17 +67,17 @@ class Gpx(object):
 
         if self.is_track:
             trk = mod_etree.SubElement(self.root, 'trk')
-            for t in list(self.summary):
-                trk.append(t)
+            for child in self.summary:
+                trk.append(child)
             if self.trkseg is None: self.make_trkseg() # For empty trkpts.
             trk.append(self.trkseg)
 
         else: # Route.  The other type, e.g. waypoints, is not supported.
             rte = mod_etree.SubElement(self.root, 'rte')
-            for t in list(self.summary):
-                rte.append(t)
-            for pt in list(self.rte):
-                rte.append(pt)
+            for child in self.summary:
+                rte.append(child)
+            for rtept in self.rte:
+                rte.append(rtept)
 
         return mod_etree.tostring(
             self.root, encoding='UTF-8', pretty_print=True, 
@@ -116,11 +116,8 @@ class Gpx(object):
         self.add_subelements(trkpt, ele=ele, time=time, name=name, desc=desc, 
                              speed=speed, hr=hr)
 
-        if self.trkseg is not None:
-            self.trkseg.append(trkpt)
-        else:
-            self.make_trkseg()
-            self.trkseg.append(trkpt)
+        if self.trkseg is None: self.make_trkseg()
+        self.trkseg.append(trkpt)
 
     def append_rtept(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
@@ -131,11 +128,8 @@ class Gpx(object):
         self.add_subelements(rtept, ele=ele, time=time, name=name, desc=desc, 
                              speed=speed, hr=hr)
 
-        if self.rte is not None:
-            self.rte.append(rtept)
-        else:
-            self.make_rte()
-            self.rte.append(rtept)
+        if self.rte is None: self.make_rte()
+        self.rte.append(rtept)
 
     def add_subelements(self, element, *, ele, time, name, desc, speed, hr):
 
