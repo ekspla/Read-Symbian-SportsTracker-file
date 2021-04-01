@@ -37,12 +37,13 @@ def format_time(datetime):
 
 
 class Gpx(object):
-    """GPX related stuff.
+    """GPX related stuff.  Topografix trkpt/rtept & Garmin gpxtpx are supported.
     """
     def __init__(self, is_track=True):
         (self.trkseg, self.metadata, self.rte, self.summary) = (None, ) * 4
         self.is_track = is_track
         self.make_root()
+        self.make_trkseg() if is_track else self.make_rte()
 
     def __del__(self):
         self.to_xml()
@@ -110,26 +111,20 @@ class Gpx(object):
     def append_trkpt(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
 
-        trkpt = mod_etree.Element(
-            'trkpt', { 'lat':make_str(lat), 'lon':make_str(lon) })
+        trkpt = mod_etree.SubElement(
+            self.trkseg, 'trkpt', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
         self.add_subelements(trkpt, ele=ele, time=time, name=name, desc=desc, 
                              speed=speed, hr=hr)
 
-        if self.trkseg is None: self.make_trkseg()
-        self.trkseg.append(trkpt)
-
     def append_rtept(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
 
-        rtept = mod_etree.Element(
-            'rtept', { 'lat':make_str(lat), 'lon':make_str(lon) })
+        rtept = mod_etree.SubElement(
+            self.rte, 'rtept', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
         self.add_subelements(rtept, ele=ele, time=time, name=name, desc=desc, 
                              speed=speed, hr=hr)
-
-        if self.rte is None: self.make_rte()
-        self.rte.append(rtept)
 
     def add_subelements(self, element, *, ele, time, name, desc, speed, hr):
 
