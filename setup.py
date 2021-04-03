@@ -5,7 +5,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='symbian_sports_tracker',
-    version='0.9.4',
+    version='0.9.5',
     install_requires=['lxml'],
     author='ekspla',
     description='Read-Symbian-SportsTracker-file',
@@ -21,7 +21,7 @@ setup(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
         'Operating System :: OS Independent',
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
     ],
     entry_points = {
         'console_scripts': [
