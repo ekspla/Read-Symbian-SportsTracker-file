@@ -6,7 +6,7 @@
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """Script to read the old- and the new-ver Symbian (Nokia) SportsTracker files.
 
-External modules, nst.py and scsu.py, are used to parse data in the files.
+Modules of nst.py, scsu.py and mini_gpx.py are used to parse data in the files.
 For temporal track files (Rec*.tmp), use convert_nst_rec_to_gpx.py.
 """
 from os import getenv
