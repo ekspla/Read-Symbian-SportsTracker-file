@@ -493,7 +493,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
               f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
 
     def read_trackpt():
-        """Read/process/time-adjust old-format trackpt, store in trackpt_store.
+        """Read/process/time-adjust trackpt, store in trackpt_store.
 
         Returns:
             1 (error) or 0 (success).
