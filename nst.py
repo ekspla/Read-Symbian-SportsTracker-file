@@ -408,7 +408,7 @@ def prepare_process_formats(new_format=None):
             # 19 bytes (1+2+2+2+2+2+2+4+2). 2-byte dv, 4-byte d_dist.
             0xDF:(process_trackpt_type80, TrackptTypeC0, '<B6hiH')}}
 
-    return switch, TrackptStore_
+    return switch[new_format], TrackptStore_
 
 def process_trackpt_type00(tp, tp_store, new_format=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
@@ -510,7 +510,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
             (header, ) = read_unpack(header_fmt, file_obj)
 
         try:
-            process_trackpt, Trackpt, fmt = switch_formats[NEW_FORMAT][header]
+            process_trackpt, Trackpt, fmt = switch_formats[header]
         except KeyError: # Other headers which I don't know.
             print_other_header_error(pointer, header)
             return 1
