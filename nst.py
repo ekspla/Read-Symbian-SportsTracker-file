@@ -90,7 +90,7 @@ def format_timedelta(t_delta):
     '1:02:03.000'
     """
     (int_td, frac_td) = divmod(round(t_delta, 3), 1)
-    return f'{dt.timedelta(seconds=int_td)}.' + f'{frac_td:.3f}'.split('.')[1]
+    return f'{dt.timedelta(seconds=int_td)}.' + f'{frac_td:.3f}'[-3:]
 
 def read_unpack(struct_fmt, file_object):
     """A helper function comprising file_object.read() and struct.unpack()."""
@@ -341,6 +341,7 @@ def prepare_namedtuples(new_format=None):
     if new_format is None: new_format = NEW_FORMAT
     type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
+    # Unknown1 & 2 show up in distant jumps.
     typec0 = 'dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist'
     if new_format: # The fields shown below are added in the new version format.
         type00 += ', symbian_time'
@@ -353,6 +354,61 @@ def prepare_namedtuples(new_format=None):
     TrackptStore_ = namedtuple('TrackptStore', type_store)
     TrackptStore_.__new__.__defaults__ = (None,) * len(TrackptStore_._fields)
     return TrackptType00_, TrackptType80_, TrackptTypeC0_, TrackptStore_
+
+def prepare_process_formats(new_format=None):
+    """Docstrings to be written.
+    """
+    if new_format is None: new_format = NEW_FORMAT
+    # Factory functions for creating named tuples.
+    TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore_ = (
+        prepare_namedtuples(new_format))
+
+    switch = { # Use double dict to change how to process trackpoints.
+        False:{ # Old format: new_format == False.
+            # Dict keys are headers.
+
+            # 22 bytes (4+4+4+4+2+4).  y(+/-): North/South; x(+/-): East/West.
+            0x00:(process_trackpt_type00, TrackptType00, '<I3iHI'),
+            0x02:(process_trackpt_type00, TrackptType00, '<I3iHI'),
+            0x03:(process_trackpt_type00, TrackptType00, '<I3iHI'),
+            # 10 bytes (1+2+2+2+1+2). 1-byte dv.
+            0x80:(process_trackpt_type80, TrackptType80, '<B3hbH'),
+            0x82:(process_trackpt_type80, TrackptType80, '<B3hbH'),
+            0x83:(process_trackpt_type80, TrackptType80, '<B3hbH'),
+            # 11 bytes (1+2+2+2+2+2). 2-byte dv.
+            0x92:(process_trackpt_type80, TrackptType80, '<B4hH'),
+            0x93:(process_trackpt_type80, TrackptType80, '<B4hH'),
+            # 13 bytes (1+2+2+2+2+4). 2-byte dv. 4-byte d_dist.
+            0x9A:(process_trackpt_type80, TrackptType80, '<B4hI'),
+            0x9B:(process_trackpt_type80, TrackptType80, '<B4hI'),
+            # 14 bytes (1+2+2+2+2+2+1+2). 1-byte dv.
+            0xC2:(process_trackpt_type80, TrackptTypeC0, '<B5hbH'),
+            0xC3:(process_trackpt_type80, TrackptTypeC0, '<B5hbH'),
+            # 15 bytes (1+2+2+2+2+2+2+2). 2-byte dv.
+            0xD2:(process_trackpt_type80, TrackptTypeC0, '<B6hH'),
+            0xD3:(process_trackpt_type80, TrackptTypeC0, '<B6hH'),
+            # 17 bytes (1+2+2+2+2+2+2+4). 2-byte dv. 4-byte d_dist.
+            0xDA:(process_trackpt_type80, TrackptTypeC0, '<B6hI'),
+            0xDB:(process_trackpt_type80, TrackptTypeC0, '<B6hI')},
+
+        True:{ # New format: new_format == True.
+
+            # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
+            0x07:(process_trackpt_type00, TrackptType00, '<I3iHIq'),
+            # 12 bytes (1+2+2+2+1+2+2). 1-byte dv.
+            0x87:(process_trackpt_type80, TrackptType80, '<B3hb2H'),
+            # 13 bytes (1+2+2+2+2+2+2). 2-byte dv.
+            0x97:(process_trackpt_type80, TrackptType80, '<B4h2H'),
+            # 15 bytes (1+2+2+2+2+4+2). 2-byte dv, 4-byte d_dist.
+            0x9F:(process_trackpt_type80, TrackptType80, '<B4hiH'),
+            # 16 bytes (1+2+2+2+2+2+1+2+2). 1-byte dv.
+            0xC7:(process_trackpt_type80, TrackptTypeC0, '<B5hb2H'),
+            # 17 bytes (1+2+2+2+2+2+2+2+2). 2-byte dv.
+            0xD7:(process_trackpt_type80, TrackptTypeC0, '<B6h2H'),
+            # 19 bytes (1+2+2+2+2+2+2+4+2). 2-byte dv, 4-byte d_dist.
+            0xDF:(process_trackpt_type80, TrackptTypeC0, '<B6hiH')}}
+
+    return switch, TrackptStore_
 
 def process_trackpt_type00(tp, tp_store, new_format=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
@@ -436,7 +492,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         print(f'{hdr:#x} Error in the track point header: {track_count}, '
               f'{num_trackpt}' '\n' f'At address: {ptr:#x}')
 
-    def read_old_fmt_trackpt():
+    def read_trackpt():
         """Read/process/time-adjust old-format trackpt, store in trackpt_store.
 
         Returns:
@@ -444,114 +500,18 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         """
         nonlocal trackpt_store
         pointer = file_obj.tell()
-        header_fmt = 'B' # 1-byte header.
-        (header, ) = read_unpack(header_fmt, file_obj)
 
-        if header in {0x00, 0x02, 0x03}:
-            process_trackpt = process_trackpt_type00
-            (Trackpt, fmt) = (TrackptType00, '<I3iHI')
-            # (t_time, y_ax, x_ax, z_ax, v, d_dist)
-            # 22 bytes (4+4+4+4+2+4).  y(+/-): North/South; x(+/-): East/West.
+        if NEW_FORMAT:
+            header_fmt = '2B' # 2-byte header.
+            (header, header1) = read_unpack(header_fmt, file_obj)
+            del header1 # We don't use header1.
+        else: # Not NEW_FORMAT
+            header_fmt = 'B' # 1-byte header.
+            (header, ) = read_unpack(header_fmt, file_obj)
 
-        elif header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B, 
-                        0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}:
-            process_trackpt = process_trackpt_type80
-
-            if header in {0x80, 0x82, 0x83, 0x92, 0x93, 0x9A, 0x9B}:
-                Trackpt = TrackptType80
-                # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist)
-
-                if header in {0x80, 0x82, 0x83}: # 1-byte dv.
-                    fmt = '<B3hbH' # 10 bytes (1+2+2+2+1+2).
-                elif header in {0x92, 0x93}: # 2-byte dv.
-                    fmt = '<B4hH' # 11 bytes (1+2+2+2+2+2).
-                else: # 0x9A, 0x9B; 2-byte dv. 4-byte d_dist.
-                    fmt = '<B4hI' # 13 bytes (1+2+2+2+2+4).
-
-            else: # Header in {0xC2, 0xC3, 0xD2, 0xD3, 0xDA, 0xDB}: Rare cases.
-                Trackpt = TrackptTypeC0
-                # (dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist)
-                # Unknown1 & 2 show up in distant jumps.
-
-                if header in {0xC2, 0xC3}: # 1-byte dv.
-                    fmt = '<B5hbH' # 14 bytes (1+2+2+2+2+2+1+2).
-                elif header in {0xD2, 0xD3}: # 2-byte dv.
-                    fmt = '<B6hH' # 15 bytes (1+2+2+2+2+2+2+2).
-                else: # 0xDA, 0xDB; 2-byte dv. 4-byte d_dist.
-                    fmt = '<B6hI' # 17 bytes (1+2+2+2+2+2+2+4).
-
-        else: # Other headers which I don't know.
-            print_other_header_error(pointer, header)
-            return 1
-
-        trackpt = Trackpt._make(read_unpack(fmt, file_obj)) # Read and wrap.
-
-        unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, dist = (
-            process_trackpt(trackpt, trackpt_store)) # Using tp & the previous.
-        if DEBUG_READ_TRACK: print_raw(t_time, unix_time, header, trackpt)
-
-        if pause_list: # Adjust unix_time by using pause_list.
-            t4_time, pause_time, resume_time = pause_list[0]
-
-            if t_time + 0.5 >= t4_time: # After a pause, use the pause data.
-                del pause_list[0]
-                if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
-                resume_time -= TZ_HOURS * 3600 # Convert from localtime to UTC.
-
-                if unix_time < resume_time:
-                    # There might be few second of error, which I don't care.
-                    unix_time = (t_time - t4_time) + resume_time
-
-        trackpt_store = TrackptStore(
-            unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
-            x_degree=x_degree, z_ax=z_ax, v=v, d_dist=d_dist, 
-            dist=dist, track_count=track_count, file_type=FILE_TYPE)
-
-        return 0
-
-    def read_new_fmt_trackpt():
-        """Read/process/time-adjust new-format trackpt, store in trackpt_store.
-
-        Returns:
-            1 (error) or 0 (success).
-        """
-        nonlocal trackpt_store
-        pointer = file_obj.tell()
-        header_fmt = '2B' # 2-byte header.
-        (header, header1) = read_unpack(header_fmt, file_obj)
-        del header1 # We don't use header1.
-
-        if header == 0x07: # Typically, 0783 or 0782.
-            process_trackpt = process_trackpt_type00
-            (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
-            # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
-            # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
-
-        elif header in {0x87, 0x97, 0x9F, 0xC7, 0xD7, 0xDF}:
-            process_trackpt = process_trackpt_type80
-
-            if header in {0x87, 0x97, 0x9F}: # Typically 8783, 8782, 9783, 9782.
-                Trackpt = TrackptType80
-                # (dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist, dunix_time)
-                if header == 0x87: # 1-byte dv.
-                    fmt = '<B3hb2H' # 12 bytes (1+2+2+2+1+2+2).
-                elif header == 0x97: # 2-byte dv.
-                    fmt = '<B4h2H' # 13 bytes (1+2+2+2+2+2+2).
-                else: # header == 0x9F # 2-byte dv, 4-byte d_dist.
-                    fmt = '<B4hiH' # 15 bytes (1+2+2+2+2+4+2).
-
-            else: # {0xC7, 0xD7, 0xDF}. C783, C782, D783, D782: Rare cases.
-                Trackpt = TrackptTypeC0
-                # (dt_time, unknown1, dy_ax, dx_ax, unknown2, dz_ax, dv, d_dist,
-                # dunix_time); Unknown1 & 2 show up in distant jumps.
-                if header == 0xC7: # 1-byte dv.
-                    fmt = '<B5hb2H' # 16 bytes (1+2+2+2+2+2+1+2+2).
-                elif header == 0xD7: # 2-byte dv.
-                    fmt = '<B6h2H' # 17 bytes (1+2+2+2+2+2+2+2+2).
-                else: # 0xDF # 2-byte dv, 4-byte d_dist.
-                    fmt = '<B6hiH' # 19 bytes (1+2+2+2+2+2+2+4+2).
-
-        else: # Other headers which I don't know.
+        try:
+            process_trackpt, Trackpt, fmt = switch_formats[NEW_FORMAT][header]
+        except KeyError: # Other headers which I don't know.
             print_other_header_error(pointer, header)
             return 1
 
@@ -568,9 +528,18 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
                 del pause_list[0]
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
 
-                if header != 0x07 and unix_time < resume_time: # No symbiantime.
-                    # There might be few second of error, which I don't care.
-                    unix_time = (t_time - t4_time) + resume_time
+                if NEW_FORMAT:
+                    if (header != 0x07  # No symbiantime.
+                        and unix_time < resume_time):
+                        # There might be few second of error which I don't care.
+                        unix_time = (t_time - t4_time) + resume_time
+
+                else: # not NEW_FORMAT
+                    resume_time -= TZ_HOURS * 3600 # From localtime to UTC.
+
+                    if unix_time < resume_time:
+                        # There might be few second of error which I don't care.
+                        unix_time = (t_time - t4_time) + resume_time
 
         trackpt_store = TrackptStore(
             unix_time=unix_time, t_time=t_time, y_degree=y_degree, 
@@ -586,9 +555,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         print(f'Number of track/route pts: {num_trackpt}')
         print(f'Track address: {hex(file_obj.tell())}')
 
-    # Factory functions for creating named tuples.
-    TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
-        prepare_namedtuples())
+    # A swicth to change formats and a factory function of namedtuple.
+    switch_formats, TrackptStore = prepare_process_formats()
 
     # For ROUTE, use mtime as starttime because no start/stop times are given.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
@@ -598,7 +566,6 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
 
     # This is the main loop.
     track_count = 0
-    read_trackpt = read_new_fmt_trackpt if NEW_FORMAT else read_old_fmt_trackpt
     while track_count < num_trackpt:
 
         exit_code = read_trackpt() # In trackpt_store, after processing.
