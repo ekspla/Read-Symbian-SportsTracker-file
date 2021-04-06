@@ -223,6 +223,11 @@ def read_pause_and_track(f, start_address):
     (pause_label, track_label) = (b'\x01\x00\x00\x00', b'\x02\x00\x00\x00')
     del pause_label # Not in use.
 
+    process_trackpt = nst.process_trackpt_type00
+    (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
+    # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
+    # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
+
     # The main loop to read the trackpoints.
     track_count = 0
     while True: # We don't know how many trackpoints exist in the temporal file.
@@ -251,10 +256,6 @@ def read_pause_and_track(f, start_address):
             #break
 
         # if header == 0x07 and header1 in {0x83, 0x82}:
-        process_trackpt = nst.process_trackpt_type00
-        (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
-        # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
-        # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
         num_bytes = struct.calcsize(fmt)
         track_data = f.read(num_bytes)
         if len(track_data) < num_bytes: # Check end of file.
