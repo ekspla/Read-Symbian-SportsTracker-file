@@ -327,7 +327,7 @@ def print_pause_list(pause_list, new_format=None):
               f'{format_datetime(unix_time)}')
     print()
 
-def prepare_data_structures_and_formats(new_format=None):
+def define_data_structures_and_formats(new_format=None):
     """Defines struct formats, namedtuples to wrap data fields, and processors.
 
     Args:
@@ -340,7 +340,6 @@ def prepare_data_structures_and_formats(new_format=None):
         TrackptStore: a factory function of namedtuple to wrap processed trkpt.
     """
     if new_format is None: new_format = NEW_FORMAT
-
     # Factory functions of namedtuples used in reading/processing trackpoints.
     # TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
     # TrackptStore: used to wrap a trackpoint after processing.
@@ -385,7 +384,6 @@ def prepare_data_structures_and_formats(new_format=None):
             # 17 bytes (1+2+2+2+2+2+2+4). 2-byte dv. 4-byte d_dist.
             0xDA:(process_trackpt_type80, TrackptTypeC0, '<B6hI'),
             0xDB:(process_trackpt_type80, TrackptTypeC0, '<B6hI')}
-
     else: # New format.
         switch = {
             # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
@@ -504,7 +502,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
             header_fmt = 'B' # 1-byte header.
             (header, ) = read_unpack(header_fmt, file_obj)
 
-        try:
+        try: # Uses the header as a dict key to change the way to process trkpt.
             process_trackpt, Trackpt, fmt = switch_formats[header]
         except KeyError: # Other headers which I don't know.
             print_other_header_error(pointer, header)
@@ -550,8 +548,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         print(f'Number of track/route pts: {num_trackpt}')
         print(f'Track address: {hex(file_obj.tell())}')
 
-    # A swicth to change formats and a factory function of namedtuple.
-    switch_formats, TrackptStore = prepare_data_structures_and_formats()
+    # Obtains a switch to change formats and a factory function of namedtuple.
+    switch_formats, TrackptStore = define_data_structures_and_formats()
 
     # For ROUTE, use mtime as starttime because no start/stop times are given.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 
