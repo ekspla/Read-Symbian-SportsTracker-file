@@ -205,17 +205,6 @@ def read_pause_and_track(f, start_address):
     # Number of track points.
     num_trackpt = None # The number in the Rec*.tmp file is useless.
 
-    # Factory functions for creating named tuples.
-    TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore = (
-        nst.prepare_namedtuples())
-    del TrackptType80, TrackptTypeC0 # Not in use.
-
-    # A temporal storage for the processed trackpt.
-    trackpt_store = TrackptStore(unix_time=nst.START_TIME, t_time=0, dist=0)
-
-    # For removing spikes.
-    suspect_pause = None # A flag to handle the trackpoints after a pause.
-
     # Trackpoint and pause data are labeled differently.  Each trackpoint 
     # following this label is always starting with 0x07 header, which means 
     # data with symbian_time. Read the trackpoint data exclusively because we 
@@ -223,10 +212,17 @@ def read_pause_and_track(f, start_address):
     (pause_label, track_label) = (b'\x01\x00\x00\x00', b'\x02\x00\x00\x00')
     del pause_label # Not in use.
 
-    process_trackpt = nst.process_trackpt_type00
-    (Trackpt, fmt) = (TrackptType00, '<I3iHIq')
+    switch_formats, TrackptStore = nst.define_data_structures_and_formats()
+    header = 0x07 # Fixed trkpt headers in FILE_TYPE == TMP.
+    process_trackpt, Trackpt, fmt = switch_formats[header]
     # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
     # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
+
+    # A temporal storage for the processed trackpt.
+    trackpt_store = TrackptStore(unix_time=nst.START_TIME, t_time=0, dist=0)
+
+    # For removing spikes.
+    suspect_pause = None # A flag to handle the trackpoints after a pause.
 
     # The main loop to read the trackpoints.
     track_count = 0
