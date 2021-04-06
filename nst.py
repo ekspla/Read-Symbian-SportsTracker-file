@@ -327,18 +327,23 @@ def print_pause_list(pause_list, new_format=None):
               f'{format_datetime(unix_time)}')
     print()
 
-def prepare_namedtuples(new_format=None):
-    """Factory functions of namedtuples used in reading/processing trackpoints.
+def prepare_data_structures_and_formats(new_format=None):
+    """Defines struct formats, namedtuples to wrap data fields, and processors.
 
     Args:
         new_format (optional, bool):  True/False = new/old format trackpoint.
             Defaults to module-level NEW_FORMAT.
 
     Returns:
-        TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
-        TrackptStore: used to wrap a trackpoint after processing.
+        switch: a dict to change how to process using trackpt header as a key.
+            Values are tuples of (process_trackpt, Trackpt, struct format).
+        TrackptStore: a factory function of namedtuple to wrap processed trkpt.
     """
     if new_format is None: new_format = NEW_FORMAT
+
+    # Factory functions of namedtuples used in reading/processing trackpoints.
+    # TrackptType00, TrackptType80, TrackptTypeC0: used to wrap after reading.
+    # TrackptStore: used to wrap a trackpoint after processing.
     type00 = 't_time, y_ax, x_ax, z_ax, v, d_dist'
     type80 = 'dt_time, dy_ax, dx_ax, dz_ax, dv, d_dist'
     # Unknown1 & 2 show up in distant jumps.
@@ -348,25 +353,15 @@ def prepare_namedtuples(new_format=None):
         type80, typec0 = (t + ', dunix_time' for t in (type80, typec0))
     type_store = ('unix_time, t_time, y_degree, x_degree, z_ax, v, d_dist, '
                   'dist, track_count, file_type')
-    TrackptType00_ = namedtuple('TrackptType00', type00)
-    TrackptType80_ = namedtuple('TrackptType80', type80)
-    TrackptTypeC0_ = namedtuple('TrackptTypeC0', typec0)
+    TrackptType00 = namedtuple('TrackptType00', type00)
+    TrackptType80 = namedtuple('TrackptType80', type80)
+    TrackptTypeC0 = namedtuple('TrackptTypeC0', typec0)
     TrackptStore_ = namedtuple('TrackptStore', type_store)
     TrackptStore_.__new__.__defaults__ = (None,) * len(TrackptStore_._fields)
-    return TrackptType00_, TrackptType80_, TrackptTypeC0_, TrackptStore_
 
-def prepare_process_formats(new_format=None):
-    """Docstrings to be written.
-    """
-    if new_format is None: new_format = NEW_FORMAT
-    # Factory functions for creating named tuples.
-    TrackptType00, TrackptType80, TrackptTypeC0, TrackptStore_ = (
-        prepare_namedtuples(new_format))
-
-    switch = { # Use double dict to change how to process trackpoints.
-        False:{ # Old format: new_format == False.
-            # Dict keys are headers.
-
+    # Defines dicts to change how to process trackpoints.  Keys are headers.
+    if not new_format: # Old format.
+        switch = { 
             # 22 bytes (4+4+4+4+2+4).  y(+/-): North/South; x(+/-): East/West.
             0x00:(process_trackpt_type00, TrackptType00, '<I3iHI'),
             0x02:(process_trackpt_type00, TrackptType00, '<I3iHI'),
@@ -389,10 +384,10 @@ def prepare_process_formats(new_format=None):
             0xD3:(process_trackpt_type80, TrackptTypeC0, '<B6hH'),
             # 17 bytes (1+2+2+2+2+2+2+4). 2-byte dv. 4-byte d_dist.
             0xDA:(process_trackpt_type80, TrackptTypeC0, '<B6hI'),
-            0xDB:(process_trackpt_type80, TrackptTypeC0, '<B6hI')},
+            0xDB:(process_trackpt_type80, TrackptTypeC0, '<B6hI')}
 
-        True:{ # New format: new_format == True.
-
+    else: # New format.
+        switch = {
             # 30 bytes (4+4+4+4+2+4+8).  y(+/-): North/South; x(+/-): East/West.
             0x07:(process_trackpt_type00, TrackptType00, '<I3iHIq'),
             # 12 bytes (1+2+2+2+1+2+2). 1-byte dv.
@@ -406,9 +401,9 @@ def prepare_process_formats(new_format=None):
             # 17 bytes (1+2+2+2+2+2+2+2+2). 2-byte dv.
             0xD7:(process_trackpt_type80, TrackptTypeC0, '<B6h2H'),
             # 19 bytes (1+2+2+2+2+2+2+4+2). 2-byte dv, 4-byte d_dist.
-            0xDF:(process_trackpt_type80, TrackptTypeC0, '<B6hiH')}}
+            0xDF:(process_trackpt_type80, TrackptTypeC0, '<B6hiH')}
 
-    return switch[new_format], TrackptStore_
+    return switch, TrackptStore_
 
 def process_trackpt_type00(tp, tp_store, new_format=None):
     """Process a trackpoint (tp) of the type with the previous one (tp_store).
@@ -504,8 +499,8 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         if NEW_FORMAT:
             header_fmt = '2B' # 2-byte header.
             (header, header1) = read_unpack(header_fmt, file_obj)
-            del header1 # We don't use header1.
-        else: # Not NEW_FORMAT
+            del header1 # We don't use header1s, which are 0x83 or 0x82.
+        else: # The old format.
             header_fmt = 'B' # 1-byte header.
             (header, ) = read_unpack(header_fmt, file_obj)
 
@@ -529,12 +524,12 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
                 if DEBUG_READ_TRACK: print(f'Pause time: {pause_time}')
 
                 if NEW_FORMAT:
-                    if (header != 0x07  # No symbiantime.
+                    if (header != 0x07 # No symbiantimes with these headers.
                         and unix_time < resume_time):
                         # There might be few second of error which I don't care.
                         unix_time = (t_time - t4_time) + resume_time
 
-                else: # not NEW_FORMAT
+                else: # Always no symbiantimes in the old format.
                     resume_time -= TZ_HOURS * 3600 # From localtime to UTC.
 
                     if unix_time < resume_time:
@@ -556,7 +551,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         print(f'Track address: {hex(file_obj.tell())}')
 
     # A swicth to change formats and a factory function of namedtuple.
-    switch_formats, TrackptStore = prepare_process_formats()
+    switch_formats, TrackptStore = prepare_data_structures_and_formats()
 
     # For ROUTE, use mtime as starttime because no start/stop times are given.
     starttime = (Path(file_obj.name).stat().st_mtime if FILE_TYPE == ROUTE 

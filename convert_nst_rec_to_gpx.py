@@ -212,7 +212,7 @@ def read_pause_and_track(f, start_address):
     (pause_label, track_label) = (b'\x01\x00\x00\x00', b'\x02\x00\x00\x00')
     del pause_label # Not in use.
 
-    switch_formats, TrackptStore = nst.prepare_process_formats()
+    switch_formats, TrackptStore = nst.prepare_data_structures_and_formats()
     header = 0x07 # Fixed trkpt headers in FILE_TYPE == TMP.
     process_trackpt, Trackpt, fmt = switch_formats[header]
     # (t_time, y_ax, x_ax, z_ax, v, d_dist, symbian_time)
