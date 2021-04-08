@@ -144,7 +144,8 @@ class Gpx(object):
         else:
             _pretty_print(self.root)
             return mod_etree.tostring(
-                self.root, encoding='UTF-8', xml_declaration=True)
+                #self.root, encoding='UTF-8', xml_declaration=True)
+                self.root, encoding='UTF-8') # xml_declaration: Python 3.8+.
 
     def add_metadata(self, name='', description='', author='', time=None):
         """Adds a few field in metadata as a short reference of the track/route.
