@@ -5,6 +5,8 @@
 # This code is written by ekspla and distributed at the following site under 
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """A minimal module for writing gpx of Symbian (Nokia) SportsTracker file.
+
+   Use of lxml is recommended, though a fallback to ElementTree is implemented.
 """
 import sys
 try:
@@ -55,6 +57,10 @@ def format_time(datetime):
     return datetime.isoformat().replace('+00:00', 'Z')
 
 def _pretty_print(current, parent=None, index=-1, depth=0):
+    """Pretty-print function for ElementTree, copied from StackOverflow.
+
+       https://stackoverflow.com/questions/28813876/
+    """
     for i, node in enumerate(current):
         _pretty_print(node, current, i, depth + 1)
     if parent is not None:
@@ -67,46 +73,50 @@ def _pretty_print(current, parent=None, index=-1, depth=0):
 
 class Gpx(object):
     """GPX related stuff.  Topografix trkpt/rtept & Garmin gpxtpx are supported.
-    
+
        A complex gpx consisting of multiple trkseg/rte is not supported.
     """
     def __init__(self, is_track=True):
         (self.trkseg, self.metadata, self.rte, self.summary) = (None, ) * 4
         self.is_track = is_track
         self.make_root()
-        self.make_trkseg() if is_track else self.make_rte()
+        if is_track:
+            self.make_trkseg()
+        else:
+            self.make_rte()
 
     def __del__(self):
         self.to_xml()
 
     def make_root(self):
-        """Supported version of GPX is 1.1.
-        """
+        """Supported version of GPX is 1.1."""
         if USE_LXML:
             self.root = mod_etree.Element('gpx', nsmap=NSMAP)
         else:
-            self.root = mod_etree.Element('{' + NS_GPX + '}' + 'gpx')
-        self.root.set('{' + NS_XSI + '}schemaLocation', SCHEMALOCATION)
+            self.root = mod_etree.Element('{' f'{NS_GPX}' '}' 'gpx')
+        self.root.set('{' f'{NS_XSI}' '}' 'schemaLocation', SCHEMALOCATION)
         self.root.set('version', '1.1')
         self.root.set(
             'creator', 'mini_gpx.py -- '
             'https://github.com/ekspla/Read-Symbian-SportsTracker-file')
 
     def make_trkseg(self):
+        """Makes a trkseg to append trkpt."""
         if USE_LXML:
             self.trkseg = mod_etree.Element('trkseg', nsmap=NSMAP)
         else:
-            self.trkseg = mod_etree.Element('{' + NS_GPX + '}' + 'trkseg')
+            self.trkseg = mod_etree.Element('{' f'{NS_GPX}' '}' 'trkseg')
 
     def make_rte(self):
+        """Makes a rte to append rtept."""
         if USE_LXML:
             self.rte = mod_etree.Element('rte', nsmap=NSMAP)
         else:
-            self.rte = mod_etree.Element('{' + NS_GPX + '}' + 'rte')
+            self.rte = mod_etree.Element('{' f'{NS_GPX}' '}' 'rte')
 
     def to_xml(self):
         """Serialize the root after appending trkseg, rte, metadata, etc.
-        
+
         Returns:
             utf-8 bytes (gpx xml).
         """
@@ -133,10 +143,11 @@ class Gpx(object):
                 doctype='<?xml version="1.0" encoding="UTF-8"?>')
         else:
             _pretty_print(self.root)
-            return mod_etree.tostring(self.root, encoding='UTF-8', xml_declaration=True)
+            return mod_etree.tostring(
+                self.root, encoding='UTF-8', xml_declaration=True)
 
     def add_metadata(self, name='', description='', author='', time=None):
-        """Adds a few field in metadata as a short reference of the track/route. 
+        """Adds a few field in metadata as a short reference of the track/route.
         """
         if name or description or author or time:
             self.metadata = mod_etree.Element('metadata')
@@ -148,8 +159,8 @@ class Gpx(object):
                 author_ = mod_etree.SubElement(self.metadata, 'author')
                 mod_etree.SubElement(author_, 'name').text = author
             if time is not None:
-                mod_etree.SubElement(self.metadata, 
-                                     'time').text = format_time(time)
+                mod_etree.SubElement(
+                    self.metadata, 'time').text = format_time(time)
 
     def add_summary(self, name='', comment='', description=''):
         """Adds track/route name in name , comment in cmt and a summary in desc.
@@ -165,23 +176,21 @@ class Gpx(object):
 
     def append_trkpt(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
-        """Appends trkpt to trkseg.
-        """
+        """Appends trkpt to trkseg."""
         trkpt = mod_etree.SubElement(
             self.trkseg, 'trkpt', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
-        self.add_subelements(trkpt, ele=ele, time=time, name=name, desc=desc, 
-                             speed=speed, hr=hr)
+        self.add_subelements(
+            trkpt, ele=ele, time=time, name=name, desc=desc, speed=speed, hr=hr)
 
     def append_rtept(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
-        """Appends rtept to rte.
-        """
+        """Appends rtept to rte."""
         rtept = mod_etree.SubElement(
             self.rte, 'rtept', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
-        self.add_subelements(rtept, ele=ele, time=time, name=name, desc=desc, 
-                             speed=speed, hr=hr)
+        self.add_subelements(
+            rtept, ele=ele, time=time, name=name, desc=desc, speed=speed, hr=hr)
 
     def add_subelements(self, element, *, ele, time, name, desc, speed, hr):
         """Adds ele, time, name, desc and gpxtpx as subelements of trkpt/rtept.
@@ -193,15 +202,15 @@ class Gpx(object):
         if name:
             mod_etree.SubElement(element, 'name').text = name
         if desc:
-            mod_etree.SubElement(element, 'desc').text = desc    
+            mod_etree.SubElement(element, 'desc').text = desc
         if speed is not None or hr is not None:
             extensions = mod_etree.SubElement(element, 'extensions')
             gpxtpx = mod_etree.SubElement(
-                extensions, '{' + f'{NS_GPXTPX}' +'}' + 'TrackPointExtension')
+                extensions, '{' f'{NS_GPXTPX}' '}' 'TrackPointExtension')
             if speed is not None:
-                mod_etree.SubElement(gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'speed'
+                mod_etree.SubElement(gpxtpx, '{' f'{NS_GPXTPX}' '}' 'speed'
                                      ).text = make_str(speed)
             if hr is not None:
-                mod_etree.SubElement(gpxtpx, '{' + f'{NS_GPXTPX}' +'}' + 'hr'
+                mod_etree.SubElement(gpxtpx, '{' f'{NS_GPXTPX}' '}' 'hr'
                                      ).text = make_str(hr)
 
