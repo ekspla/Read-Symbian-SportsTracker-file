@@ -6,7 +6,21 @@
 # LGPL v2.1 license.  https://github.com/ekspla/Read-Symbian-SportsTracker-file
 """A minimal module for writing gpx of Symbian (Nokia) SportsTracker file.
 """
-import lxml.etree as mod_etree
+import sys
+try:
+    import lxml.etree as mod_etree
+    USE_LXML = True
+except ImportError:
+    USE_LXML = False
+    try:
+        import xml.etree.cElementTree as mod_etree
+    except ImportError:
+        try:
+            import xml.etree.ElementTree as mod_etree
+        except ImportError:
+            print('Failed to import ElementTree')
+            sys.exit(1)
+
 
 NS_GPX = 'http://www.topografix.com/GPX/1/1'
 NS_GPXTPX = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
@@ -19,8 +33,13 @@ SCHEMALOCATION = (
     'http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd' ' '
     'http://www.garmin.com/xmlschemas/TrackPointExtension/v2' ' '
     'http://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd')
-NSMAP = {None:NS_GPX, 'gpxtpx':NS_GPXTPX, 'gpxx':NS_GPXX, 'xsi':NS_XSI}
-
+if USE_LXML:
+    NSMAP = {None:NS_GPX, 'gpxtpx':NS_GPXTPX, 'gpxx':NS_GPXX, 'xsi':NS_XSI}
+else:
+    mod_etree.register_namespace('', NS_GPX)
+    mod_etree.register_namespace('gpxtpx', NS_GPXTPX)
+    mod_etree.register_namespace('gpxx', NS_GPXX)
+    mod_etree.register_namespace('xsi', NS_XSI)
 
 def make_str(s): # A function copied from https://github.com/tkrajina/gpxpy.
     """ Convert a str, unicode or float object into a str type. """
@@ -35,6 +54,16 @@ def make_str(s): # A function copied from https://github.com/tkrajina/gpxpy.
 def format_time(datetime):
     return datetime.isoformat().replace('+00:00', 'Z')
 
+def _pretty_print(current, parent=None, index=-1, depth=0):
+    for i, node in enumerate(current):
+        _pretty_print(node, current, i, depth + 1)
+    if parent is not None:
+        if index == 0:
+            parent.text = '\n' + ('  ' * depth)
+        else:
+            parent[index - 1].tail = '\n' + ('  ' * depth)
+        if index == len(parent) - 1:
+            current.tail = '\n' + ('  ' * (depth - 1))
 
 class Gpx(object):
     """GPX related stuff.  Topografix trkpt/rtept & Garmin gpxtpx are supported.
@@ -53,7 +82,10 @@ class Gpx(object):
     def make_root(self):
         """Supported version of GPX is 1.1.
         """
-        self.root = mod_etree.Element('gpx', nsmap=NSMAP)
+        if USE_LXML:
+            self.root = mod_etree.Element('gpx', nsmap=NSMAP)
+        else:
+            self.root = mod_etree.Element('{' + NS_GPX + '}' + 'gpx')
         self.root.set('{' + NS_XSI + '}schemaLocation', SCHEMALOCATION)
         self.root.set('version', '1.1')
         self.root.set(
@@ -61,10 +93,16 @@ class Gpx(object):
             'https://github.com/ekspla/Read-Symbian-SportsTracker-file')
 
     def make_trkseg(self):
-        self.trkseg = mod_etree.Element('trkseg', nsmap=NSMAP)
+        if USE_LXML:
+            self.trkseg = mod_etree.Element('trkseg', nsmap=NSMAP)
+        else:
+            self.trkseg = mod_etree.Element('{' + NS_GPX + '}' + 'trkseg')
 
     def make_rte(self):
-        self.rte = mod_etree.Element('rte', nsmap=NSMAP)
+        if USE_LXML:
+            self.rte = mod_etree.Element('rte', nsmap=NSMAP)
+        else:
+            self.rte = mod_etree.Element('{' + NS_GPX + '}' + 'rte')
 
     def to_xml(self):
         """Serialize the root after appending trkseg, rte, metadata, etc.
@@ -89,15 +127,19 @@ class Gpx(object):
             for rtept in self.rte:
                 rte.append(rtept)
 
-        return mod_etree.tostring(
-            self.root, encoding='UTF-8', pretty_print=True, 
-            doctype='<?xml version="1.0" encoding="UTF-8"?>')
+        if USE_LXML:
+            return mod_etree.tostring(
+                self.root, encoding='UTF-8', pretty_print=True, 
+                doctype='<?xml version="1.0" encoding="UTF-8"?>')
+        else:
+            _pretty_print(self.root)
+            return mod_etree.tostring(self.root, encoding='UTF-8', xml_declaration=True)
 
     def add_metadata(self, name='', description='', author='', time=None):
         """Adds a few field in metadata as a short reference of the track/route. 
         """
         if name or description or author or time:
-            self.metadata = mod_etree.Element('metadata', nsmap=NSMAP)
+            self.metadata = mod_etree.Element('metadata')
             if name:
                 mod_etree.SubElement(self.metadata, 'name').text = name
             if description:
@@ -113,7 +155,7 @@ class Gpx(object):
         """Adds track/route name in name , comment in cmt and a summary in desc.
         """
         if name or comment or description:
-            self.summary = mod_etree.Element('summary', nsmap=NSMAP)
+            self.summary = mod_etree.Element('summary')
             if name:
                 mod_etree.SubElement(self.summary, 'name').text = name
             if comment:
