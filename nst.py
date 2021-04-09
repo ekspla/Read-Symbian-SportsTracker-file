@@ -360,7 +360,7 @@ def define_data_structures_and_formats(new_format=None):
 
     # Defines dicts to change how to process trackpoints.  Keys are headers.
     if not new_format: # Old format.
-        switch = { 
+        switch = {
             # 22 bytes (4+4+4+4+2+4).  y(+/-): North/South; x(+/-): East/West.
             0x00:(process_trackpt_type00, TrackptType00, '<I3iHI'),
             0x02:(process_trackpt_type00, TrackptType00, '<I3iHI'),
