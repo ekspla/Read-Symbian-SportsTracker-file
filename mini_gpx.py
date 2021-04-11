@@ -44,14 +44,14 @@ else:
     mod_etree.register_namespace('gpxx', NS_GPXX)
     mod_etree.register_namespace('xsi', NS_XSI)
 
-def make_str(s): # A function copied from https://github.com/tkrajina/gpxpy.
-    """ Convert a str, unicode or float object into a str type. """
+def make_str(s): # A modified function of https://github.com/tkrajina/gpxpy.
     if isinstance(s, float):
         result = str(s)
         if 'e' not in result:
             return result
         # scientific notation is illegal in GPX 1/1
-        return format(s, '.10f').rstrip('0.')
+        result = format(s, '.10f').rstrip('0')
+        return result + '0' if result.endswith('.', -1) else result
     return str(s)
 
 def format_time(datetime):
