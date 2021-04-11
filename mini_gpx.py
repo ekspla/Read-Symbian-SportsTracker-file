@@ -14,13 +14,14 @@ try:
     USE_LXML = True
 except ImportError:
     USE_LXML = False
+    from io import BytesIO
     try:
         import xml.etree.cElementTree as mod_etree
     except ImportError:
         try:
             import xml.etree.ElementTree as mod_etree
         except ImportError:
-            print('Failed to import ElementTree')
+            print('Failed to import ElementTree.')
             sys.exit(1)
 
 
@@ -143,9 +144,10 @@ class Gpx(object):
                 doctype='<?xml version="1.0" encoding="UTF-8"?>')
         else:
             _pretty_print(self.root)
-            return mod_etree.tostring(
-                #self.root, encoding='UTF-8', xml_declaration=True)
-                self.root, encoding='UTF-8') # xml_declaration: Python 3.8+.
+            f = BytesIO()
+            tree = mod_etree.ElementTree(self.root)
+            tree.write(f, encoding='UTF-8', xml_declaration=True) 
+            return f.getvalue()
 
     def add_metadata(self, name='', description='', author='', time=None):
         """Adds a few field in metadata as a short reference of the track/route.
