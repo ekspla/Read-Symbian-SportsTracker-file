@@ -12,7 +12,7 @@ import sys
 try:
     import lxml.etree as mod_etree
     USE_LXML = True
-except ImportError:
+except ImportError: # Fallback to built-in ElementTree.
     USE_LXML = False
     from io import BytesIO
     try:
@@ -44,8 +44,9 @@ else:
     mod_etree.register_namespace('gpxx', NS_GPXX)
     mod_etree.register_namespace('xsi', NS_XSI)
 
+
 def make_str(s): # A modified function of https://github.com/tkrajina/gpxpy.
-    """ Convert a str, unicode or float object into a str type. """
+    """ Converts a str, unicode or float object into a str type. """
     if isinstance(s, float):
         result = str(s)
         if 'e' not in result:
@@ -59,7 +60,7 @@ def format_time(datetime):
     return datetime.isoformat().replace('+00:00', 'Z')
 
 def _pretty_print(current, parent=None, index=-1, depth=0):
-    """Pretty-print function for ElementTree, copied from StackOverflow.
+    """Pretty-print for built-in ElementTree, copied from Stack Overflow.
 
        https://stackoverflow.com/questions/28813876/
     """
@@ -117,7 +118,7 @@ class Gpx(object):
             self.rte = mod_etree.Element('{' f'{NS_GPX}' '}' 'rte')
 
     def to_xml(self):
-        """Serialize the root after appending trkseg, rte, metadata, etc.
+        """Serializes the root after appending trkseg, rte, metadata, etc.
 
         Returns:
             utf-8 bytes (gpx xml).
