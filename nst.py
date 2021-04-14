@@ -63,13 +63,13 @@ def dt_from_timestamp(timestamp, tz_info=None):
 
     Set WORKAROUND = True, if necessary.
     """
-    if WORKAROUND and -62135596800 <= timestamp < 253402300800:
+    if (not WORKAROUND) and 0 <= timestamp < 32536799999:
+        # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59, platform dependent.
+        d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
+    elif WORKAROUND and -62135596800 <= timestamp < 253402300800:
         # From 0001-01-01T00:00:00 to 9999-12-31T23:59:59.
         d_t = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         d_t += dt.timedelta(seconds=1) * timestamp
-    elif (not WORKAROUND) and 0 <= timestamp < 32536799999:
-        # From 1970-01-01T00:00:00 to 3001-01-19T07:59:59, platform dependent.
-        d_t = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
     else:
         return None
     return (d_t.replace(tzinfo=None) if tz_info is None 

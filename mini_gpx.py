@@ -88,9 +88,6 @@ class Gpx(object):
         else:
             self.make_rte()
 
-    def __del__(self):
-        self.to_xml()
-
     def make_root(self):
         """Supported version of GPX is 1.1."""
         if USE_LXML:
@@ -133,7 +130,7 @@ class Gpx(object):
             if self.trkseg is None: self.make_trkseg() # For empty trkpts.
             trk.append(self.trkseg)
 
-        else: # Route.  The other type, e.g. waypoints, is not supported.
+        else: # Route.  The other type, e.g. waypoint, is not supported.
             rte = mod_etree.SubElement(self.root, 'rte')
             for child in self.summary:
                 rte.append(child)
@@ -181,7 +178,7 @@ class Gpx(object):
 
     def append_trkpt(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
-        """Appends trkpt to trkseg."""
+        """Appends a trkpt in trkseg."""
         trkpt = mod_etree.SubElement(
             self.trkseg, 'trkpt', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
@@ -190,7 +187,7 @@ class Gpx(object):
 
     def append_rtept(self, *, lat, lon, ele=None, time=None, name='', desc='', 
                        speed=None, hr=None):
-        """Appends rtept to rte."""
+        """Appends a rtept in rte."""
         rtept = mod_etree.SubElement(
             self.rte, 'rtept', { 'lat':make_str(lat), 'lon':make_str(lon) })
 
