@@ -157,7 +157,6 @@ def store_trackpt(tp, append_pt=None):
     #      f'{tp.y_degree:.6f}\t{tp.x_degree:.6f}\t{tp.z_ax:.1f}\t'
     #      f'{tp.v / 100 * 3.6:.3f}')
     if append_pt is None: append_pt = gpx_target
-    speed = round(tp.v / 100, 3) # velocity in m/s
     append_pt(
         lat=round(tp.y_degree, 6), # 1e-6 ~ 10 cm precision.
         lon=round(tp.x_degree, 6), 
@@ -166,7 +165,7 @@ def store_trackpt(tp, append_pt=None):
         name=str(tp.track_count + 1),
         desc=(f'Speed {round(tp.v / 100 * 3.6, 3)} km/h '
               f'Distance {round(tp.dist / 10**5, 3)} km'),
-        speed=f'{speed}')
+        speed=round(tp.v / 100, 3)) # Speed (m/s).
 
 def initialize_gpx(file_type=None):
     """Initialize a route or a track segment (determined by the file_type).
@@ -492,7 +491,6 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
             1 (error) or 0 (success).
         """
         nonlocal trackpt_store
-        pointer = file_obj.tell()
 
         if NEW_FORMAT:
             header_fmt = '2B' # 2-byte header.
@@ -505,6 +503,7 @@ def read_trackpoints(file_obj, pause_list=None): # No pause_list if ROUTE.
         try: # Uses the header as a dict key to change the way to process trkpt.
             process_trackpt, Trackpt, fmt = switch_formats[header]
         except KeyError: # Other headers which I don't know.
+            pointer = file_obj.tell() - struct.calcsize(header_fmt)
             print_other_header_error(pointer, header)
             return 1
 
