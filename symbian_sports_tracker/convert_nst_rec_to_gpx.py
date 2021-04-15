@@ -7,6 +7,8 @@
 """Script to read temporal track log files (Rec*.tmp) of Symbian SportsTracker.
 
 Modules of nst.py, scsu.py and mini_gpx.py are used to parse data in the files.
+Gpx writing part depends on lxml and its use is strongly recommended due to 
+performance reasons, though a fallback to built-in ElementTree is implemented.
 For usual track/route files (W*.dat/R*.dat), use convert_nst_files_to_gpx.py.
 """
 from os import getenv
