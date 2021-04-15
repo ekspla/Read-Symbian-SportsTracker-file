@@ -7,6 +7,8 @@
 """Script to read the old- and the new-ver Symbian (Nokia) SportsTracker files.
 
 Modules of nst.py, scsu.py and mini_gpx.py are used to parse data in the files.
+Gpx writing part depends on lxml and its use is strongly recommended due to 
+performance reasons, though a fallback to built-in ElementTree is implemented.
 For temporal track files (Rec*.tmp), use convert_nst_rec_to_gpx.py.
 """
 from os import getenv
