@@ -265,7 +265,7 @@ def read_pause_data(file_obj, new_format=None):
         print(f'Pause address: {hex(file_obj.tell())}') # START_ADDRESS + 4
 
     def print_raw_data(): # For debugging purposes.
-        utctime = f'{format_datetime(unix_time)}' # The old ver. in localtime.
+        utctime = format_datetime(unix_time) # The old ver. in localtime.
         if new_format: utctime += 'Z' # The new version NST in UTC (Z).
         print(f'{unknown}\t{format_timedelta(t_time)}\t{flag}\t{utctime}')
 
