@@ -1,4 +1,3 @@
-#mini_gpx.py
 #coding:utf-8
 #
 # (c) 2020 ekspla.
@@ -80,7 +79,7 @@ class Gpx(object):
        A complex gpx consisting of multiple trkseg/rte is not supported.
     """
     def __init__(self, is_track=True):
-        (self.trkseg, self.metadata, self.rte, self.summary) = (None, ) * 4
+        (self.metadata, self.summary) = (None, ) * 2
         self.is_track = is_track
         self.make_root()
         if is_track:
@@ -127,7 +126,6 @@ class Gpx(object):
             trk = mod_etree.SubElement(self.root, 'trk')
             for child in self.summary:
                 trk.append(child)
-            if self.trkseg is None: self.make_trkseg() # For empty trkpts.
             trk.append(self.trkseg)
 
         else: # Route.  The other type, e.g. waypoint, is not supported.
