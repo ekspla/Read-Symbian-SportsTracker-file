@@ -50,7 +50,7 @@ def make_str(s): # A modified function of https://github.com/tkrajina/gpxpy.
         result = str(s)
         if 'e' not in result:
             return result
-        # Scientific notation is illegal in GPX 1/1.
+        # Scientific notation is illegal in GPX 1.1.
         result = format(s, '.10f').rstrip('0')
         return result + '0' if result.endswith('.', -1) else result
     return str(s)
@@ -59,7 +59,7 @@ def format_time(datetime):
     return datetime.isoformat().replace('+00:00', 'Z')
 
 def _pretty_print(current, parent=None, index=-1, depth=0):
-    """Pretty-print for built-in ElementTree, copied from Stack Overflow.
+    """Pretty print for built-in ElementTree, copied from Stack Overflow.
 
        https://stackoverflow.com/questions/28813876/
     """
