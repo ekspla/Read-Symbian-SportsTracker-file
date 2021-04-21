@@ -230,7 +230,6 @@ def add_gpx_summary(gpx, tp_store):
                      time=time)
     gpx.add_summary(name=name, comment=comment, description=description)
 
-
 def finalize_gpx(gpx, outfile_path=None):
     """Output gpx xml to the outfile_path (or print if not specified).
 
