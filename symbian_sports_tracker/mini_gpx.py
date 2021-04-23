@@ -45,7 +45,7 @@ else:
 
 
 def make_str(s): # A modified function of https://github.com/tkrajina/gpxpy.
-    """ Converts a str, unicode or float object into a str type. """
+    """Converts a str, unicode or float object into a str type."""
     if isinstance(s, float):
         result = str(s)
         if 'e' not in result:
