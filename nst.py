@@ -129,7 +129,7 @@ def scsu_reader(file_object, address=None):
     return decoded_strings
 
 def dmm_to_decdeg(dddmm_mmmm):
-    """Convert signed int. DDDMM MMMM format to decimal degree.
+    """Convert signed int. DDDMM_MMMM format to decimal degree.
 
     >>> dmm_to_decdeg(45300000)
     45.5
@@ -237,12 +237,11 @@ def finalize_gpx(gpx, outfile_path=None):
         gpx
         outfile_path (optional): write gpx xml to the file or print (if None).
     """
-    result = gpx.to_xml() # bytes
     if outfile_path is not None:
         with outfile_path.open(mode='wb') as f:
-            f.write(result)
+            f.write(gpx.to_xml()) # to_xml() returns bytes.
     else:
-        print(result.decode())
+        print(gpx.to_xml().decode())
 
 DEBUG_READ_PAUSE = False
 def read_pause_data(file_obj, new_format=None):
