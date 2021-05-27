@@ -78,8 +78,8 @@ the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The f
 
 ## Note added for the users of www.sports-tracker.com
 - Its gpx handling code seems very faulty.
-- The time format should be **YYYY-MM-DDThh:mm:ss\[.SSS]\[+-HH:MM]**.  **Z** as timezone is **not allowed**.  
-The resolution should be miliseconds (**microseconds not allowed**).
+- The time format should be **YYYY-MM-DDThh:mm:ss\[.SSS]\[+-HH:MM]**.  Use of **Z** as UTC timezone is **not allowed**.  
+The resolution should be milliseconds (**microseconds not allowed**).
 
 You have to modify as followings.
 
