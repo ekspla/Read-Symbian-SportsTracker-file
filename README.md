@@ -82,11 +82,11 @@ the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The f
 The resolution should be miliseconds (**microseconds not allowed**).
 
 You have to modify as followings.
-format_time() in minigpx.py, delete ".replace('+00:00', 'Z')" to use +00:00 as UTC.
+format_time() in minigpx.py, delete `.replace('+00:00', 'Z')` to use +00:00 as UTC.
 ``` python
     return datetime.isoformat()
 ```
-store_trackpt() in nst.py, "add round( , 3)" to remove microseconds.
+store_trackpt() in nst.py, add `round( , 3)` to remove microseconds.
 ``` python
         time=dt_from_timestamp(round(tp.unix_time, 3), dt.timezone.utc), 
 ```
