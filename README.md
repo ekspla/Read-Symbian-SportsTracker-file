@@ -81,9 +81,9 @@ the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The f
 - The time format should be **YYYY-MM-DDThh:mm:ss\[.SSS]\[+-HH:MM]**.  Use of **Z** as UTC timezone is **not allowed**.  
 The resolution should be milliseconds (**microseconds not allowed**).
 
-You have to modify as followings.
+You have to modify as followings:
 
-format_time() in minigpx.py, delete `.replace('+00:00', 'Z')` to use +00:00 as UTC.
+format_time() in mini_gpx.py, delete `.replace('+00:00', 'Z')` to use +00:00 as UTC.
 ``` python
     return datetime.isoformat()
 ```
