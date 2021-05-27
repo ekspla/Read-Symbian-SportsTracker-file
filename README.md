@@ -76,6 +76,22 @@ the internet](https://forum.allnokia.ru/viewtopic.php?t=65299&start=210).  The f
 ## Limitation
 - Units other than Metrics (km and km/h), such as Imperial (mi and mph) and Nautical (nm and kn), were not tested.
 
+## Note added for the users of www.sports-tracker.com
+- Its gpx handling code seems very faulty.
+- The time format should be **YYYY-MM-DDThh:mm:ss\[.SSS]\[+-HH:MM]**.  Use of **Z** as UTC timezone is **not allowed**.  
+The resolution should be milliseconds (**microseconds not allowed**).
+
+You have to modify as followings:
+
+format_time() in mini_gpx.py, delete `.replace('+00:00', 'Z')` to use +00:00 as UTC.
+``` python
+    return datetime.isoformat()
+```
+store_trackpt() in nst.py, add `round( , 3)` to remove microseconds.
+``` python
+        time=dt_from_timestamp(round(tp.unix_time, 3), dt.timezone.utc), 
+```
+
 ## TODO
 - A few unknown field in the track points.
 - Support for heart rate in track log files of the new version (example files needed).
