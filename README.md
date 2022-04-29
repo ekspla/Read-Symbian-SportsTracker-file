@@ -94,8 +94,6 @@ in store_trackpt() of nst.py, add `round( , 3)` to remove microseconds.
 ## TODO
 - A few unknown field in the track points.
 - Support for heart rate in track log files of the new version (example files needed).
-- A test for a file in the West or South hemisphere, supposed to work though.  The codes were only tested for the real files in the North-East 
-(both the latitudes and the longitudes of positive values).
 
 ## License
 This software is released under the LGPL v2.1 License.
