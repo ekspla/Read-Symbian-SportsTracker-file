@@ -142,10 +142,8 @@ def parse_track_informations(f, ver=1):
     #print(f'Track name: {nst.track_name}')
 
     # Starttime & Stoptime in UTC.
-    start_stop_z_addr = 0x0018e # This is the fixed address of old NST track.
-    if ver != 0: start_stop_z_addr += 0x04 # Offset at total_distance (0x192).
-    if nst.FILE_TYPE == TMP: start_stop_z_addr += 0x04 # 4-byte blank (0x196).
-    f.seek(start_stop_z_addr, 0) # 16 (8+8) bytes, little endian I64+I64.
+    # Due to the previous SCSU data field of variable length, this address is not fixed.
+    f.seek(0x0137, 1) # Skip 312 bytes.  16 (8+8) bytes, little endian I64+I64.
     (start_time, stop_time) = nst.read_unpack('<2q', f)
     if stop_time <= start_time: stop_time = 0 # Avoid error.
     nst.START_TIME = nst.symbian_to_unix_time(start_time)
