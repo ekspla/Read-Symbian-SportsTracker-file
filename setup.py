@@ -5,7 +5,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='symbian_sports_tracker',
-    version='0.9.9',
+    version='1.0.0',
     author='ekspla',
     description='Read-Symbian-SportsTracker-file',
     long_description=long_description,

@@ -124,14 +124,16 @@ class Gpx(object):
 
         if self.is_track:
             trk = mod_etree.SubElement(self.root, 'trk')
-            for child in self.summary:
-                trk.append(child)
+            if self.summary is not None:
+                for child in self.summary:
+                    trk.append(child)
             trk.append(self.trkseg)
 
         else: # Route.  The other type, e.g. waypoint, is not supported.
             rte = mod_etree.SubElement(self.root, 'rte')
-            for child in self.summary:
-                rte.append(child)
+            if self.summary is not None:
+                for child in self.summary:
+                    rte.append(child)
             for rtept in self.rte:
                 rte.append(rtept)
 
