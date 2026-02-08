@@ -2,14 +2,14 @@
 (c) 2026, [ekspla](https://github.com/ekspla/Read-Symbian-SportsTracker-file/references/symbian_time.md)
 
 ## Introduction
-I found very recently that there were lots of wrong explanations on the internet how to deal 
-with *Symbian time*. 
+I found very recently that there were wrong explanations on the internet how to deal with 
+*Symbian time*. 
 Symbian time uses 64-bit timestamp of microsecond resolution with *Gregorian calender* starting 
 1st Jan. 1 AD. 
-Because there were ways to handle Gregorian calender back in the days before it was introduced 
-in 1582, these confusion might occur.  
+Because there were ways to handle Gregorian calender backwards in the days before it was introduced 
+at 1582, these confusion might occur.  
 
-## A brief history 
+## A brief history
 The old *Julian calendar* by Julius Caesar has a simple rule of leap year every 4th year. 
 Because of its limited precision, accumulated error of about 10 days has been adjusted and 
 additional rules of leap year (see below) has been introduced by Gregorian calender. 
@@ -29,19 +29,19 @@ Gregorian leap-year rule.
 ## The ways to handle backwards
 
   - Proleptic Gregorian Calender  
-Most of the current databases use so called *Proleptic Gregorian Calender*, that is supposed to be 
+Most of the current databases use so called *Proleptic Gregorian Calender* that is supposed to be 
 the Gregorian calendar extended to backwards. 
-In this way, difference in Gregorian time (in sec) and unixtime is calculated as 62167219200 (A few 
-reference shows it as 62167132800 because of 1 day difference at start, which is caused by the 
-difference in definition of 1st Jan. 1 AD.)  
-This value was also confirmed from [Wolfram Alpha in Wolfram site](https://www.wolframalpha.com/):  
+In this way, difference in Gregorian time (in seconds) and unix time (starts at 1st Jan. 1970) is 
+calculated as 62167219200 (A few reference shows it as 62167132800 because of 1 day difference at 
+start, which is caused by the difference in definitions of 1st Jan. 1 AD.)  
+This value was also confirmed by [Wolfram Alpha in Wolfram site](https://www.wolframalpha.com/):  
 
 719528 days \* 24 \* 60 \* 60 = 62167219200 sec.  
 
   - Symbian Time  
-Symbian uses *a mixed way of Julian and Gregorian* calenders; it preserve the old rule before the 
-Gregorian. 
-As the result year 1500 (before Gregorian) is leap year, but 1700 (after Gregorian) is not.  
+Symbian uses *a combined way of Julian and Gregorian* calenders; it preserve the old rule before 
+the start of Gregorian. 
+As the result, year 1500 (Julian) is leap year whereas 1700 (Gregorian) is not.  
 
 | Year | Symbian | Proleptic Gregorian |
 | ---- | --------- | --------- |
@@ -67,7 +67,11 @@ As shown in the table above, Symbian time is greater than proleptic Gregorian by
 
 12 days \* 24 hours \* 60 min \* 60 sec = 1036800 sec.  
 
-By addition of 62167219200 sec in proleptic Gregorian as shown above, we obtain the difference in 
+By addition of 62167219200 shown in proleptic Gregorian as above, we obtain the difference in 
 Symbian's way as  
 
 62167219200 + 1036800 = 62168256000 sec.  
+
+## Conclusion
+ - Use **62168256000 sec**.  
+ - Do not use 62167219200 sec.  
