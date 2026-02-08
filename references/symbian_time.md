@@ -28,8 +28,8 @@ Gregorian leap-year rule.
 
 ## The ways to handle backwards
 
-  - Proleptic Glegorian Calender  
-Most of the current databases use so called *Proleptic Glegorian Calender*, that is supposed to be 
+  - Proleptic Gregorian Calender  
+Most of the current databases use so called *Proleptic Gregorian Calender*, that is supposed to be 
 the Gregorian calendar extended to backwards. 
 In this way, difference in Gregorian time (in sec) and unixtime is calculated as 62167219200 (A few 
 reference shows it as 62167132800 because of 1 day difference at start, which is caused by the 
@@ -43,7 +43,7 @@ Symbian uses *a mixed way of Julian and Gregorian* calenders; it preserve the ol
 Gregorian. 
 As the result year 1500 (before Gregorian) is leap year, but 1700 (after Gregorian) is not.  
 
-| Year | Symbian | Proleptic Glegorian |
+| Year | Symbian | Proleptic Gregorian |
 | ---- | --------- | --------- |
 | 1700 |           |           |
 | 1600 | leap year | leap year |
