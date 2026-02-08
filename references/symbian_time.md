@@ -13,7 +13,7 @@ in 1582, these confusion might occur.
 The old *Julian calendar* by Julius Caesar has a simple rule of leap year every 4th year. 
 Because of its limited precision, accumulated error of about 10 days has been adjusted and 
 additional rules of leap year (see below) has been introduced by Gregorian calender. 
-Gregorian calender started at 15 Oct. 1582 with 10-day offset to its successor, Julian calender.  
+Gregorian calender started at 15 Oct. 1582 with 10-day offset to its predecessor, Julian calender.  
 
 Gregorian leap-year rule.  
 
