@@ -5,7 +5,7 @@
 I found very recently that there were wrong explanations on the internet how to deal with 
 *Symbian time*. 
 Symbian time uses 64-bit timestamp of microsecond resolution with *Gregorian calender* starting 
-1st Jan. 1 AD. 
+1st Jan. 0 AD. 
 Because there were ways to handle Gregorian calender backwards in the days before it was introduced 
 at 1582, these confusion might occur.  
 
