@@ -33,7 +33,7 @@ Most of the current databases use so called *Proleptic Gregorian Calender* that 
 the Gregorian calendar extended to backwards. 
 In this way, difference in Gregorian time (in seconds) and unix time (starts at 1st Jan. 1970) is 
 calculated as 62167219200 (A few reference shows it as 62167132800 because of 1 day difference at 
-start, which is caused by the difference in definitions of 1st Jan. 1 AD.)  
+start, which is caused by difference in definitions of the epoch.)  
 This value was also confirmed by [Wolfram Alpha in Wolfram site](https://www.wolframalpha.com/):  
 
 719528 days \* 24 \* 60 \* 60 = 62167219200 sec.  
