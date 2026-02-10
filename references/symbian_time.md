@@ -62,6 +62,7 @@ As the result, year 1500 (Julian) is leap year whereas 1700 (Gregorian) is not.
 |  300 | leap year |           |
 |  200 | leap year |           |
 |  100 | leap year |           |
+|    0 | leap year | leap year |
 
 As shown in the table above, Symbian time is greater than proleptic Gregorian by *12 days*.  
 
